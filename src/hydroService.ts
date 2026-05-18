@@ -16,19 +16,20 @@ const STATION_NAME_MAP: Record<string, string> = {
   DS_CONF_A: 'Dewitt Springs: Before Confluence with Logan River',
   LBR_MR_A: 'Little Bear River: Mendon Road',
   LR_1000W_A: 'Logan River: 1000 West',
-  LR_Cutler_A: 'Logan River: Before Confluence with Cutler Reservior',
+  LR_Cutler_A: 'Logan River: Before Confluence with Cutler Reservoir',
   LR_FB_BA: 'Logan River: Franklin Basin',
   LR_GCB_A: 'Logan River: Guinavah Campground',
   LR_MainStreet_BA: 'Logan River: Mainstreet',
   LR_Mendon_AA: 'Logan River: Mendon Road',
   LR_TG_BA: 'Logan River: Tony Grove',
-  LR_WaterLab_AA: 'Logan River: Utah Water Reaserch Labratory',
+  LR_WaterLab_AA: 'Logan River: Utah Water Research Laboratory',
   LR_WC_A: 'Logan River: Above Wood Camp',
   LR_WCB_A: 'Logan River: Wood Camp Bridge',
   RHF_CONF_A: 'Right Hand Fork: Before Confluence with Logan River',
   RS_CONF_A: 'Ricks Spring: Before Confluence with Logan River',
   SC_CONF_A: 'Spring Creek: Before Confluence with Logan River',
   SC_MR_A: 'Spring Creek: Mendon Road',
+  TF_CONF_A: 'Temple Fork: Before Confluence with Logan River',
 }
 
 export async function getDischargeStations(): Promise<Station[]> {
@@ -60,4 +61,15 @@ export async function getLatestObservation(stationId: string): Promise<any> {
   const response = await fetch(obsUrl)
   const data = await response.json()
   return data.value?.[0] || null
+}
+export function isStationActive(observation: any): boolean {
+  if (!observation || !observation.phenomenonTime) return false
+
+  // If the sensor is reporting the -9999 error code, treat it as inactive
+  if (Number(observation.result) === -9999) return false
+
+  const obsTime = new Date(observation.phenomenonTime).getTime()
+  const twentyFourHoursAgo = Date.now() - 24 * 60 * 60 * 1000
+
+  return obsTime > twentyFourHoursAgo
 }
