@@ -8,10 +8,11 @@ function formatDate(dateStr: string) {
   if (!dateStr) return ''
   const date = new Date(dateStr)
 
-  // This version shows: "May 14, 12:00 PM"
+  // Added year: 'numeric' so it displays: "May 14, 2026, 12:00 PM"
   return date.toLocaleString([], {
     month: 'short',
     day: 'numeric',
+    year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
   })

@@ -12,13 +12,12 @@ interface RiverSite {
   observation?: any
 }
 
-// Keep Brooke's setup receiving the raw sites from the parent
 const props = defineProps<{
   sites: RiverSite[]
   loading: boolean
 }>()
 
-// FILTER: Dynamically filter out any sites that are not live/active
+// FILTER: Keep only the live-reporting stations
 const activeSites = computed(() => {
   return props.sites.filter((site) => isStationActive(site.observation))
 })
