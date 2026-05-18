@@ -1,40 +1,75 @@
 // src/hydroService.ts
-const BASE_URL = "https://lro.hydroserver.org/api/sensorthings/v1.1";
+const BASE_URL = 'https://lro.hydroserver.org/api/sensorthings/v1.1'
 
 export interface Station {
-  id: string;
-  displayName: string;
-  description: string;
-  observation: any;
+  id: string
+  displayName: string
+  description: string
+  observation: any
+}
+
+const STATION_NAME_MAP: Record<string, string> = {
+  BC_CONF_A: 'Beaver Creek: Before Confluence with the Logan River',
+  BSF_1700S_A: 'Blacksmith Fork River: 1700 South Footbridge',
+  BSF_CONF_BA: 'Blacksmith Fork River: Before Confluence with Logan River',
+  BSF_Darwin_A: 'Blacksmith Fork River: Hollow Road',
+  DS_CONF_A: 'Dewitt Springs: Before Confluence with Logan River',
+  LBR_MR_A: 'Little Bear River: Mendon Road',
+  LR_1000W_A: 'Logan River: 1000 West',
+  LR_Cutler_A: 'Logan River: Before Confluence with Cutler Reservoir',
+  LR_FB_BA: 'Logan River: Franklin Basin',
+  LR_GCB_A: 'Logan River: Guinavah Campground',
+  LR_MainStreet_BA: 'Logan River: Mainstreet',
+  LR_Mendon_AA: 'Logan River: Mendon Road',
+  LR_TG_BA: 'Logan River: Tony Grove',
+  LR_WaterLab_AA: 'Logan River: Utah Water Research Laboratory',
+  LR_WC_A: 'Logan River: Above Wood Camp',
+  LR_WCB_A: 'Logan River: Wood Camp Bridge',
+  RHF_CONF_A: 'Right Hand Fork: Before Confluence with Logan River',
+  RS_CONF_A: 'Ricks Spring: Before Confluence with Logan River',
+  SC_CONF_A: 'Spring Creek: Before Confluence with Logan River',
+  SC_MR_A: 'Spring Creek: Mendon Road',
+  TF_CONF_A: 'Temple Fork: Before Confluence with Logan River',
 }
 
 export async function getDischargeStations(): Promise<Station[]> {
   // Change $top=100 to $top=50
-const listUrl = `${BASE_URL}/Datastreams?$filter=contains(name,'Discharge') and contains(name,'cfs') and not contains(name,'cms')&$top=50&$orderby=name asc`;
-  const response = await fetch(listUrl);
-  const data = await response.json();
-  
+  const listUrl = `${BASE_URL}/Datastreams?$filter=contains(name,'Discharge') and contains(name,'cfs') and not contains(name,'cms')&$top=50&$orderby=name asc`
+  const response = await fetch(listUrl)
+  const data = await response.json()
+
   return data.value.map((ds: any) => {
     // We do the split and replace all in one go to prevent any "leaks"
     const cleanName = ds.name
-      .split(' - ')[0]             // Cut off " - Raw data"
-      .split(' Discharge')[0]      // Cut off " Discharge (cfs)"
+      .split(' - ')[0] // Cut off " - Raw data"
+      .split(' Discharge')[0] // Cut off " Discharge (cfs)"
       .replace(/^[A-Z0-9_]+ /, '') // Cut off "LR_DSC_A"
       .replace('at Logan River at ', '') // Cut off the redundant river name
-      .trim();
+      .trim()
 
     return {
       id: ds['@iot.id'],
-      displayName: cleanName || ds.name, 
+      displayName: STATION_NAME_MAP[cleanName] || cleanName || ds.name,
       description: ds.description,
-      observation: null
-    };
-  });
+      observation: null,
+    }
+  })
 }
 
 export async function getLatestObservation(stationId: string): Promise<any> {
-  const obsUrl = `${BASE_URL}/Datastreams('${stationId}')/Observations?$top=1&$orderby=phenomenonTime desc`;
-  const response = await fetch(obsUrl);
-  const data = await response.json();
-  return data.value?.[0] || null;
+  const obsUrl = `${BASE_URL}/Datastreams('${stationId}')/Observations?$top=1&$orderby=phenomenonTime desc`
+  const response = await fetch(obsUrl)
+  const data = await response.json()
+  return data.value?.[0] || null
+}
+export function isStationActive(observation: any): boolean {
+  if (!observation || !observation.phenomenonTime) return false
+
+  // If the sensor is reporting the -9999 error code, treat it as inactive
+  if (Number(observation.result) === -9999) return false
+
+  const obsTime = new Date(observation.phenomenonTime).getTime()
+  const twentyFourHoursAgo = Date.now() - 24 * 60 * 60 * 1000
+
+  return obsTime > twentyFourHoursAgo
 }
