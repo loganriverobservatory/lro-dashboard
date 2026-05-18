@@ -48,7 +48,7 @@ export async function getDischargeStations(): Promise<Station[]> {
 
     return {
       id: ds['@iot.id'],
-      displayName: cleanName || ds.name,
+      displayName: STATION_NAME_MAP[cleanName] || cleanName || ds.name,
       description: ds.description,
       observation: null,
     }
