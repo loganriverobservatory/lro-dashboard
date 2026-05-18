@@ -1,5 +1,7 @@
 <script setup lang="ts">
-// This allows App.vue to pass the "site" data into this card
+/** * StationCard.vue
+ * Displays real-time sensor data and location details for an individual river station using props.
+ */
 defineProps(['site'])
 
 function formatDate(dateStr: string) {
