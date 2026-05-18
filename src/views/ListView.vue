@@ -2,25 +2,18 @@
 /** * ListView.vue
  * Renders a collection of station cards to provide a comprehensive overview of all active sensor readings.
  */
-import { computed } from 'vue'
 import StationCard from '../components/StationCard.vue'
-import { isStationActive } from '../hydroService'
 
 interface RiverSite {
   id: string
   displayName: string
-  observation?: any
+  observation?: Record<string, unknown>
 }
 
-const props = defineProps<{
+defineProps<{
   sites: RiverSite[]
   loading: boolean
 }>()
-
-// FILTER: Keep only the live-reporting stations
-const activeSites = computed(() => {
-  return props.sites.filter((site) => isStationActive(site.observation))
-})
 </script>
 
 <template>
@@ -37,7 +30,7 @@ const activeSites = computed(() => {
     </div>
 
     <div v-else class="station-grid">
-      <StationCard v-for="site in activeSites" :key="site.id" :site="site" />
+      <StationCard v-for="site in sites" :key="site.id" :site="site" />
     </div>
   </div>
 </template>
