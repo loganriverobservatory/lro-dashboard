@@ -2,8 +2,10 @@
 /** * App.vue
  * Orchestrates global state, fetches data from HydroServer, and coordinates the visibility of different views.
  */
+
 import { ref, onMounted } from 'vue'
-import { getDischargeStations, getLatestObservation } from './hydroService'
+import 'leaflet/dist/leaflet.css'
+import { getDischargeStations, type Station } from './hydroService'
 
 // Import all your shiny new components!
 import AppHeader from './components/AppHeader.vue'
@@ -13,14 +15,8 @@ import ListView from './views/ListView.vue'
 import MapView from './views/MapView.vue'
 import SchematicView from './views/SchematicView.vue'
 
-interface RiverStation {
-  id: string
-  displayName: string
-  observation?: Record<string, unknown>
-}
-
 // Global State
-const sites = ref<RiverStation[]>([])
+const sites = ref<Station[]>([])
 const loading = ref(true)
 const sidebarOpen = ref(false)
 const currentView = ref('home')
@@ -28,25 +24,18 @@ const currentView = ref('home')
 // Global Data Fetching (Using the fixed Promise.all setup)
 onMounted(async () => {
   try {
-    const stations = await getDischargeStations()
-    sites.value = stations
+    console.log('Fetching stations from HydroServer...')
+    const data = await getDischargeStations()
 
-    await Promise.all(
-      sites.value.map(async (site) => {
-        try {
-          const obs = await getLatestObservation(String(site.id))
-          if (obs) site.observation = obs
-        } catch {
-          console.warn(`Failed: ${site.displayName}`)
-        }
-      }),
-    )
-  } catch (err) {
-    console.error('Dashboard error:', err)
+    sites.value = data
+  } catch (error) {
+    console.error('Failed to load stations:', error)
   } finally {
     loading.value = false
   }
 })
+
+//PINS FOR MAP VIEW
 </script>
 
 <template>
@@ -63,7 +52,7 @@ onMounted(async () => {
     <main class="main-container">
       <HomeView v-if="currentView === 'home'" @change-view="(view) => (currentView = view)" />
       <ListView v-if="currentView === 'list'" :sites="sites" :loading="loading" />
-      <MapView v-if="currentView === 'map'" />
+      <MapView v-if="currentView === 'map'" :sites="sites" :selected-id="null" />
       <SchematicView v-if="currentView === 'schematic'" />
     </main>
   </div>

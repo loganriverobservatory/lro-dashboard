@@ -4,16 +4,10 @@
  */
 import { computed } from 'vue'
 import StationCard from '../components/StationCard.vue'
-import { isStationActive } from '../hydroService'
+import { type Station } from '../hydroService'
 
-interface RiverSite {
-  id: string
-  displayName: string
-  observation?: any
-}
-
-const props = defineProps<{
-  sites: RiverSite[]
+defineProps<{
+  sites: Station[]
   loading: boolean
 }>()
 
