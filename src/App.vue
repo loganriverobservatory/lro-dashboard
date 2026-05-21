@@ -77,7 +77,7 @@ body {
 
 .main-container {
   grid-area: main;
-  background-color: #637085;
+  background-color: #6376c1;
   padding: 2rem;
   overflow-y: auto;
 }
