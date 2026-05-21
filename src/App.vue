@@ -4,10 +4,9 @@
  */
 
 import { ref, onMounted } from 'vue'
-import 'leaflet/dist/leaflet.css'
-import { getDischargeStations, type Station } from './hydroService'
+import { getDischargeStations, getLatestObservation, type Station } from './hydroService'
 
-// Import all your shiny new components!
+// Component Imports
 import AppHeader from './components/AppHeader.vue'
 import AppSidebar from './components/AppSidebar.vue'
 import HomeView from './views/HomeView.vue'
@@ -15,27 +14,40 @@ import ListView from './views/ListView.vue'
 import MapView from './views/MapView.vue'
 import SchematicView from './views/SchematicView.vue'
 
-// Global State
+// Reactive State
 const sites = ref<Station[]>([])
 const loading = ref(true)
 const sidebarOpen = ref(false)
 const currentView = ref('home')
+const selectedId = ref<string | null>(null)
 
-// Global Data Fetching (Using the fixed Promise.all setup)
+const handleSelect = (id: string) => {
+  console.log('Station selected:', id)
+  selectedId.value = id
+}
+
+// Global Data Fetching
 onMounted(async () => {
   try {
-    console.log('Fetching stations from HydroServer...')
+    loading.value = true
+    // Get station data
     const data = await getDischargeStations()
-
     sites.value = data
+
+    //get water levels
+    for (const site of sites.value) {
+      const obs = await getLatestObservation(site.id)
+      site.observation = obs
+    }
+    // Trigger the map once all the data is in
+    sites.value = [...sites.value]
   } catch (error) {
     console.error('Failed to load stations:', error)
   } finally {
+    // This runs whether the fetch succeeded or failed, stopping the spinner
     loading.value = false
   }
 })
-
-//PINS FOR MAP VIEW
 </script>
 
 <template>
@@ -52,14 +64,19 @@ onMounted(async () => {
     <main class="main-container">
       <HomeView v-if="currentView === 'home'" @change-view="(view) => (currentView = view)" />
       <ListView v-if="currentView === 'list'" :sites="sites" :loading="loading" />
-      <MapView v-if="currentView === 'map'" :sites="sites" :selected-id="null" />
+      <MapView
+        v-if="currentView === 'map'"
+        :sites="sites"
+        :selected-id="selectedId"
+        @selected="handleSelect"
+      />
       <SchematicView v-if="currentView === 'schematic'" />
     </main>
   </div>
 </template>
 
 <style>
-/* Global resets and layout grid only */
+/* Global resets and layout grid */
 body {
   margin: 0;
   font-family: sans-serif;
@@ -67,11 +84,11 @@ body {
 
 .grid-container {
   display: grid;
-  grid-template-columns: 260px 1fr 1fr 1fr;
+  grid-template-columns: 260px 1fr; /* Simplified columns */
   grid-template-rows: 70px 1fr;
   grid-template-areas:
-    'sidebar header header header'
-    'sidebar main main main';
+    'sidebar header'
+    'sidebar main';
   height: 100vh;
 }
 
@@ -82,6 +99,7 @@ body {
   overflow-y: auto;
 }
 
+/* Mobile Responsiveness */
 @media screen and (max-width: 992px) {
   .grid-container {
     grid-template-columns: 1fr;
