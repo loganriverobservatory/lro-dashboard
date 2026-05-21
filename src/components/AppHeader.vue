@@ -59,7 +59,7 @@ const emit = defineEmits(['toggle-sidebar', 'change-view'])
 .dashboard-tag {
   font-size: 0.95rem;
   font-weight: 700;
-  color: #475569;
+  color: #000000;
   letter-spacing: -0.01em;
 }
 
@@ -76,7 +76,7 @@ const emit = defineEmits(['toggle-sidebar', 'change-view'])
   padding: 6px 12px;
   border-radius: 8px;
   cursor: pointer;
-  color: #475569;
+  color: #000000;
   transition: all 0.2s ease;
 }
 
@@ -100,7 +100,7 @@ const emit = defineEmits(['toggle-sidebar', 'change-view'])
 
 .menu-icon {
   display: none;
-  color: #475569;
+  color: #000000;
   cursor: pointer;
   padding: 8px;
   border-radius: 8px;

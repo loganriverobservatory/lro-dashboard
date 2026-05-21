@@ -53,14 +53,13 @@ const emit = defineEmits(['change-view'])
 </template>
 
 <style scoped>
-/* 1. The Outer Wrapper gets your custom periwinkle blue background */
 .home-wrapper {
   width: 100%;
   min-height: 85vh;
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: #7d9ddd; /* Your exact bright blue color! */
+  background-color: #7d9ddd;
   padding: 2rem 1rem;
   box-sizing: border-box;
 }
@@ -72,17 +71,15 @@ const emit = defineEmits(['change-view'])
   justify-content: center;
 }
 
-/* 2. The Inner Content Panel stays pure white so it stands out beautifully */
 .home-container {
   width: 100%;
   padding: 3rem 2.5rem;
   box-sizing: border-box;
-  background-color: #ffffff; /* Crisp white interior */
-  border-radius: 16px; /* Smooth rounded dashboard corners */
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); /* Soft shadow over the blue background */
+  background-color: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
 }
 
-/* 3. Left-aligned editorial hero styles */
 .hero-block {
   text-align: left;
   margin-bottom: 3rem;
@@ -96,7 +93,7 @@ const emit = defineEmits(['change-view'])
 }
 
 .hero-icon {
-  color: #0284c7; /* Brand Blue matching icon */
+  color: #0284c7;
 }
 
 .hero-block h1 {
@@ -114,14 +111,12 @@ const emit = defineEmits(['change-view'])
   margin: 0;
 }
 
-/* 4. Grid presentation for the action items */
 .navigation-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 24px;
 }
 
-/* 5. Navigation cards use a soft off-white to contrast against the white panel */
 .nav-card {
   background: #f8fafc;
   border: 1px solid #e2e8f0;
