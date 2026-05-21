@@ -2,13 +2,11 @@
 import { ref, onMounted, onUnmounted, nextTick, computed } from 'vue'
 import { Droplets, ArrowDown, CornerDownRight } from 'lucide-vue-next'
 
-// 1. Using your exact required Station interface format!
 export interface Station {
   id: string
   displayName: string
   description: string
   observation: any
-  // Internal layout assistants (can be optional or stamped by the service)
   row?: number
   type?: string
 }
@@ -18,7 +16,6 @@ const props = defineProps<{
   loading?: boolean
 }>()
 
-// 2. Updated Backups to use your exact "displayName" property
 const backupLogan = [
   {
     id: 'franklin',
@@ -86,7 +83,7 @@ const backupLogan = [
   },
   {
     id: 'guinivah',
-    displayName: 'Logan River: Guinivah Campground',
+    displayName: 'Logan River: Guinavah Campground',
     row: 9,
     type: 'gauge',
     description: '',
@@ -102,7 +99,7 @@ const backupLogan = [
   },
   {
     id: 'water_lab',
-    displayName: 'Logan River: Water Lab',
+    displayName: 'Logan River: Utah Water Research Laboratory',
     row: 11,
     type: 'gauge',
     description: '',
@@ -126,7 +123,7 @@ const backupLogan = [
   },
   {
     id: 'bsf_confluence',
-    displayName: 'Blacksmith Fork Confluence',
+    displayName: 'Blacksmith Fork River',
     row: 14,
     type: 'confluence-node',
     description: '',
@@ -169,7 +166,7 @@ const backupBlacksmith = [
   },
   {
     id: 'seventeen_s',
-    displayName: 'Blacksmith River: 1700 S',
+    displayName: 'Blacksmith Fork River: 1700 South Footbridge',
     row: 12,
     type: 'bsf-card',
     description: '',
@@ -196,7 +193,6 @@ const backupCutler = [
   },
 ]
 
-// 3. Computed Filters checking for live data vs backup structures
 const loganMainStem = computed(() => {
   if (props.sites && props.sites.length > 0) {
     return props.sites
@@ -224,7 +220,6 @@ const cutlerInflows = computed(() => {
   return backupCutler
 })
 
-// 4. Line Positioning Engine
 const gridContainerRef = ref<HTMLElement | null>(null)
 const paths = ref({
   logan: '',
@@ -274,8 +269,8 @@ const updateLineCoordinates = async () => {
     const orangeNodePt = getMarkerCenter(springCreekId)
 
     reservoirBlueX = blueNodePt.x
-    reservoirOrangeX1 = orangeNodePt.x + 50
-    reservoirOrangeX2 = orangeNodePt.x + 20
+    reservoirOrangeX1 = orangeNodePt.x - 20
+    reservoirOrangeX2 = orangeNodePt.x - 50
   }
 
   let loganPathStr = ''
@@ -448,7 +443,7 @@ onUnmounted(() => {
               <Droplets :size="26" class="terminus-icon" />
               <div class="terminus-details">
                 <h3>SYSTEM TERMINUS: Cutler Reservoir</h3>
-                <p>Ultimate drainage collection basin for all main channels and lateral streams.</p>
+                <p>Ultimate drainage collection basin for all channels</p>
               </div>
             </div>
           </div>
