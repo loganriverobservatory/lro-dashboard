@@ -1,67 +1,156 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { Droplets, ArrowDown, Info } from 'lucide-vue-next'
+import { ref, onMounted, onUnmounted, nextTick } from 'vue'
+import { Droplets, ArrowDown, CornerDownRight } from 'lucide-vue-next'
 
-// We map out your topology exactly as you listed it from top to bottom
-const riverNodes = ref([
-  { id: 'franklin', name: 'Logan River: Franklin Basin', type: 'main-stem' },
-  { id: 'beaver', name: 'Beaver Creek (Flows into Logan River)', type: 'tributary' },
-  { id: 'tony_grove', name: 'Logan River: Tony Grove', type: 'main-stem' },
-  { id: 'ricks', name: 'Ricks Spring (Flows into Logan River)', type: 'tributary' },
-  { id: 'temple', name: 'Temple Fork (Flows into Logan River)', type: 'tributary' },
-  { id: 'above_wood', name: 'Logan River: Above Wood Camp', type: 'main-stem' },
-  { id: 'wood_camp', name: 'Logan River: Wood Camp Bridge', type: 'main-stem' },
-  { id: 'right_hand', name: 'Right Hand Fork (Flows into Logan River)', type: 'tributary' },
-  { id: 'guinivah', name: 'Logan River: Guinivah Campground', type: 'main-stem' },
-  { id: 'dewitt', name: 'Dewitt Springs (Flows into Logan River)', type: 'tributary' },
-  { id: 'water_lab', name: 'Logan River: Water Lab', type: 'main-stem' },
-  { id: 'mainstreet', name: 'Logan River: Main Street', type: 'main-stem' },
-  { id: 'spring_creek', name: 'Spring Creek (Flows into Logan River)', type: 'tributary' },
+const loganMainStem = ref([
+  { id: 'franklin', name: 'Logan River: Franklin Basin', row: 1, type: 'source' },
+  { id: 'beaver', name: 'Beaver Creek', row: 2, type: 'inflow-left' },
+  { id: 'tony_grove', name: 'Logan River: Tony Grove', row: 3, type: 'gauge' },
+  { id: 'ricks', name: 'Ricks Spring', row: 4, type: 'inflow-left' },
+  { id: 'temple', name: 'Temple Fork', row: 5, type: 'inflow-left' },
+  { id: 'above_wood', name: 'Logan River: Above Wood Camp', row: 6, type: 'gauge' },
+  { id: 'wood_camp', name: 'Logan River: Wood Camp Bridge', row: 7, type: 'gauge' },
+  { id: 'right_hand', name: 'Right Hand Fork', row: 8, type: 'inflow-left' },
+  { id: 'guinivah', name: 'Logan River: Guinivah Campground', row: 9, type: 'gauge' },
+  { id: 'dewitt', name: 'Dewitt Springs', row: 10, type: 'inflow-left' },
+  { id: 'water_lab', name: 'Logan River: Water Lab', row: 11, type: 'gauge' },
+  { id: 'mainstreet', name: 'Logan River: Main Street', row: 12, type: 'gauge' },
+  { id: 'spring_creek', name: 'Spring Creek', row: 13, type: 'inflow-left' },
+  { id: 'bsf_confluence', name: 'Blacksmith Fork Confluence', row: 14, type: 'confluence-node' },
+  { id: 'thousand_w', name: 'Logan River: 1000 West', row: 15, type: 'gauge' },
+  { id: 'mendon_rd', name: 'Logan River: Mendon Road', row: 16, type: 'gauge' },
+  {
+    id: 'before_cutler',
+    name: 'Logan River: Before Confluence with Cutler Reservoir',
+    row: 17,
+    type: 'gauge',
+  },
+])
 
-  // Blacksmith River system branching and feeding in
-  {
-    id: 'blacksmith_header',
-    name: '--- Blacksmith Fork Tributary System ---',
-    type: 'system-divider',
-  },
-  {
-    id: 'hollow_rd',
-    name: 'Blacksmith River: Hollow Road (Top of Blacksmith)',
-    type: 'sub-branch',
-  },
-  { id: 'seventeen_s', name: 'Blacksmith River: 1700 S', type: 'sub-branch' },
-  {
-    id: 'confluence',
-    name: 'Blacksmith River: Above Confluence with Logan River',
-    type: 'tributary',
-  },
+const blacksmithSystem = ref([
+  { id: 'hollow_rd', name: 'Blacksmith River: Hollow Road', row: 11, type: 'bsf-card' },
+  { id: 'seventeen_s', name: 'Blacksmith River: 1700 S', row: 12, type: 'bsf-card' },
+])
 
-  // Back to the lower Logan main stem
-  { id: 'thousand_w', name: 'Logan River: 1000 West', type: 'main-stem' },
-  { id: 'mendon_rd', name: 'Logan River: Mendon Road', type: 'main-stem' },
-
-  // Independent basins dumping straight into Cutler Reservoir
-  {
-    id: 'cutler_header',
-    name: '--- Independent Cutler Reservoir Inflows ---',
-    type: 'system-divider',
-  },
+const cutlerInflows = ref([
   {
     id: 'little_bear',
-    name: 'Little Bear River: Mendon Road (Runs into Cutler separately)',
-    type: 'sub-branch',
+    name: 'Little Bear River: Mendon Road',
+    row: 15,
+    type: 'independent-inflow',
   },
   {
     id: 'spring_creek_mendon',
-    name: 'Spring Creek: Mendon Road (Runs into Cutler separately)',
-    type: 'sub-branch',
+    name: 'Spring Creek: Mendon Road',
+    row: 16,
+    type: 'independent-inflow',
   },
-
-  // The ultimate endpoint
-  { id: 'cutler', name: 'Logan River: Cutler Reservoir (System Terminus)', type: 'terminus' },
 ])
 
-const loading = ref(false)
+// Vector Overlay Coordinates state
+const gridContainerRef = ref<HTMLElement | null>(null)
+const paths = ref({
+  logan: '',
+  blacksmith: '',
+  cutlerLittleBear: '',
+  cutlerSpringCreek: '',
+})
+
+const updateLineCoordinates = async () => {
+  await nextTick()
+  if (!gridContainerRef.value) return
+
+  const containerRect = gridContainerRef.value.getBoundingClientRect()
+
+  const getMarkerCenter = (id: string, position: 'center' | 'left' = 'center') => {
+    const el = gridContainerRef.value?.querySelector(`[data-marker="${id}"]`)
+    if (!el) return { x: 0, y: 0 }
+    const rect = el.getBoundingClientRect()
+
+    if (position === 'left') {
+      return {
+        x: rect.left - containerRect.left,
+        y: rect.top + rect.height / 2 - containerRect.top,
+      }
+    }
+    return {
+      x: rect.left + rect.width / 2 - containerRect.left,
+      y: rect.top + rect.height / 2 - containerRect.top,
+    }
+  }
+
+  // Target coordinates on the top border of the Terminus reservoir card
+  const terminusEl = gridContainerRef.value.querySelector('[data-marker="terminus_card"]')
+  let reservoirTopY = containerRect.height
+  let reservoirBlueX = 0
+  let reservoirOrangeX1 = 0
+  let reservoirOrangeX2 = 0
+
+  if (terminusEl) {
+    const tRect = terminusEl.getBoundingClientRect()
+    reservoirTopY = tRect.top - containerRect.top
+
+    const blueNodePt = getMarkerCenter('before_cutler')
+    const orangeNodePt = getMarkerCenter('spring_creek_mendon')
+
+    reservoirBlueX = blueNodePt.x
+    // Anchor destinations spaced cleanly on the right half of the reservoir card
+    reservoirOrangeX1 = orangeNodePt.x + 50
+    reservoirOrangeX2 = orangeNodePt.x + 20
+  }
+
+  // 1. Primary Logan Trunk Line (Now tracks all the way through the new bottom confluence node)
+  let loganPathStr = ''
+  loganMainStem.value.forEach((node, idx) => {
+    const pt = getMarkerCenter(node.id)
+    if (idx === 0) loganPathStr += `M ${pt.x},${pt.y}`
+    else loganPathStr += ` L ${pt.x},${pt.y}`
+  })
+  if (terminusEl) {
+    loganPathStr += ` L ${reservoirBlueX},${reservoirTopY}`
+  }
+  paths.value.logan = loganPathStr
+
+  // 2. Blacksmith Hook Line
+  const bsf1 = getMarkerCenter('hollow_rd')
+  const bsf2 = getMarkerCenter('seventeen_s')
+  const confLeft = getMarkerCenter('bsf_confluence', 'left')
+  paths.value.blacksmith = `M ${bsf1.x},${bsf1.y} L ${bsf2.x},${bsf2.y} V ${confLeft.y - 30} Q ${bsf2.x},${confLeft.y} ${bsf2.x - 40},${confLeft.y} L ${confLeft.x},${confLeft.y}`
+
+  // 3. Crisp Independent Line A: Little Bear River
+  const lbCenter = getMarkerCenter('little_bear')
+  const lbRightEdgeX = lbCenter.x + 135
+  paths.value.cutlerLittleBear = `M ${lbCenter.x},${lbCenter.y} L ${lbRightEdgeX},${lbCenter.y} L ${reservoirOrangeX1},${lbCenter.y} L ${reservoirOrangeX1},${reservoirTopY}`
+
+  // 4. Crisp Independent Line B: Spring Creek
+  const scmCenter = getMarkerCenter('spring_creek_mendon')
+  const scmRightEdgeX = scmCenter.x + 135
+  paths.value.cutlerSpringCreek = `M ${scmCenter.x},${scmCenter.y} L ${scmRightEdgeX},${scmCenter.y} L ${reservoirOrangeX2},${scmCenter.y} L ${reservoirOrangeX2},${reservoirTopY}`
+}
+
+let resizeObserver: ResizeObserver | null = null
+
+onMounted(() => {
+  setTimeout(() => {
+    updateLineCoordinates()
+  }, 100)
+  setTimeout(() => {
+    updateLineCoordinates()
+  }, 300)
+
+  if (gridContainerRef.value) {
+    resizeObserver = new ResizeObserver(() => {
+      updateLineCoordinates()
+    })
+    resizeObserver.observe(gridContainerRef.value)
+  }
+  window.addEventListener('resize', updateLineCoordinates)
+})
+
+onUnmounted(() => {
+  if (resizeObserver) resizeObserver.disconnect()
+  window.removeEventListener('resize', updateLineCoordinates)
+})
 </script>
 
 <template>
@@ -69,49 +158,117 @@ const loading = ref(false)
     <div class="schematic-card">
       <div class="header-block">
         <Droplets :size="28" class="title-icon" />
-        <h2>Hydrologic Network Schematic</h2>
+        <h2>Hydrologic Network Schematic Matrix</h2>
       </div>
       <p class="subtitle">
-        Linear topological layout tracking the flow paths, tributaries, and confluences of the Logan
-        River basin from highest upstream source to the Cutler Reservoir terminus.
+        Multi-column topology tracking parallel sub-basins entering the Cutler Reservoir basin.
       </p>
 
-      <div class="network-diagram">
-        <div v-for="(node, index) in riverNodes" :key="node.id" class="node-row" :class="node.type">
-          <div class="line-column">
-            <div
-              v-if="node.type !== 'system-divider'"
-              class="indicator-dot"
-              :class="node.type"
-            ></div>
-            <div
-              v-if="index < riverNodes.length - 1 && node.type !== 'system-divider'"
-              class="vertical-flow-line"
-            ></div>
+      <div class="schematic-grid-wrapper" ref="gridContainerRef">
+        <svg class="global-routing-svg">
+          <path
+            :d="paths.logan"
+            fill="none"
+            stroke="#01377D"
+            stroke-width="4"
+            stroke-linejoin="round"
+            stroke-linecap="round"
+          />
+          <path
+            :d="paths.blacksmith"
+            fill="none"
+            stroke="#16a34a"
+            stroke-width="4"
+            stroke-linejoin="round"
+            stroke-linecap="round"
+          />
+          <path
+            :d="paths.cutlerLittleBear"
+            fill="none"
+            stroke="#ea580c"
+            stroke-width="4"
+            stroke-linejoin="round"
+            stroke-linecap="round"
+          />
+          <path
+            :d="paths.cutlerSpringCreek"
+            fill="none"
+            stroke="#ea580c"
+            stroke-width="4"
+            stroke-linejoin="round"
+            stroke-linecap="round"
+          />
+        </svg>
+
+        <div class="schematic-grid">
+          <div class="grid-cell col-1 placeholder-cell"></div>
+
+          <div
+            v-for="node in loganMainStem"
+            :key="node.id"
+            class="grid-cell col-2"
+            :style="{ gridRow: node.row }"
+            :data-marker="node.id"
+          >
+            <div v-if="node.type === 'confluence-node'" class="node-card confluence-card">
+              <div class="inflow-content-wrapper">
+                <CornerDownRight :size="16" class="arrow-inflow-green" />
+                <span class="node-title font-highlight">{{ node.name }}</span>
+              </div>
+            </div>
+
+            <div v-else-if="node.type === 'inflow-left'" class="node-card inflow-card">
+              <div class="inflow-content-wrapper">
+                <CornerDownRight :size="16" class="arrow-inflow-blue" />
+                <span class="node-title">{{ node.name }}</span>
+              </div>
+            </div>
+
+            <div v-else class="node-card main-stem-card">
+              <span class="node-title">{{ node.name }}</span>
+              <ArrowDown :size="16" class="arrow-down-indicator" />
+            </div>
           </div>
 
-          <div class="content-column">
-            <div class="station-plate" :class="node.type">
-              <span class="station-name">{{ node.name }}</span>
-              <div
-                v-if="node.type === 'main-stem' || node.type === 'sub-branch'"
-                class="live-data-badge"
-              >
-                <span class="flow-value">Active Station</span>
+          <div
+            v-for="node in blacksmithSystem"
+            :key="node.id"
+            class="grid-cell col-3"
+            :style="{ gridRow: node.row }"
+            :data-marker="node.id"
+          >
+            <div class="node-card bsf-card">
+              <span class="node-title">{{ node.name }}</span>
+              <ArrowDown :size="16" class="arrow-down-green" />
+            </div>
+          </div>
+
+          <div
+            v-for="node in cutlerInflows"
+            :key="node.id"
+            class="grid-cell col-3"
+            :style="{ gridRow: node.row }"
+            :data-marker="node.id"
+          >
+            <div class="node-card independent-card">
+              <span class="node-title">{{ node.name }}</span>
+              <div class="routing-label">Direct to Cutler Terminus</div>
+            </div>
+          </div>
+
+          <div
+            class="terminus-grid-cell"
+            style="grid-row: 18; grid-column: 1 / span 3"
+            data-marker="terminus_card"
+          >
+            <div class="terminus-card">
+              <Droplets :size="26" class="terminus-icon" />
+              <div class="terminus-details">
+                <h3>SYSTEM TERMINUS: Cutler Reservoir</h3>
+                <p>Ultimate drainage collection basin for all main channels and lateral streams.</p>
               </div>
             </div>
           </div>
-        </div>
-      </div>
-
-      <div class="footer-legend">
-        <div class="legend-item">
-          <div class="legend-dot main-stem"></div>
-          Solid Black Text: Main Channel
-        </div>
-        <div class="legend-item">
-          <div class="legend-dot tributary"></div>
-          Indented Box: Lateral Inflow / Spring
         </div>
       </div>
     </div>
@@ -119,17 +276,16 @@ const loading = ref(false)
 </template>
 
 <style scoped>
-/* Layout Enclosure matching your clean white panel upgrades */
 .schematic-container {
   width: 100%;
-  max-width: 1000px;
+  max-width: 1200px;
   margin: 0 auto;
   box-sizing: border-box;
 }
 
 .schematic-card {
   background: #ffffff;
-  padding: 3rem 2.5rem;
+  padding: 2.5rem;
   border-radius: 16px;
   border: 1px solid #e2e8f0;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
@@ -146,8 +302,9 @@ const loading = ref(false)
   color: #0284c7;
 }
 
-/* Explicit high contrast solid black text rules */
+/* Forced high contrast solid black text rules */
 h2,
+h3,
 p,
 span,
 div {
@@ -162,157 +319,192 @@ h2 {
 
 .subtitle {
   font-size: 1rem;
-  line-height: 1.6;
-  margin: 0 0 3rem 0;
+  margin: 0 0 2.5rem 0;
 }
 
-/* Diagram Structure Mapping matrix */
-.network-diagram {
-  display: flex;
-  flex-direction: column;
+/* Container hosting both the layout elements and the canvas paths */
+.schematic-grid-wrapper {
   position: relative;
-  margin-left: 20px;
+  width: 100%;
 }
 
-.node-row {
-  display: flex;
-  align-items: stretch;
-  min-height: 64px;
-}
-
-/* Tracking connection geometry */
-.line-column {
-  width: 40px;
-  position: relative;
-  display: flex;
-  justify-content: center;
-}
-
-.vertical-flow-line {
+/* Master SVG overlay canvas plane */
+.global-routing-svg {
   position: absolute;
-  top: 24px;
-  bottom: -40px;
-  width: 4px;
-  background-color: #0284c7; /* Classic blue river track line */
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
   z-index: 1;
 }
 
-/* Different Node Types geometry mapping */
-.indicator-dot {
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: #ffffff;
-  border: 4px solid #01377d;
-  margin-top: 10px;
+/* Three columns with optimal margins for outer bypass lines */
+.schematic-grid {
+  display: grid;
+  grid-template-columns: 0.3fr 1.3fr 1.1fr;
+  grid-template-rows: repeat(17, auto) auto;
+  row-gap: 28px;
+  column-gap: 55px;
+  align-items: center;
+  position: relative;
   z-index: 2;
 }
 
-.indicator-dot.tributary {
-  border-color: #0284c7;
-  background: #e0f2fe;
+.col-1 {
+  grid-column: 1;
+}
+.col-2 {
+  grid-column: 2;
+}
+.col-3 {
+  grid-column: 3;
 }
 
-.indicator-dot.terminus {
-  border-color: #ea580c;
-  border-radius: 4px;
-}
-
-/* Layout alignment shifts based on your topological hierarchy inputs */
-.content-column {
-  flex-grow: 1;
-  padding-bottom: 24px;
+.grid-cell {
   display: flex;
-  align-items: center;
-}
-
-.station-plate {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  padding: 10px 16px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
   width: 100%;
-  max-width: 650px;
-  transition: background-color 0.2s;
+  position: relative;
 }
 
-.station-plate:hover {
-  background: #f1f5f9;
+.placeholder-cell {
+  min-height: 0;
 }
 
-.station-name {
+/* Base Node Card Geometry */
+.node-card {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 12px;
+  min-height: 64px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  box-sizing: border-box;
+}
+
+/* Central Star: Logan Main Stem Styling */
+.main-stem-card {
+  border: 2px solid #01377d;
+  background: #fdfdfd;
+  box-shadow: 0 4px 6px -1px rgba(1, 55, 125, 0.05);
+}
+.main-stem-card .node-title {
   font-size: 0.95rem;
+  font-weight: 800;
+}
+.arrow-down-indicator {
+  color: #01377d !important;
+  margin-top: 4px;
+}
+
+.node-title {
+  font-size: 0.88rem;
   font-weight: 700;
 }
-
-/* Indent Tributaries so they look visually distinct as lateral branch feeding sources */
-.node-row.tributary .station-plate,
-.node-row.sub-branch .station-plate {
-  margin-left: 30px;
-  border-left: 4px solid #38bdf8;
-  background: #ffffff;
-}
-
-/* Header Separator Bounding Boxes for Sub-basins */
-.node-row.system-divider {
-  min-height: auto;
-  padding: 20px 0 10px 0;
-}
-.node-row.system-divider .station-name {
-  font-size: 0.85rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: #64748b !important; /* Soft descriptive helper accent text */
-}
-.node-row.system-divider .station-plate {
-  background: transparent;
-  border: none;
-  padding: 0;
-}
-
-/* Terminus Highlight at the very bottom */
-.node-row.terminus .station-plate {
-  border: 2px solid #ea580c;
-  background: #fff7ed;
-}
-
-.live-data-badge {
-  background-color: #e2e8f0;
-  padding: 4px 10px;
-  border-radius: 6px;
-}
-
-.flow-value {
-  font-size: 0.75rem;
+.font-highlight {
   font-weight: 800;
 }
 
-.footer-legend {
-  margin-top: 2rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid #e2e8f0;
-  display: flex;
-  gap: 24px;
-}
-
-.legend-item {
+/* Inline Inflow Layout Architecture: Left aligned Arrow box mapping */
+.inflow-content-wrapper {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 0.85rem;
-  font-weight: 600;
+  gap: 10px;
+  width: 100%;
 }
 
-.legend-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  border: 3px solid #01377d;
+/* Lateral Blue Tributaries / Springs */
+.inflow-card {
+  border-left: 4px solid #38bdf8;
+  background: #f0f9ff;
+  align-items: flex-start;
+  text-align: left;
+  padding-left: 14px;
 }
-.legend-dot.tributary {
-  border-color: #0284c7;
+.arrow-inflow-blue {
+  color: #0284c7 !important;
+  flex-shrink: 0;
+}
+
+/* GREEN CONFLUENCE NODE */
+.confluence-card {
+  border-left: 4px solid #16a34a;
+  background: #f0fdf4;
+  border-top: 1px solid #cbd5e1;
+  border-right: 1px solid #cbd5e1;
+  border-bottom: 1px solid #cbd5e1;
+  align-items: center;
+  text-align: center;
+}
+.arrow-inflow-green {
+  color: #16a34a !important;
+  flex-shrink: 0;
+}
+
+/* Blacksmith Fork System Components */
+.bsf-card {
+  border-left: 4px solid #16a34a;
+}
+.arrow-down-green {
+  color: #16a34a !important;
+  margin-top: 4px;
+}
+
+/* Independent Inflows Draining Straight Down into Cutler Pool */
+.independent-card {
+  border-left: 4px solid #ea580c;
+  align-items: center;
+  text-align: center;
+}
+.routing-label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #ea580c !important;
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+
+/* Bottom Terminus Component Block inside Grid Layout */
+.terminus-grid-cell {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin-top: 2rem;
+  position: relative;
+  z-index: 5;
+}
+
+.terminus-card {
+  width: 100%;
+  max-width: 720px;
+  background: #fff7ed;
+  border: 2px solid #ea580c;
+  border-radius: 12px;
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 4px 12px rgba(234, 88, 12, 0.08);
+}
+
+.terminus-icon {
+  color: #ea580c;
+}
+
+.terminus-details h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.terminus-details p {
+  margin: 4px 0 0 0;
+  font-size: 0.85rem;
 }
 </style>
