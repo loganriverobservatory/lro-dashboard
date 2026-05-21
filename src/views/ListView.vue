@@ -3,15 +3,10 @@
  * Renders a collection of station cards to provide a comprehensive overview of all active sensor readings.
  */
 import StationCard from '../components/StationCard.vue'
-
-interface RiverSite {
-  id: string
-  displayName: string
-  observation?: Record<string, unknown>
-}
+import { type Station } from '../hydroService'
 
 defineProps<{
-  sites: RiverSite[]
+  sites: Station[]
   loading: boolean
 }>()
 </script>
