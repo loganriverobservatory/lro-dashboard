@@ -30,30 +30,38 @@ const STATION_NAME_MAP: Record<string, string> = {
   SC_CONF_A: 'Spring Creek: Before Confluence with Logan River',
   SC_MR_A: 'Spring Creek: Mendon Road',
   TF_CONF_A: 'Temple Fork: Before Confluence with Logan River',
+  LR_DSC_A: 'Logan River: Dewitt Springs Campground',
 }
 
 export async function getDischargeStations(): Promise<Station[]> {
-  // Change $top=100 to $top=50
-  const listUrl = `${BASE_URL}/Datastreams?$filter=contains(name,'Discharge') and contains(name,'cfs') and not contains(name,'cms')&$top=50&$orderby=name asc`
+  const listUrl = `${BASE_URL}/Datastreams?$filter=contains(name,'Discharge') and contains(name,'cfs') and not contains(name,'cms')&$top=100&$orderby=name asc`
   const response = await fetch(listUrl)
   const data = await response.json()
 
-  return data.value.map((ds: any) => {
-    // We do the split and replace all in one go to prevent any "leaks"
-    const cleanName = ds.name
-      .split(' - ')[0] // Cut off " - Raw data"
-      .split(' Discharge')[0] // Cut off " Discharge (cfs)"
-      .replace(/^[A-Z0-9_]+ /, '') // Cut off "LR_DSC_A"
-      .replace('at Logan River at ', '') // Cut off the redundant river name
-      .trim()
+  return data.value
 
-    return {
-      id: ds['@iot.id'],
-      displayName: STATION_NAME_MAP[cleanName] || cleanName || ds.name,
-      description: ds.description,
-      observation: null,
-    }
-  })
+    .filter((ds: any) => {
+      const isDecommissioned =
+        ds.description?.includes('Decommissioned') || ds.name?.includes('Decommissioned')
+      const isTesting = ds.name?.includes('Testing')
+      return !isDecommissioned && !isTesting
+    })
+
+    .map((ds: any) => {
+      const cleanName = ds.name
+        .split(' - ')[0]
+        .split(' Discharge')[0]
+        .replace(/^[A-Z0-9_]+ /, '')
+        .replace('at Logan River at ', '')
+        .trim()
+
+      return {
+        id: ds['@iot.id'],
+        displayName: STATION_NAME_MAP[cleanName] || cleanName || ds.name,
+        description: ds.description,
+        observation: null,
+      }
+    })
 }
 
 export async function getLatestObservation(stationId: string): Promise<any> {
@@ -62,14 +70,7 @@ export async function getLatestObservation(stationId: string): Promise<any> {
   const data = await response.json()
   return data.value?.[0] || null
 }
+
 export function isStationActive(observation: any): boolean {
-  if (!observation || !observation.phenomenonTime) return false
-
-  // If the sensor is reporting the -9999 error code, treat it as inactive
-  if (Number(observation.result) === -9999) return false
-
-  const obsTime = new Date(observation.phenomenonTime).getTime()
-  const twentyFourHoursAgo = Date.now() - 24 * 60 * 60 * 1000
-
-  return obsTime > twentyFourHoursAgo
+  return true
 }
