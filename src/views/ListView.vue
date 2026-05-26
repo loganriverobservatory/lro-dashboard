@@ -19,7 +19,18 @@ const props = defineProps<{
 }>()
 
 const activeSites = computed(() => {
-  return props.sites.filter((site) => isStationActive(site.observation))
+  return props.sites.filter((site) => {
+    if (!isStationActive(site.observation)) return false
+
+    if (site.observation === null) return true
+
+    if (!site.observation.phenomenonTime) return false
+
+    const obsTime = new Date(site.observation.phenomenonTime).getTime()
+    const oneYearAgo = Date.now() - 365 * 24 * 60 * 60 * 1000
+
+    return obsTime > oneYearAgo
+  })
 })
 </script>
 
