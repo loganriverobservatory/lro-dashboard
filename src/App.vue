@@ -1,12 +1,7 @@
 <script setup lang="ts">
-/** * App.vue
- * Orchestrates global state, fetches data from HydroServer, and coordinates the visibility of different views.
- */
-
 import { ref, onMounted } from 'vue'
-import { getDischargeStations, getLatestObservation, type Station } from './hydroService'
+import { getDischargeStations, getLatestObservation } from './hydroService'
 
-// Component Imports
 import AppHeader from './components/AppHeader.vue'
 import AppSidebar from './components/AppSidebar.vue'
 import HomeView from './views/HomeView.vue'
@@ -14,37 +9,37 @@ import ListView from './views/ListView.vue'
 import MapView from './views/MapView.vue'
 import SchematicView from './views/SchematicView.vue'
 
-// Reactive State
+interface Station {
+  id: string
+  displayName: string
+  description: string
+  observation: any
+}
+
 const sites = ref<Station[]>([])
 const loading = ref(true)
 const sidebarOpen = ref(false)
 const currentView = ref('home')
 const selectedId = ref<string | null>(null)
 
-const handleSelect = (id: string) => {
-  console.log('Station selected:', id)
-  selectedId.value = id
-}
-
-// Global Data Fetching
 onMounted(async () => {
   try {
-    loading.value = true
-    // Get station data
-    const data = await getDischargeStations()
-    sites.value = data
+    const stations = await getDischargeStations()
+    sites.value = stations
 
-    //get water levels
-    for (const site of sites.value) {
-      const obs = await getLatestObservation(site.id)
-      site.observation = obs
-    }
-    // Trigger the map once all the data is in
-    sites.value = [...sites.value]
-  } catch (error) {
-    console.error('Failed to load stations:', error)
+    await Promise.all(
+      sites.value.map(async (site) => {
+        try {
+          const obs = await getLatestObservation(String(site.id))
+          if (obs) site.observation = obs
+        } catch {
+          console.warn(`Failed: ${site.displayName}`)
+        }
+      }),
+    )
+  } catch (err) {
+    console.error('Dashboard error:', err)
   } finally {
-    // This runs whether the fetch succeeded or failed, stopping the spinner
     loading.value = false
   }
 })
@@ -67,16 +62,17 @@ onMounted(async () => {
       <MapView
         v-if="currentView === 'map'"
         :sites="sites"
+        :loading="loading"
         :selected-id="selectedId"
         @select="handleSelect"
       />
-      <SchematicView v-if="currentView === 'schematic'" />
+      <SchematicView v-if="currentView === 'schematic'" :sites="sites" :loading="loading" />
     </main>
   </div>
 </template>
 
 <style>
-/* Global resets and layout grid */
+/* Global resets and layout grid only */
 body {
   margin: 0;
   font-family: sans-serif;
@@ -84,11 +80,11 @@ body {
 
 .grid-container {
   display: grid;
-  grid-template-columns: 260px 1fr; /* Simplified columns */
+  grid-template-columns: 260px 1fr 1fr 1fr;
   grid-template-rows: 70px 1fr;
   grid-template-areas:
-    'sidebar header'
-    'sidebar main';
+    'sidebar header header header'
+    'sidebar main main main';
   height: 100vh;
 }
 
@@ -99,7 +95,6 @@ body {
   overflow-y: auto;
 }
 
-/* Mobile Responsiveness */
 @media screen and (max-width: 992px) {
   .grid-container {
     grid-template-columns: 1fr;

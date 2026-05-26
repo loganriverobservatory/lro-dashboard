@@ -1,6 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // src/hydroService.ts
-
 const BASE_URL = 'https://lro.hydroserver.org/api/sensorthings/v1.1'
 
 // Each View pulls from Station interface
@@ -69,6 +67,7 @@ export async function getDischargeStations(): Promise<Station[]> {
       const isTesting = ds.name?.includes('Testing')
       return !isDecommissioned && !isTesting
     })
+
     .map((ds: any) => {
       // 1. YOUR ORIGINAL NAMING LOGIC
       const cleanName = ds.name
@@ -128,6 +127,6 @@ export async function getLatestObservation(stationId: string): Promise<any> {
   return data.value?.[0] || null
 }
 
-export function isStationActive(_observation: any): boolean {
+export function isStationActive(observation: any): boolean {
   return true
 }
