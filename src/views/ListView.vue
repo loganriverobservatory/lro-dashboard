@@ -4,14 +4,7 @@
  */
 import { computed } from 'vue'
 import StationCard from '../components/StationCard.vue'
-import { isStationActive } from '../hydroService'
-
-interface Station {
-  id: string
-  displayName: string
-  description: string
-  observation: any
-}
+import { isStationActive, type Station } from '../hydroService'
 
 const props = defineProps<{
   sites: Station[]
@@ -21,9 +14,7 @@ const props = defineProps<{
 const activeSites = computed(() => {
   return props.sites.filter((site) => {
     if (!isStationActive(site.observation)) return false
-
     if (site.observation === null) return true
-
     if (!site.observation.phenomenonTime) return false
 
     const obsTime = new Date(site.observation.phenomenonTime).getTime()
