@@ -2,7 +2,7 @@
 /** * AppHeader.vue
  * Handles top navigation and communicates with App.vue to control the sidebar and view state.
  */
-import { Menu, Home, HelpCircle, Droplets } from 'lucide-vue-next'
+import { Menu, Home, HelpCircle } from 'lucide-vue-next'
 
 const emit = defineEmits(['toggle-sidebar', 'change-view'])
 </script>
@@ -23,14 +23,16 @@ const emit = defineEmits(['toggle-sidebar', 'change-view'])
         <span class="nav-label">Home</span>
       </div>
 
-      <div class="nav-action-btn" title="Help / Documentation">
+      <div class="nav-action-btn" title="Help">
         <HelpCircle :size="20" class="nav-icon" />
         <span class="nav-label">Help</span>
       </div>
 
-      <div class="nav-action-btn" title="HydroServer Status">
-        <Droplets :size="20" class="nav-icon" />
-        <span class="nav-label">Status</span>
+      <div class="nav-action-btn" title="HydroServer">
+        <a href="https://lro.hydroserver.org/" target="_blank" class="brand-link">
+          <img src="https://lro.hydroserver.org/favicon.ico" alt="" class="nav-logo-img" />
+          <span class="nav-label">HydroServer</span>
+        </a>
       </div>
     </div>
   </header>

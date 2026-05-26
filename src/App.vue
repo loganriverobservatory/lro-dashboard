@@ -68,7 +68,7 @@ onMounted(async () => {
         v-if="currentView === 'map'"
         :sites="sites"
         :selected-id="selectedId"
-        @selected="handleSelect"
+        @select="handleSelect"
       />
       <SchematicView v-if="currentView === 'schematic'" />
     </main>
