@@ -1,22 +1,37 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, nextTick } from 'vue'
-import { Droplets, ArrowDown, CornerDownRight } from 'lucide-vue-next'
+import { Droplets, CornerDownRight } from 'lucide-vue-next'
+import StationCard from '../components/StationCard.vue'
+import { type Station } from '../hydroService'
+
+const props = defineProps<{
+  sites: Station[]
+  loading: boolean
+}>()
+
+function findLiveStation(schematicName: string): Station | undefined {
+  return props.sites.find((site) => {
+    const liveName = site.displayName.toLowerCase()
+    const targetName = schematicName.toLowerCase()
+    return liveName.includes(targetName) || targetName.includes(liveName)
+  })
+}
 
 const loganMainStem = ref([
   { id: 'franklin', name: 'Logan River: Franklin Basin', row: 1, type: 'source' },
-  { id: 'beaver', name: 'Beaver Creek', row: 2, type: 'inflow-left' },
+  { id: 'beaver_junc', name: 'Beaver Creek Junction', row: 2, type: 'line-junction' },
   { id: 'tony_grove', name: 'Logan River: Tony Grove', row: 3, type: 'gauge' },
-  { id: 'ricks', name: 'Ricks Spring', row: 4, type: 'inflow-left' },
-  { id: 'temple', name: 'Temple Fork', row: 5, type: 'inflow-left' },
+  { id: 'ricks_junc', name: 'Ricks Spring Junction', row: 4, type: 'line-junction' },
+  { id: 'temple_junc', name: 'Temple Fork Junction', row: 5, type: 'line-junction' },
   { id: 'above_wood', name: 'Logan River: Above Wood Camp', row: 6, type: 'gauge' },
   { id: 'wood_camp', name: 'Logan River: Wood Camp Bridge', row: 7, type: 'gauge' },
-  { id: 'right_hand', name: 'Right Hand Fork', row: 8, type: 'inflow-left' },
-  { id: 'guinivah', name: 'Logan River: Guinivah Campground', row: 9, type: 'gauge' },
-  { id: 'dewitt', name: 'Dewitt Springs', row: 10, type: 'inflow-left' },
-  { id: 'water_lab', name: 'Logan River: Water Lab', row: 11, type: 'gauge' },
+  { id: 'right_hand_junc', name: 'Right Hand Fork Junction', row: 8, type: 'line-junction' },
+  { id: 'guinivah', name: 'Logan River: Guinavah Campground', row: 9, type: 'gauge' },
+  { id: 'dewitt_junc', name: 'Dewitt Springs Junction', row: 10, type: 'line-junction' },
+  { id: 'water_lab', name: 'Logan River: Utah Water Research Laboratory', row: 11, type: 'gauge' },
   { id: 'mainstreet', name: 'Logan River: Main Street', row: 12, type: 'gauge' },
-  { id: 'spring_creek', name: 'Spring Creek', row: 13, type: 'inflow-left' },
-  { id: 'bsf_confluence', name: 'Blacksmith Fork Confluence', row: 14, type: 'confluence-node' },
+  { id: 'spring_creek_junc', name: 'Spring Creek Junction', row: 13, type: 'line-junction' },
+  { id: 'bsf_confluence', name: 'Blacksmith Fork Confluence', row: 14, type: 'line-junction' },
   { id: 'thousand_w', name: 'Logan River: 1000 West', row: 15, type: 'gauge' },
   { id: 'mendon_rd', name: 'Logan River: Mendon Road', row: 16, type: 'gauge' },
   {
@@ -27,27 +42,30 @@ const loganMainStem = ref([
   },
 ])
 
+const leftTributaries = ref([
+  { id: 'beaver', name: 'Beaver Creek', row: 1, juncId: 'beaver_junc' },
+  { id: 'ricks', name: 'Ricks Spring', row: 3, juncId: 'ricks_junc' },
+  { id: 'temple', name: 'Temple Fork', row: 4, juncId: 'temple_junc' },
+  { id: 'right_hand', name: 'Right Hand Fork', row: 7, juncId: 'right_hand_junc' },
+  { id: 'dewitt', name: 'Dewitt Springs', row: 9, juncId: 'dewitt_junc' },
+  { id: 'spring_creek', name: 'Spring Creek', row: 12, juncId: 'spring_creek_junc' },
+])
+
 const blacksmithSystem = ref([
-  { id: 'hollow_rd', name: 'Blacksmith River: Hollow Road', row: 11, type: 'bsf-card' },
-  { id: 'seventeen_s', name: 'Blacksmith River: 1700 S', row: 12, type: 'bsf-card' },
+  { id: 'hollow_rd', name: 'Blacksmith Fork River: Hollow Road', row: 11 },
+  { id: 'seventeen_s', name: 'Blacksmith Fork River: 1700 South Footbridge', row: 12 },
+  {
+    id: 'bsf_before_conf',
+    name: 'Blacksmith Fork River: Before Confluence with Logan River',
+    row: 13,
+  },
 ])
 
 const cutlerInflows = ref([
-  {
-    id: 'little_bear',
-    name: 'Little Bear River: Mendon Road',
-    row: 15,
-    type: 'independent-inflow',
-  },
-  {
-    id: 'spring_creek_mendon',
-    name: 'Spring Creek: Mendon Road',
-    row: 16,
-    type: 'independent-inflow',
-  },
+  { id: 'little_bear', name: 'Little Bear River: Mendon Road', row: 15 },
+  { id: 'spring_creek_mendon', name: 'Spring Creek: Mendon Road', row: 16 },
 ])
 
-// Vector Overlay Coordinates state
 const gridContainerRef = ref<HTMLElement | null>(null)
 const paths = ref({
   logan: '',
@@ -56,30 +74,27 @@ const paths = ref({
   cutlerSpringCreek: '',
 })
 
+const leftTribPaths = ref<Record<string, string>>({})
+
 const updateLineCoordinates = async () => {
   await nextTick()
   if (!gridContainerRef.value) return
 
   const containerRect = gridContainerRef.value.getBoundingClientRect()
 
-  const getMarkerCenter = (id: string, position: 'center' | 'left' = 'center') => {
+  const getMarkerCenter = (id: string) => {
     const el = gridContainerRef.value?.querySelector(`[data-marker="${id}"]`)
-    if (!el) return { x: 0, y: 0 }
-    const rect = el.getBoundingClientRect()
+    if (!el) return { x: 0, y: 0, left: 0, right: 0 }
 
-    if (position === 'left') {
-      return {
-        x: rect.left - containerRect.left,
-        y: rect.top + rect.height / 2 - containerRect.top,
-      }
-    }
+    const rect = el.getBoundingClientRect()
     return {
       x: rect.left + rect.width / 2 - containerRect.left,
       y: rect.top + rect.height / 2 - containerRect.top,
+      left: rect.left - containerRect.left,
+      right: rect.right - containerRect.left,
     }
   }
 
-  // Target coordinates on the top border of the Terminus reservoir card
   const terminusEl = gridContainerRef.value.querySelector('[data-marker="terminus_card"]')
   let reservoirTopY = containerRect.height
   let reservoirBlueX = 0
@@ -88,44 +103,76 @@ const updateLineCoordinates = async () => {
 
   if (terminusEl) {
     const tRect = terminusEl.getBoundingClientRect()
-    reservoirTopY = tRect.top - containerRect.top
-
+    reservoirTopY = tRect.top - containerRect.top - 30
     const blueNodePt = getMarkerCenter('before_cutler')
-    const orangeNodePt = getMarkerCenter('spring_creek_mendon')
-
     reservoirBlueX = blueNodePt.x
-    // Anchor destinations spaced cleanly on the right half of the reservoir card
-    reservoirOrangeX1 = orangeNodePt.x + 50
-    reservoirOrangeX2 = orangeNodePt.x + 20
+    reservoirOrangeX1 = blueNodePt.x + 200
+    reservoirOrangeX2 = blueNodePt.x + 230
   }
 
-  // 1. Primary Logan Trunk Line (Now tracks all the way through the new bottom confluence node)
   let loganPathStr = ''
   loganMainStem.value.forEach((node, idx) => {
     const pt = getMarkerCenter(node.id)
     if (idx === 0) loganPathStr += `M ${pt.x},${pt.y}`
     else loganPathStr += ` L ${pt.x},${pt.y}`
   })
+
   if (terminusEl) {
     loganPathStr += ` L ${reservoirBlueX},${reservoirTopY}`
   }
+
   paths.value.logan = loganPathStr
 
-  // 2. Blacksmith Hook Line
+  leftTributaries.value.forEach((trib) => {
+    const startPt = getMarkerCenter(trib.id)
+    const juncPt = getMarkerCenter(trib.juncId)
+    if (startPt.x > 0 && juncPt.x > 0) {
+      const curveRadius = 30
+      const cardBottomY = startPt.y + 32
+
+      leftTribPaths.value[trib.id] =
+        `M ${startPt.x},${cardBottomY} ` +
+        `V ${juncPt.y - curveRadius} ` +
+        `Q ${startPt.x},${juncPt.y} ${startPt.x + curveRadius},${juncPt.y} ` +
+        `L ${juncPt.x - 35},${juncPt.y}`
+    }
+  })
+
   const bsf1 = getMarkerCenter('hollow_rd')
   const bsf2 = getMarkerCenter('seventeen_s')
-  const confLeft = getMarkerCenter('bsf_confluence', 'left')
-  paths.value.blacksmith = `M ${bsf1.x},${bsf1.y} L ${bsf2.x},${bsf2.y} V ${confLeft.y - 30} Q ${bsf2.x},${confLeft.y} ${bsf2.x - 40},${confLeft.y} L ${confLeft.x},${confLeft.y}`
+  const bsf3 = getMarkerCenter('bsf_before_conf')
+  const confCenter = getMarkerCenter('bsf_confluence')
+  const curveRadius = 30
+  const turnY = confCenter.y
 
-  // 3. Crisp Independent Line A: Little Bear River
-  const lbCenter = getMarkerCenter('little_bear')
-  const lbRightEdgeX = lbCenter.x + 135
-  paths.value.cutlerLittleBear = `M ${lbCenter.x},${lbCenter.y} L ${lbRightEdgeX},${lbCenter.y} L ${reservoirOrangeX1},${lbCenter.y} L ${reservoirOrangeX1},${reservoirTopY}`
+  paths.value.blacksmith =
+    `M ${bsf1.x},${bsf1.y} ` +
+    `L ${bsf2.x},${bsf2.y} ` +
+    `L ${bsf3.x},${bsf3.y} ` +
+    `V ${turnY - curveRadius} ` +
+    `Q ${bsf3.x},${turnY} ${bsf3.x - curveRadius},${turnY} ` +
+    `L ${confCenter.x + 35},${turnY}`
 
-  // 4. Crisp Independent Line B: Spring Creek
-  const scmCenter = getMarkerCenter('spring_creek_mendon')
-  const scmRightEdgeX = scmCenter.x + 135
-  paths.value.cutlerSpringCreek = `M ${scmCenter.x},${scmCenter.y} L ${scmRightEdgeX},${scmCenter.y} L ${reservoirOrangeX2},${scmCenter.y} L ${reservoirOrangeX2},${reservoirTopY}`
+  const lbElement = getMarkerCenter('little_bear')
+  const lbTurnX = reservoirOrangeX1
+  const lbTurnY = lbElement.y
+  const tightCurve = 10
+
+  paths.value.cutlerLittleBear =
+    `M ${lbElement.left},${lbTurnY} ` +
+    `L ${lbTurnX + tightCurve},${lbTurnY} ` +
+    `Q ${lbTurnX},${lbTurnY} ${lbTurnX},${lbTurnY + tightCurve} ` +
+    `L ${lbTurnX},${reservoirTopY}`
+
+  const scmElement = getMarkerCenter('spring_creek_mendon')
+  const scmTurnX = reservoirOrangeX2
+  const scmTurnY = scmElement.y
+
+  paths.value.cutlerSpringCreek =
+    `M ${scmElement.left},${scmTurnY} ` +
+    `L ${scmTurnX + tightCurve},${scmTurnY} ` +
+    `Q ${scmTurnX},${scmTurnY} ${scmTurnX},${scmTurnY + tightCurve} ` +
+    `L ${scmTurnX},${reservoirTopY}`
 }
 
 let resizeObserver: ResizeObserver | null = null
@@ -134,6 +181,7 @@ onMounted(() => {
   setTimeout(() => {
     updateLineCoordinates()
   }, 100)
+
   setTimeout(() => {
     updateLineCoordinates()
   }, 300)
@@ -144,6 +192,7 @@ onMounted(() => {
     })
     resizeObserver.observe(gridContainerRef.value)
   }
+
   window.addEventListener('resize', updateLineCoordinates)
 })
 
@@ -160,12 +209,65 @@ onUnmounted(() => {
         <Droplets :size="28" class="title-icon" />
         <h2>Hydrologic Network Schematic Matrix</h2>
       </div>
+
       <p class="subtitle">
         Multi-column topology tracking parallel sub-basins entering the Cutler Reservoir basin.
       </p>
 
-      <div class="schematic-grid-wrapper" ref="gridContainerRef">
+      <div v-if="loading" class="loading-state">
+        <div class="spinner"></div>
+        <p>Aligning network telemetry lines...</p>
+      </div>
+
+      <div v-else class="schematic-grid-wrapper" ref="gridContainerRef">
         <svg class="global-routing-svg">
+          <defs>
+            <marker
+              id="blue-arrow"
+              markerWidth="8"
+              markerHeight="8"
+              refX="0"
+              refY="4"
+              orient="auto-start-reverse"
+            >
+              <path
+                d="M 0 1 L 7 4 L 0 7 z"
+                fill="#01377D"
+                style="shape-rendering: geometricPrecision"
+              />
+            </marker>
+
+            <marker
+              id="green-arrow"
+              markerWidth="8"
+              markerHeight="8"
+              refX="0"
+              refY="4"
+              orient="auto-start-reverse"
+            >
+              <path
+                d="M 0 1 L 7 4 L 0 7 z"
+                fill="#16a34a"
+                style="shape-rendering: geometricPrecision"
+              />
+            </marker>
+
+            <marker
+              id="orange-arrow"
+              markerWidth="8"
+              markerHeight="8"
+              refX="0"
+              refY="4"
+              orient="auto-start-reverse"
+            >
+              <path
+                d="M 0 1 L 7 4 L 0 7 z"
+                fill="#ea580c"
+                style="shape-rendering: geometricPrecision"
+              />
+            </marker>
+          </defs>
+
           <path
             :d="paths.logan"
             fill="none"
@@ -173,15 +275,30 @@ onUnmounted(() => {
             stroke-width="4"
             stroke-linejoin="round"
             stroke-linecap="round"
+            marker-end="url(#blue-arrow)"
           />
+
+          <path
+            v-for="(pathD, id) in leftTribPaths"
+            :key="id"
+            :d="pathD"
+            fill="none"
+            stroke="#16a34a"
+            stroke-width="4"
+            stroke-linejoin="round"
+            marker-end="url(#green-arrow)"
+          />
+
           <path
             :d="paths.blacksmith"
             fill="none"
             stroke="#16a34a"
             stroke-width="4"
             stroke-linejoin="round"
-            stroke-linecap="round"
+            stroke-linecap="butt"
+            marker-end="url(#green-arrow)"
           />
+
           <path
             :d="paths.cutlerLittleBear"
             fill="none"
@@ -189,7 +306,9 @@ onUnmounted(() => {
             stroke-width="4"
             stroke-linejoin="round"
             stroke-linecap="round"
+            marker-end="url(#orange-arrow)"
           />
+
           <path
             :d="paths.cutlerSpringCreek"
             fill="none"
@@ -197,11 +316,30 @@ onUnmounted(() => {
             stroke-width="4"
             stroke-linejoin="round"
             stroke-linecap="round"
+            marker-end="url(#orange-arrow)"
           />
         </svg>
 
         <div class="schematic-grid">
-          <div class="grid-cell col-1 placeholder-cell"></div>
+          <div
+            v-for="node in leftTributaries"
+            :key="node.id"
+            class="grid-cell col-1"
+            :style="{ gridRow: node.row }"
+            :data-marker="node.id"
+          >
+            <StationCard
+              v-if="findLiveStation(node.name)"
+              :site="findLiveStation(node.name)!"
+              compact
+            />
+
+            <div v-else class="node-card inflow-card-left">
+              <div class="inflow-content-wrapper">
+                <span class="node-title">{{ node.name }}</span>
+              </div>
+            </div>
+          </div>
 
           <div
             v-for="node in loganMainStem"
@@ -210,24 +348,21 @@ onUnmounted(() => {
             :style="{ gridRow: node.row }"
             :data-marker="node.id"
           >
-            <div v-if="node.type === 'confluence-node'" class="node-card confluence-card">
-              <div class="inflow-content-wrapper">
-                <CornerDownRight :size="16" class="arrow-inflow-green" />
-                <span class="node-title font-highlight">{{ node.name }}</span>
-              </div>
-            </div>
+            <template v-if="findLiveStation(node.name)">
+              <StationCard :site="findLiveStation(node.name)!" compact />
+            </template>
 
-            <div v-else-if="node.type === 'inflow-left'" class="node-card inflow-card">
-              <div class="inflow-content-wrapper">
-                <CornerDownRight :size="16" class="arrow-inflow-blue" />
+            <template v-else>
+              <div
+                v-if="node.type === 'line-junction'"
+                :data-marker="node.id"
+                class="junction-spacer"
+              ></div>
+
+              <div v-else class="node-card main-stem-card">
                 <span class="node-title">{{ node.name }}</span>
               </div>
-            </div>
-
-            <div v-else class="node-card main-stem-card">
-              <span class="node-title">{{ node.name }}</span>
-              <ArrowDown :size="16" class="arrow-down-indicator" />
-            </div>
+            </template>
           </div>
 
           <div
@@ -237,9 +372,14 @@ onUnmounted(() => {
             :style="{ gridRow: node.row }"
             :data-marker="node.id"
           >
-            <div class="node-card bsf-card">
+            <StationCard
+              v-if="findLiveStation(node.name)"
+              :site="findLiveStation(node.name)!"
+              compact
+            />
+
+            <div v-else class="node-card bsf-card">
               <span class="node-title">{{ node.name }}</span>
-              <ArrowDown :size="16" class="arrow-down-green" />
             </div>
           </div>
 
@@ -250,7 +390,13 @@ onUnmounted(() => {
             :style="{ gridRow: node.row }"
             :data-marker="node.id"
           >
-            <div class="node-card independent-card">
+            <StationCard
+              v-if="findLiveStation(node.name)"
+              :site="findLiveStation(node.name)!"
+              compact
+            />
+
+            <div v-else class="node-card independent-card">
               <span class="node-title">{{ node.name }}</span>
               <div class="routing-label">Direct to Cutler Terminus</div>
             </div>
@@ -302,33 +448,43 @@ onUnmounted(() => {
   color: #0284c7;
 }
 
-/* Forced high contrast solid black text rules */
-h2,
-h3,
-p,
-span,
-div {
-  color: #000000 !important;
-}
-
 h2 {
+  color: #1e293b;
   font-size: 1.75rem;
   font-weight: 800;
   margin: 0;
 }
 
 .subtitle {
+  color: #64748b;
   font-size: 1rem;
   margin: 0 0 2.5rem 0;
 }
 
-/* Container hosting both the layout elements and the canvas paths */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem;
+  gap: 15px;
+  color: #64748b;
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #e2e8f0;
+  border-top: 3px solid #0284c7;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
 .schematic-grid-wrapper {
   position: relative;
   width: 100%;
 }
 
-/* Master SVG overlay canvas plane */
 .global-routing-svg {
   position: absolute;
   top: 0;
@@ -337,15 +493,15 @@ h2 {
   height: 100%;
   pointer-events: none;
   z-index: 1;
+  shape-rendering: geometricPrecision;
 }
 
-/* Three columns with optimal margins for outer bypass lines */
 .schematic-grid {
   display: grid;
-  grid-template-columns: 0.3fr 1.3fr 1.1fr;
+  grid-template-columns: 1.1fr 1.3fr 1.1fr;
   grid-template-rows: repeat(17, auto) auto;
-  row-gap: 28px;
-  column-gap: 55px;
+  row-gap: 32px;
+  column-gap: 60px;
   align-items: center;
   position: relative;
   z-index: 2;
@@ -354,9 +510,11 @@ h2 {
 .col-1 {
   grid-column: 1;
 }
+
 .col-2 {
   grid-column: 2;
 }
+
 .col-3 {
   grid-column: 3;
 }
@@ -368,11 +526,10 @@ h2 {
   position: relative;
 }
 
-.placeholder-cell {
-  min-height: 0;
+.junction-spacer {
+  min-height: 64px;
 }
 
-/* Base Node Card Geometry */
 .node-card {
   background: #ffffff;
   border: 1px solid #cbd5e1;
@@ -388,80 +545,38 @@ h2 {
   box-sizing: border-box;
 }
 
-/* Central Star: Logan Main Stem Styling */
 .main-stem-card {
   border: 2px solid #01377d;
-  background: #fdfdfd;
-  box-shadow: 0 4px 6px -1px rgba(1, 55, 125, 0.05);
-}
-.main-stem-card .node-title {
-  font-size: 0.95rem;
-  font-weight: 800;
-}
-.arrow-down-indicator {
-  color: #01377d !important;
-  margin-top: 4px;
+  background: #f8fafc;
 }
 
 .node-title {
   font-size: 0.88rem;
   font-weight: 700;
-}
-.font-highlight {
-  font-weight: 800;
+  color: #334155;
 }
 
-/* Inline Inflow Layout Architecture: Left aligned Arrow box mapping */
 .inflow-content-wrapper {
   display: flex;
   align-items: center;
   gap: 10px;
   width: 100%;
+  justify-content: center;
 }
 
-/* Lateral Blue Tributaries / Springs */
-.inflow-card {
-  border-left: 4px solid #38bdf8;
-  background: #f0f9ff;
-  align-items: flex-start;
-  text-align: left;
-  padding-left: 14px;
-}
-.arrow-inflow-blue {
-  color: #0284c7 !important;
-  flex-shrink: 0;
-}
-
-/* GREEN CONFLUENCE NODE */
-.confluence-card {
-  border-left: 4px solid #16a34a;
+.inflow-card-left {
+  border-right: 4px solid #16a34a;
   background: #f0fdf4;
-  border-top: 1px solid #cbd5e1;
-  border-right: 1px solid #cbd5e1;
-  border-bottom: 1px solid #cbd5e1;
-  align-items: center;
-  text-align: center;
-}
-.arrow-inflow-green {
-  color: #16a34a !important;
-  flex-shrink: 0;
 }
 
-/* Blacksmith Fork System Components */
 .bsf-card {
   border-left: 4px solid #16a34a;
 }
-.arrow-down-green {
-  color: #16a34a !important;
-  margin-top: 4px;
-}
 
-/* Independent Inflows Draining Straight Down into Cutler Pool */
 .independent-card {
   border-left: 4px solid #ea580c;
-  align-items: center;
-  text-align: center;
 }
+
 .routing-label {
   font-size: 0.72rem;
   font-weight: 800;
@@ -470,7 +585,6 @@ h2 {
   margin-top: 4px;
 }
 
-/* Bottom Terminus Component Block inside Grid Layout */
 .terminus-grid-cell {
   display: flex;
   justify-content: center;
@@ -501,10 +615,69 @@ h2 {
   margin: 0;
   font-size: 1.2rem;
   font-weight: 800;
+  color: #7c2d12;
 }
 
 .terminus-details p {
   margin: 4px 0 0 0;
   font-size: 0.85rem;
+  color: #9a3412;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.grid-cell.col-1 {
+  background-color: #f0fdf4 !important;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 10px;
+  box-sizing: border-box;
+}
+
+.grid-cell.col-2 {
+  background-color: #f0f7ff !important;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  padding: 10px;
+  box-sizing: border-box;
+}
+
+.grid-cell.col-3 {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 10px;
+  box-sizing: border-box;
+}
+
+.grid-cell.col-3[style*='11'],
+.grid-cell.col-3[style*='12'],
+.grid-cell.col-3[style*='13'] {
+  background-color: #f0fdf4 !important;
+}
+
+.grid-cell.col-3[style*='15'],
+.grid-cell.col-3[style*='16'] {
+  background-color: #fff7ed !important;
+  border-color: #fed7aa;
+}
+
+.grid-cell[data-marker='beaver_junc'],
+.grid-cell[data-marker='ricks_junc'],
+.grid-cell[data-marker='temple_junc'],
+.grid-cell[data-marker='right_hand_junc'],
+.grid-cell[data-marker='dewitt_junc'],
+.grid-cell[data-marker='spring_creek_junc'],
+.grid-cell[data-marker='bsf_confluence'] {
+  background-color: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
 }
 </style>
