@@ -1,11 +1,15 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // src/hydroService.ts
+
 const BASE_URL = 'https://lro.hydroserver.org/api/sensorthings/v1.1'
 
+//each View pulls from Station interface
 export interface Station {
   id: string
   displayName: string
-  description: string
-  observation: any
+  description?: string
+  observation?: any
+  coordinates: [number, number] | null // [Lat, Lon]
 }
 
 const STATION_NAME_MAP: Record<string, string> = {
@@ -34,7 +38,7 @@ const STATION_NAME_MAP: Record<string, string> = {
 }
 
 export async function getDischargeStations(): Promise<Station[]> {
-  const listUrl = `${BASE_URL}/Datastreams?$filter=contains(name,'Discharge') and contains(name,'cfs') and not contains(name,'cms')&$top=100&$orderby=name asc`
+  const listUrl = `${BASE_URL}/Datastreams?$filter=contains(name,'Discharge') and contains(name,'cfs') and not contains(name,'cms')&$top=50&$orderby=name asc&$expand=Thing($expand=Locations)`
   const response = await fetch(listUrl)
   const data = await response.json()
 
@@ -46,7 +50,6 @@ export async function getDischargeStations(): Promise<Station[]> {
       const isTesting = ds.name?.includes('Testing')
       return !isDecommissioned && !isTesting
     })
-
     .map((ds: any) => {
       const cleanName = ds.name
         .split(' - ')[0]
@@ -55,11 +58,16 @@ export async function getDischargeStations(): Promise<Station[]> {
         .replace('at Logan River at ', '')
         .trim()
 
+      // 3. Extract and Flip Coords [Lon, Lat] -> [Lat, Lon]
+      const loc = ds.Thing?.Locations?.[0]?.location?.coordinates
+      const coords: [number, number] | null = loc ? [loc[1], loc[0]] : null
+
       return {
         id: ds['@iot.id'],
         displayName: STATION_NAME_MAP[cleanName] || cleanName || ds.name,
         description: ds.description,
         observation: null,
+        coordinates: coords,
       }
     })
 }
@@ -71,6 +79,6 @@ export async function getLatestObservation(stationId: string): Promise<any> {
   return data.value?.[0] || null
 }
 
-export function isStationActive(observation: any): boolean {
+export function isStationActive(_observation: any): boolean {
   return true
 }

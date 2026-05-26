@@ -4,20 +4,15 @@
  */
 import { computed } from 'vue'
 import StationCard from '../components/StationCard.vue'
-import { isStationActive } from '../hydroService'
+import { type Station, isStationActive } from '../hydroService'
 
-interface RiverSite {
-  id: string
-  displayName: string
-  observation?: any
-}
-
+// Access props sent from App.vue
 const props = defineProps<{
-  sites: RiverSite[]
+  sites: Station[]
   loading: boolean
 }>()
 
-// FILTER: Keep only the live-reporting stations
+//Filter active sites
 const activeSites = computed(() => {
   return props.sites.filter((site) => isStationActive(site.observation))
 })
@@ -47,27 +42,37 @@ const activeSites = computed(() => {
   max-width: 800px;
   margin: 0 auto;
   padding: 2rem;
-  background-color: #f8fafc;
+  background-color: #a4bbd1;
   border-radius: 12px;
 }
+
 .dashboard-header h1 {
-  color: #334155;
+  color: #2f3c4d;
 }
+
 .status-banner {
   background-color: #e0f2fe;
   padding: 10px;
   border-radius: 8px;
   margin-bottom: 20px;
 }
+
+.status-banner h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #0369a1;
+}
+
 .loading-state {
   text-align: center;
   padding: 2rem;
-  font-size: 1.2rem;
   color: #64748b;
+  font-style: italic;
 }
+
 .station-grid {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 16px;
 }
 </style>
