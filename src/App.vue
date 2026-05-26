@@ -64,6 +64,7 @@ onMounted(async () => {
         :sites="sites"
         :loading="loading"
         :selected-id="selectedId"
+        @select="handleSelect"
       />
       <SchematicView v-if="currentView === 'schematic'" :sites="sites" :loading="loading" />
     </main>

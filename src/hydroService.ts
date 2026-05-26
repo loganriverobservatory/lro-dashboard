@@ -1,11 +1,32 @@
 // src/hydroService.ts
 const BASE_URL = 'https://lro.hydroserver.org/api/sensorthings/v1.1'
 
+// Each View pulls from Station interface
 export interface Station {
   id: string
   displayName: string
-  description: string
-  observation: any
+  description?: string
+  observation?: any
+  coordinates: [number, number] | null
+}
+
+export const WATER_VARIBALES = [
+  { id: 'Discharge', label: 'Discharge (cfs)' },
+  { id: 'Water Temperature', label: 'Temperature (°C)' },
+  { id: 'Specific Conductance', label: 'SPC (uS/cm)' },
+  { id: 'pH', label: 'pH' },
+  { id: 'Oxygen, dissolved', label: 'Dissolved Oxygen' },
+]
+
+function getCoordinates(ds: any): [number, number] | null {
+  const p = ds.Thing?.Locations?.[0]?.location?.geometry?.coordinates
+
+  if (p && p.length >= 2) {
+    // API is [Lon, Lat], Map needs [Lat, Lon]
+    return [p[1], p[0]]
+  } else {
+    return null
+  }
 }
 
 const STATION_NAME_MAP: Record<string, string> = {
@@ -34,12 +55,12 @@ const STATION_NAME_MAP: Record<string, string> = {
 }
 
 export async function getDischargeStations(): Promise<Station[]> {
-  const listUrl = `${BASE_URL}/Datastreams?$filter=contains(name,'Discharge') and contains(name,'cfs') and not contains(name,'cms')&$top=100&$orderby=name asc`
+  const listUrl = `${BASE_URL}/Datastreams?$filter=contains(name,'Discharge') and contains(name,'cfs') and not contains(name,'cms')&$top=50&$orderby=name asc&$expand=Thing($expand=Locations)`
+
   const response = await fetch(listUrl)
   const data = await response.json()
 
   return data.value
-
     .filter((ds: any) => {
       const isDecommissioned =
         ds.description?.includes('Decommissioned') || ds.name?.includes('Decommissioned')
@@ -48,6 +69,7 @@ export async function getDischargeStations(): Promise<Station[]> {
     })
 
     .map((ds: any) => {
+      // 1. YOUR ORIGINAL NAMING LOGIC
       const cleanName = ds.name
         .split(' - ')[0]
         .split(' Discharge')[0]
@@ -55,14 +77,48 @@ export async function getDischargeStations(): Promise<Station[]> {
         .replace('at Logan River at ', '')
         .trim()
 
+      // 2. GET COORDINATES WITH FALLBACK
+      const foundCoords = getCoordinates(ds)
+
       return {
-        id: ds['@iot.id'],
+        id: ds['@iot.id']?.toString(),
         displayName: STATION_NAME_MAP[cleanName] || cleanName || ds.name,
         description: ds.description,
         observation: null,
+        coordinates: foundCoords,
       }
     })
 }
+
+/*export async function getStationsByVariable(variable: string = 'Discharge') {
+  const baseUrl = 'https://lro.hydroserver.org/api/sensorthings/v1.1/Datastreams'
+
+  // Use the $filter to only get datastreams for the selected property
+  const filter = `substringof('${variable}', name)`
+  const expand = '$expand=Thing($expand=Locations)'
+
+  const url = `${baseUrl}?$filter=${filter}&${expand}`
+
+  const response = await fetch(url)
+  const data = await response.json()
+
+  return data.value
+    .filter((ds: any) => {
+      const isDecommissioned =
+        ds.description?.includes('Decommissioned') || ds.name?.includes('Decommissioned')
+      return !isDecommissioned
+    })
+    .map((ds: any) => {
+      // Your existing cleaning and coordinate logic here...
+      const foundCoords = getCoordinates(ds)
+      return {
+        id: ds['@iot.id'],
+        displayName: ds.name.split(' - ')[0], // Example cleaning
+        coordinates: foundCoords,
+        variableType: variable,
+      }
+    })
+}*/
 
 export async function getLatestObservation(stationId: string): Promise<any> {
   const obsUrl = `${BASE_URL}/Datastreams('${stationId}')/Observations?$top=1&$orderby=phenomenonTime desc`

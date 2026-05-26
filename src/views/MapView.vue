@@ -10,86 +10,71 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits(['select'])
+
 let map: L.Map | null = null
-const markerMap = new Map<string, any>()
+const markerMap = new Map<string, L.CircleMarker>()
 
 const syncMarkers = () => {
   if (!map) return
 
-  // 1. CLEAR existing layers
+  // 1. Clear existing markers from the map and the tracking Map
   markerMap.forEach((m) => m.remove())
   markerMap.clear()
 
-  // 2. THE TEST DOT (Proves the rendering engine is working)
-  L.circleMarker([41.737, -111.83], {
-    radius: 12,
-    fillColor: '#ff0000',
-    color: '#000',
-    weight: 2,
-    fillOpacity: 1,
-    pane: 'markerPane',
-  })
-    .addTo(map!)
-    .bindPopup('TEST DOT - LOGAN')
+  console.log(`MAP_DEBUG: Syncing ${props.sites.length} stations...`)
 
-  // 3. THE DATA SYNC
-  props.sites.forEach((station: any) => {
-    // Try various possible naming conventions for coordinates
-    let lat =
-      station.latitude || station.lat || (station.coordinates ? station.coordinates[0] : null)
-    let lng =
-      station.longitude ||
-      station.lon ||
-      station.lng ||
-      (station.coordinates ? station.coordinates[1] : null)
+  // 3. RENDER REAL DATA
+  props.sites.forEach((station: Station) => {
+    // Ensure coordinates exist and have both Lat and Lng
+    if (station.coordinates && station.coordinates.length === 2) {
+      const [lat, lng] = station.coordinates
 
-    if (lat === undefined && station.location) {
-      lat = station.location.latitude || station.location.lat
-      lng = station.location.longitude || station.location.lng
-    }
-
-    const finalLat = Number(lat)
-    const finalLng = Number(lng)
-
-    if (!isNaN(finalLat) && !isNaN(finalLng) && lat !== null) {
-      const newMarker = L.circleMarker([finalLat, finalLng], {
+      // Create the blue circle marker
+      const newMarker = L.circleMarker([lat, lng], {
         radius: 9,
-        fillColor: '#3b82f6',
+        fillColor: '#3b82f6', // Logan Blue
         color: '#ffffff',
         weight: 2,
         fillOpacity: 0.9,
-        pane: 'markerPane',
       })
         .addTo(map!)
-        .bindPopup(`<b>${station.displayName}</b>`)
-        .on('click', () => emit('select', station.id))
+        .bindPopup(`<b>${station.displayName}</b><br>${station.id}`)
+        .on('click', () => {
+          console.log('Pin clicked:', station.id)
+          emit('select', station.id)
+        })
 
+      // Store reference for the watcher (to open popups externally)
       markerMap.set(station.id, newMarker)
     } else {
-      console.warn(`Could not find coordinates for ${station.displayName}`, station)
+      console.warn(
+        `MAP_DEBUG: Skipping station ${station.displayName} - Missing Coordinates`,
+        station,
+      )
     }
   })
-} // <--- syncMarkers ends here!
+}
 
 onMounted(() => {
-  console.log('MAP_DEBUG: Initializing map...')
+  console.log('MAP_DEBUG: Initializing Leaflet map...')
+
+  // Standard initialization
   map = L.map('map-div', {
     center: [41.737, -111.83],
     zoom: 12,
-    preferCanvas: true,
   })
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap',
+    attribution: '&copy; OpenStreetMap contributors',
   }).addTo(map)
 
+  // Wait a beat for the DOM/CSS to settle, then draw
   setTimeout(() => {
     if (map) {
-      console.log('MAP_DEBUG: Invaliding size and syncing markers')
       map.invalidateSize()
       syncMarkers()
     }
-  }, 300)
+  }, 250)
 })
 
 onBeforeUnmount(() => {
@@ -99,21 +84,25 @@ onBeforeUnmount(() => {
   }
 })
 
+// Watch for changes in the sites array (e.g., after the HydroServer fetch completes)
 watch(
   () => props.sites,
   () => {
     syncMarkers()
   },
-  { deep: true, immediate: true },
+  { deep: true },
 )
 
+// Watch for external selection (e.g., clicking a row in the Sidebar)
 watch(
   () => props.selectedId,
   (newId) => {
     if (newId && markerMap.has(newId) && map) {
       const marker = markerMap.get(newId)
-      marker?.openPopup()
-      map.panTo(marker!.getLatLng())
+      if (marker) {
+        marker.openPopup()
+        map.panTo(marker.getLatLng())
+      }
     }
   },
 )
@@ -125,22 +114,24 @@ watch(
   </div>
 </template>
 
-<style>
+<style scoped>
 .map-container {
   width: 100%;
   height: 600px;
   position: relative;
-  border: 2px solid red;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 #map-div {
   width: 100%;
   height: 100%;
-  background: #eee;
+  background: #f8f9fa; /* Light grey while map tiles load */
 }
 
-/* Force the SVG layer to have dimensions */
-.leaflet-svg-pane {
-  display: block !important;
+/* Ensure Leaflet controls don't get hidden */
+:deep(.leaflet-control-container) {
+  z-index: 1000;
 }
 </style>
