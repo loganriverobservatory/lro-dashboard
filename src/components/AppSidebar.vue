@@ -31,7 +31,7 @@ const handleVariableChange = () => {
 <template>
   <aside id="sidebar" :class="{ 'sidebar-responsive': isOpen }">
     <div class="sidebar-title">
-      <div class="sidebar-brand">HydroServer</div>
+      <div class="sidebar-brand">LRO Dashboard</div>
       <X @click="emit('close-sidebar')" class="close-icon" :size="20" />
     </div>
 

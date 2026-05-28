@@ -29,8 +29,8 @@ const emit = defineEmits(['change-view'])
           <h3>Station List View</h3>
         </div>
         <p class="card-desc">
-          Browse real-time river discharge levels, target flow capacities, and sensor health metrics
-          across the basin.
+          Browse all active monitoring stations in a sortable list. Scan current discharge levels
+          and sensor health metrics across the basin in one view.
         </p>
         <span class="card-action-text">Open List View →</span>
       </div>
@@ -43,8 +43,8 @@ const emit = defineEmits(['change-view'])
           <h3>Interactive Map View</h3>
         </div>
         <p class="card-desc">
-          Locate physical sensor installations geographically along the Logan River main stem and
-          canal corridors.
+          Locate physical sensor installations on an interactive map. View geographic relationships
+          and check live data along the Logan River and its canal corridors.
         </p>
         <span class="card-action-text">Open Map View →</span>
       </div>
