@@ -67,7 +67,21 @@ const shortDisplayName = computed(() => {
 
 const parsedMeasurements = computed(() => {
   const obs = props.site?.observation
-  if (!obs || obs.result === null) return []
+  if (!obs) return []
+
+  // If the station is offline but has a timestamp, pass a structural object
+  // so it doesn't drop out of the rendering tree
+  if (obs.result === null) {
+    return [
+      {
+        label: 'Discharge',
+        value: '---',
+        unit: props.site.unit || 'cfs',
+        time: obs.phenomenonTime,
+        fresh: false,
+      },
+    ]
+  }
 
   if (Array.isArray(obs)) {
     return obs.map((m: any) => ({
@@ -94,7 +108,6 @@ const hasAnyLiveTelemetry = computed(() => {
   return parsedMeasurements.value.some((m) => m.fresh)
 })
 
-// Loading checker that distinguishes a real offline node from a pending fetch
 const isAwaitingTelemetry = computed(() => {
   return props.site.observation === null
 })
@@ -214,8 +227,9 @@ const isAwaitingTelemetry = computed(() => {
     0 4px 6px -2px rgba(0, 0, 0, 0.03);
 }
 .card-stale {
-  background: #f8fafc;
-  border-left: 4px solid #cbd5e1;
+  /* Changed background color to a distinct off-white grey so it pop outs visibly on the dashboard view */
+  background: #f1f5f9;
+  border-left: 4px solid #94a3b8;
   box-shadow: none;
 }
 .card-stale:hover {
@@ -274,8 +288,8 @@ const isAwaitingTelemetry = computed(() => {
   color: #166534;
 }
 .badge-offline {
-  background-color: #f1f5f9;
-  color: #475569;
+  background-color: #e2e8f0;
+  color: #334155;
 }
 .metric-row {
   margin-bottom: 0.5rem;
@@ -294,7 +308,7 @@ const isAwaitingTelemetry = computed(() => {
 }
 .fallback-text {
   font-size: 1.5rem;
-  color: #64748b;
+  color: #475569;
   font-weight: 600;
   letter-spacing: normal;
 }
