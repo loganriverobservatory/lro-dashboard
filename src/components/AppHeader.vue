@@ -23,7 +23,7 @@ const emit = defineEmits(['toggle-sidebar', 'change-view'])
         <span class="nav-label">Home</span>
       </div>
 
-      <div class="nav-action-btn" title="Help">
+      <div class="nav-action-btn" @click="emit('change-view', 'help')" title="View Help">
         <HelpCircle :size="20" class="nav-icon" />
         <span class="nav-label">Help</span>
       </div>
