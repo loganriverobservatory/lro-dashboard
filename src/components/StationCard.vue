@@ -1,22 +1,30 @@
 <script setup lang="ts">
-/** * StationCard.vue
- */
+/** * StationCard.vue */
+import { computed } from 'vue'
 import { type Station } from '../hydroService'
 
 const props = withDefaults(
   defineProps<{
     site: Station
     compact?: boolean
+    mapMode?: boolean // True when used inside a Map popup
   }>(),
   {
     compact: false,
+    mapMode: false,
   },
 )
+
+const UNIT_DESCRIPTIONS: Record<string, string> = {
+  cfs: 'cubic feet per second',
+  degC: 'degrees Celsius',
+  'mg/L': 'milligrams per liter',
+  'µS/cm': 'microsiemens per centimeter',
+}
 
 function formatDate(dateStr: string | undefined): string {
   if (!dateStr) return ''
   const date = new Date(dateStr)
-
   return date.toLocaleString([], {
     month: 'short',
     day: 'numeric',
@@ -26,7 +34,7 @@ function formatDate(dateStr: string | undefined): string {
   })
 }
 
-function isDataFresh(observation: any): boolean {
+function isDataFresh(observation: Station['observation']): boolean {
   if (
     !observation ||
     observation.result === -9999 ||
@@ -46,32 +54,69 @@ function getFreshnessClass(dateStr: string | undefined): string {
   if (!dateStr) return 'color-stale'
 
   const obsTime = new Date(dateStr).getTime()
-  const millisecondsAgo = Date.now() - obsTime
-  const hoursAgo = millisecondsAgo / (1000 * 60 * 60)
+  const hoursAgo = (Date.now() - obsTime) / (1000 * 60 * 60)
 
-  if (hoursAgo <= 4) {
-    return 'color-fresh'
-  } else if (hoursAgo <= 24) {
-    return 'color-warning'
-  } else {
-    return 'color-stale'
-  }
+  if (hoursAgo <= 4) return 'color-fresh'
+  if (hoursAgo <= 24) return 'color-warning'
+  return 'color-stale'
 }
+
+const shortDisplayName = computed(() => {
+  // get rid of this when the new variable data thing is up
+  const name = props.site?.displayName || ''
+  return name.split(':')[0].trim()
+})
+
+const parsedMeasurements = computed(() => {
+  const obs = props.site?.observation
+  if (!obs) return []
+
+  if (Array.isArray(obs)) {
+    return obs.map((m) => ({
+      label: m.label || m.name,
+      value: Number(m.result).toFixed(2),
+      unit: m.unit || '',
+      time: m.phenomenonTime,
+      fresh: isDataFresh(m),
+    }))
+  }
+
+  return [
+    {
+      label: 'Discharge',
+      value: Number(obs.result).toFixed(2),
+      unit: obs.unit || 'cfs',
+      time: obs.phenomenonTime,
+      fresh: isDataFresh(obs),
+    },
+  ]
+})
+
+const hasAnyLiveTelemetry = computed(() => {
+  return parsedMeasurements.value.some((m) => m.fresh)
+})
 </script>
 
 <template>
   <div
     :class="[
       'station-card',
-      { 'card-stale': !isDataFresh(site.observation), 'is-compact': compact },
+      {
+        'card-stale': !hasAnyLiveTelemetry,
+        'is-compact': compact || mapMode,
+        'is-map': mapMode,
+      },
     ]"
   >
     <div class="card-header">
-      <h2 class="location-name">{{ site.displayName }}</h2>
+      <h2 class="location-name">
+        {{ mapMode ? shortDisplayName : site.displayName }}
+      </h2>
       <span
-        :class="['status-badge', isDataFresh(site.observation) ? 'badge-online' : 'badge-offline']"
+        v-if="!mapMode"
+        :class="['status-badge', hasAnyLiveTelemetry ? 'badge-online' : 'badge-offline']"
       >
-        {{ isDataFresh(site.observation) ? 'Live' : 'Offline' }}
+        {{ hasAnyLiveTelemetry ? 'Live' : 'Offline' }}
       </span>
     </div>
 
@@ -82,23 +127,38 @@ function getFreshnessClass(dateStr: string | undefined): string {
       </div>
 
       <div v-else class="measurement-container">
-        <div v-if="isDataFresh(site.observation)" class="value-row">
-          <span :class="['value', getFreshnessClass(site.observation.phenomenonTime)]">
-            {{ Number(site.observation.result).toFixed(2) }}
-          </span>
-          <span class="unit">cfs <span class="unit-expansion">cubic feet per second</span></span>
+        <div v-for="metric in parsedMeasurements" :key="metric.label" class="metric-row">
+          <div v-if="metric.fresh" class="value-row">
+            <span class="metric-label" v-if="parsedMeasurements.length > 1">
+              {{ metric.label }}:
+            </span>
+            <span :class="['value', getFreshnessClass(metric.time)]">
+              {{ metric.value }}
+            </span>
+            <span class="unit">
+              {{ metric.unit }}
+              <span
+                v-if="UNIT_DESCRIPTIONS[metric.unit] && !compact && !mapMode"
+                class="unit-expansion"
+              >
+                {{ UNIT_DESCRIPTIONS[metric.unit] }}
+              </span>
+            </span>
+          </div>
         </div>
 
-        <div v-else class="value-row offline-row">
+        <div v-if="!hasAnyLiveTelemetry" class="value-row offline-row">
           <span class="value fallback-text">No Live Data Available</span>
         </div>
 
-        <p v-if="site.observation && site.observation.phenomenonTime" class="timestamp">
-          Last Reading: {{ formatDate(site.observation.phenomenonTime) }}
+        <p v-if="parsedMeasurements[0]?.time && !mapMode" class="timestamp">
+          Last Reading: {{ formatDate(parsedMeasurements[0].time) }}
         </p>
       </div>
 
-      <p v-if="site.description && !compact" class="description">{{ site.description }}</p>
+      <p v-if="site.description && !compact && !mapMode" class="description">
+        {{ site.description }}
+      </p>
     </div>
   </div>
 </template>
@@ -171,6 +231,17 @@ function getFreshnessClass(dateStr: string | undefined): string {
   color: #475569;
 }
 
+.metric-row {
+  margin-bottom: 0.5rem;
+}
+
+.metric-label {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #475569;
+  margin-right: 0.5rem;
+}
+
 .value {
   font-size: 3.5rem;
   font-weight: 800;
@@ -188,11 +259,9 @@ function getFreshnessClass(dateStr: string | undefined): string {
 .color-fresh {
   color: #16a34a;
 }
-
 .color-warning {
   color: #d97706;
 }
-
 .color-stale {
   color: #64748b;
 }
@@ -256,6 +325,7 @@ function getFreshnessClass(dateStr: string | undefined): string {
   }
 }
 
+/* Variant A: Schematic Compact Tiles */
 .station-card.is-compact {
   padding: 0.65rem 1rem;
   margin-bottom: 0;
@@ -297,5 +367,31 @@ function getFreshnessClass(dateStr: string | undefined): string {
 .station-card.is-compact .timestamp {
   font-size: 0.7rem;
   margin-top: 0.25rem;
+}
+
+/* Variant B: Map Leaflet Popover Specific Overrides */
+.station-card.is-map {
+  background: #ffffff !important; /* Changed from transparent to white */
+  background-color: #ffffff !important;
+  border: 1px solid #e2e8f0 !important; /* Adds a clean, subtle border wrapper */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important; /* Adds a soft shadow */
+  padding: 0.75rem !important; /* Gives the text some breathing room inside the white box */
+  border-radius: 8px;
+  min-width: 180px;
+}
+
+/* Fixes any text contrast issues over the bare map */
+.station-card.is-map .location-name {
+  font-size: 0.95rem !important;
+  font-weight: 800;
+  color: #0f172a; /* Nice dark charcoal so it's easy to read */
+}
+
+.station-card.is-map .value {
+  font-size: 1.5rem !important;
+}
+
+.station-card.is-map .unit {
+  font-size: 0.85rem !important;
 }
 </style>
