@@ -429,21 +429,7 @@ const hasAnyLiveTelemetry = computed(() => {
 }
 
 .station-card.is-map {
-<<<<<<< HEAD
-  background: transparent !important;
-  background-color: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-  margin-bottom: 0 !important;
-  padding: 0.25rem 0.5rem !important;
-  min-width: 180px;
-=======
-  background: rgba(
-    255,
-    255,
-    255,
-    0.95
-  ) !important; /* Solid background hides overlap better than transparent grey */
+  background: rgba(255, 255, 255, 0.95) !important;
   border: 1px solid #94a3b8 !important;
   padding: 1px 2px !important;
   border-radius: 4px;
@@ -456,16 +442,15 @@ const hasAnyLiveTelemetry = computed(() => {
   text-align: center !important;
 }
 
-/* The outer grey border of the arrow */
 .station-card.is-map::before {
   content: '';
   position: absolute;
-  top: 100%; /* Pushes it to the very bottom edge */
+  top: 100%;
   left: 50%;
-  transform: translateX(-50%); /* Centers it perfectly */
+  transform: translateX(-50%);
   border-width: 7px;
   border-style: solid;
-  border-color: #94a3b8 transparent transparent transparent; /* Matches your border color */
+  border-color: #94a3b8 transparent transparent transparent;
 }
 
 .station-card.is-map .metric-row,
@@ -475,16 +460,15 @@ const hasAnyLiveTelemetry = computed(() => {
   line-height: 1 !important;
 }
 
-/* The inner white fill of the arrow */
 .station-card.is-map::after {
   content: '';
   position: absolute;
   top: 100%;
   left: 50%;
   transform: translateX(-50%);
-  border-width: 6px; /* Slightly smaller to sit inside the border */
+  border-width: 6px;
   border-style: solid;
-  border-color: rgba(255, 255, 255, 0.95) transparent transparent transparent; /* Matches background */
+  border-color: rgba(255, 255, 255, 0.95) transparent transparent transparent;
 }
 
 .station-card.is-map .card-header {
@@ -497,19 +481,14 @@ const hasAnyLiveTelemetry = computed(() => {
   order: 1 !important;
   margin: 0 !important;
   padding: 0 !important;
->>>>>>> 3f58c7a4ba356e88da66bd1ea1a83e0e2ab555b3
 }
 
 .station-card.is-map .location-name {
-<<<<<<< HEAD
-  font-size: 0.95rem !important;
-  font-weight: 800;
-=======
   font-size: 0.7rem !important;
   font-weight: 700;
->>>>>>> 3f58c7a4ba356e88da66bd1ea1a83e0e2ab555b3
   color: #0f172a;
 }
+
 .station-card.is-map .value {
   font-size: 1.2rem !important;
   line-height: 1 !important; /* Forces the text box to shrink */
