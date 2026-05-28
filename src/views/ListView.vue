@@ -1,27 +1,28 @@
 <script setup lang="ts">
-/** * ListView.vue
- * Renders a collection of station cards to provide a comprehensive overview of all active sensor readings.
- */
 import { computed } from 'vue'
 import StationCard from '../components/StationCard.vue'
-import { isStationActive, type Station } from '../hydroService'
+import { type Station } from '../hydroService'
 
 const props = defineProps<{
   sites: Station[]
   loading: boolean
 }>()
 
+const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000
+
+function isStationExpired(site: Station): boolean {
+  if (!site || !site.observation) return true
+  if (site.observation.result === -9999 || site.observation.result === null) return true
+  if (!site.observation.phenomenonTime) return true
+
+  const obsTime = new Date(site.observation.phenomenonTime).getTime()
+  const cutoffTime = Date.now() - ONE_YEAR_MS
+
+  return obsTime < cutoffTime
+}
+
 const activeSites = computed(() => {
-  return props.sites.filter((site) => {
-    if (!isStationActive(site.observation)) return false
-    if (site.observation === null) return true
-    if (!site.observation.phenomenonTime) return false
-
-    const obsTime = new Date(site.observation.phenomenonTime).getTime()
-    const oneYearAgo = Date.now() - 365 * 24 * 60 * 60 * 1000
-
-    return obsTime > oneYearAgo
-  })
+  return props.sites.filter((site) => !isStationExpired(site))
 })
 </script>
 
@@ -39,7 +40,7 @@ const activeSites = computed(() => {
     </div>
 
     <div v-else class="station-grid">
-      <StationCard v-for="site in activeSites" :key="site.id" :site="site" />
+      <StationCard v-for="site in activeSites" :key="site.uuid" :site="site" />
     </div>
   </div>
 </template>

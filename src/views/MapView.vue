@@ -15,32 +15,42 @@ const emit = defineEmits(['select'])
 let map: L.Map | null = null
 const markerMap = new Map<string, L.Marker>()
 
+const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000
+
+function isStationExpired(site: Station): boolean {
+  if (!site || !site.observation) return true
+  if (site.observation.result === -9999 || site.observation.result === null) return true
+  if (!site.observation.phenomenonTime) return true
+
+  const obsTime = new Date(site.observation.phenomenonTime).getTime()
+  const cutoffTime = Date.now() - ONE_YEAR_MS
+
+  return obsTime < cutoffTime
+}
+
 const syncMarkers = () => {
   if (!map) return
 
-  // 1. Clean up old markers
+  // Clean up old markers
   markerMap.forEach((m) => m.remove())
   markerMap.clear()
 
   const allCoords: L.LatLngTuple[] = []
 
-  // 2. Loop through sites
   props.sites.forEach((station: Station) => {
-    // Check if coordinates exist and are valid
+    if (isStationExpired(station)) return
+
     if (station.coordinates && station.coordinates.length === 2) {
       const coords = station.coordinates as L.LatLngTuple
       allCoords.push(coords)
 
-      // A. Create the container for the Vue component
       const popupContainer = document.createElement('div')
 
-      // B. Mount the StationCard into the div
       const app = createApp({
         render: () => h(StationCard, { site: station, mapMode: true }),
       })
       app.mount(popupContainer)
 
-      // C. Define the custom Red Pin
       const pinSvg = `
         <svg viewBox="0 0 24 24" width="22" height="28">
           <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="#ef4444" stroke="#b91c1c" stroke-width="1"/>
@@ -55,7 +65,6 @@ const syncMarkers = () => {
         popupAnchor: [0, -28],
       })
 
-      // D. Create and add marker
       const marker = L.marker(coords, { icon: redPin })
         .addTo(map!)
         .bindTooltip(popupContainer, {
@@ -65,14 +74,13 @@ const syncMarkers = () => {
           className: 'clean-tooltip',
           interactive: true,
         })
-        .on('click', () => emit('select', station.id))
+        .on('click', () => emit('select', station.uuid))
 
       marker.openPopup()
-      markerMap.set(station.id, marker)
+      markerMap.set(station.uuid, marker)
     }
   })
 
-  // 3. THE AUTO-ZOOM (Now correctly inside the syncMarkers function)
   if (allCoords.length > 0) {
     const bounds = L.latLngBounds(allCoords)
     map.fitBounds(bounds, { padding: [50, 50] })
