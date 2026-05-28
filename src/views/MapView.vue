@@ -13,54 +13,72 @@ const props = defineProps<{
 const emit = defineEmits(['select'])
 
 let map: L.Map | null = null
-const markerMap = new Map<string, L.CircleMarker>()
+const markerMap = new Map<string, L.Marker>()
 
 const syncMarkers = () => {
   if (!map) return
 
+  // 1. Clean up old markers
   markerMap.forEach((m) => m.remove())
   markerMap.clear()
 
-  console.log(`MAP_DEBUG: Syncing ${props.sites.length} stations...`)
+  const allCoords: L.LatLngTuple[] = []
 
+  // 2. Loop through sites
   props.sites.forEach((station: Station) => {
+    // Check if coordinates exist and are valid
     if (station.coordinates && station.coordinates.length === 2) {
-      const [lat, lng] = station.coordinates
+      const coords = station.coordinates as L.LatLngTuple
+      allCoords.push(coords)
 
+      // A. Create the container for the Vue component
       const popupContainer = document.createElement('div')
-      popupContainer.style.minWidth = '180px'
 
-      createApp({
+      // B. Mount the StationCard into the div
+      const app = createApp({
         render: () => h(StationCard, { site: station, mapMode: true }),
-      }).mount(popupContainer)
-
-      const newMarker = L.circleMarker([lat, lng], {
-        radius: 9,
-        fillColor: '#3b82f6',
-        color: '#ffffff',
-        weight: 2,
-        fillOpacity: 0.9,
       })
+      app.mount(popupContainer)
+
+      // C. Define the custom Red Pin
+      const pinSvg = `
+        <svg viewBox="0 0 24 24" width="22" height="28">
+          <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="#ef4444" stroke="#b91c1c" stroke-width="1"/>
+          <circle cx="12" cy="9" r="3" fill="white"/>
+        </svg>`
+
+      const redPin = L.divIcon({
+        className: 'custom-pin',
+        html: pinSvg,
+        iconSize: [28, 28],
+        iconAnchor: [14, 28],
+        popupAnchor: [0, -28],
+      })
+
+      // D. Create and add marker
+      const marker = L.marker(coords, { icon: redPin })
         .addTo(map!)
-
-        .bindPopup(popupContainer, {
-          maxWidth: 300,
-          autoClose: true,
-          closeOnClick: true,
+        .bindTooltip(popupContainer, {
+          permanent: true,
+          direction: 'top',
+          offset: [0, -20],
+          className: 'clean-tooltip',
+          interactive: true,
         })
-        .on('click', () => {
-          console.log('Pin clicked:', station.id)
-          emit('select', station.id)
-        })
+        .on('click', () => emit('select', station.id))
 
-      markerMap.set(station.id, newMarker)
+      markerMap.set(station.id, marker)
     }
   })
+
+  // 3. THE AUTO-ZOOM
+  if (allCoords.length > 0) {
+    const bounds = L.latLngBounds(allCoords)
+    map.fitBounds(bounds, { padding: [50, 50] })
+  }
 }
 
 onMounted(() => {
-  console.log('MAP_DEBUG: Initializing Leaflet map...')
-
   map = L.map('map-div', {
     center: [41.737, -111.83],
     zoom: 12, // Default zoom look over Logan River
@@ -87,9 +105,7 @@ onBeforeUnmount(() => {
 
 watch(
   () => props.sites,
-  () => {
-    syncMarkers()
-  },
+  () => syncMarkers(),
   { deep: true },
 )
 
@@ -99,7 +115,6 @@ watch(
     if (newId && markerMap.has(newId) && map) {
       const marker = markerMap.get(newId)
       if (marker) {
-        marker.openPopup()
         map.panTo(marker.getLatLng())
       }
     }
@@ -129,23 +144,35 @@ watch(
   background: #f8f9fa;
 }
 
+:deep(.custom-pin) {
+  background: transparent;
+  border: none;
+}
+
 :deep(.leaflet-control-container) {
   z-index: 1000;
 }
 
-:deep(.leaflet-popup-content-wrapper) {
-  background: #ffffff !important;
-  background-color: #ffffff !important;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
+:deep(.leaflet-tooltip.clean-tooltip) {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
   padding: 0 !important;
 }
 
-:deep(.leaflet-popup-tip-container) {
+:deep(.leaflet-tooltip.clean-tooltip::before) {
   display: none !important;
 }
 
-:deep(.leaflet-popup-close-button) {
-  color: #64748b !important;
-  padding: 8px 8px 0 0 !important;
+:deep(.leaflet-tooltip) {
+  z-index: 600;
+  transition:
+    z-index 0.2s,
+    transform 0.2s;
+}
+
+:deep(.leaflet-tooltip:hover) {
+  z-index: 1000 !important;
+  transform: scale(1.05);
 }
 </style>
