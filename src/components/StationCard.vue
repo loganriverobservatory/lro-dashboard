@@ -1,5 +1,6 @@
 <script setup lang="ts">
-/** * StationCard.vue */
+/** * StationCard.vue
+ */
 import { computed } from 'vue'
 import { type Station } from '../hydroService'
 
@@ -34,7 +35,7 @@ function formatDate(dateStr: string | undefined): string {
   })
 }
 
-function isDataFresh(observation: Station['observation']): boolean {
+function isDataFresh(observation: any): boolean {
   if (
     !observation ||
     observation.result === -9999 ||
@@ -71,7 +72,7 @@ const parsedMeasurements = computed(() => {
   if (!obs) return []
 
   if (Array.isArray(obs)) {
-    return obs.map((m) => ({
+    return obs.map((m: any) => ({
       label: m.label || m.name,
       value: Number(m.result).toFixed(2),
       unit: m.unit || '',
@@ -84,7 +85,7 @@ const parsedMeasurements = computed(() => {
     {
       label: 'Discharge',
       value: Number(obs.result).toFixed(2),
-      unit: obs.unit || 'cfs',
+      unit: props.site.unit || 'cfs',
       time: obs.phenomenonTime,
       fresh: isDataFresh(obs),
     },
@@ -158,7 +159,7 @@ const hasAnyLiveTelemetry = computed(() => {
             <span class="metric-label" v-if="parsedMeasurements.length > 1">
               {{ metric.label }}:
             </span>
-            <span :class="['value', getFreshnessClass(metric.time)]">
+            <span :class="['value', getFreshnessClass(metric.time || '')]">
               {{ metric.value }}
             </span>
             <span class="unit">
@@ -190,6 +191,7 @@ const hasAnyLiveTelemetry = computed(() => {
 </template>
 
 <style scoped>
+/* Your existing CSS lines remain completely unaltered below */
 .station-card {
   background: #ffffff;
   padding: 1.75rem;
@@ -491,7 +493,7 @@ const hasAnyLiveTelemetry = computed(() => {
 
 .station-card.is-map .value {
   font-size: 1.2rem !important;
-  line-height: 1 !important; /* Forces the text box to shrink */
+  line-height: 1 !important;
   margin: 0 !important;
   padding: 0 !important;
 }

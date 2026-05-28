@@ -1,16 +1,31 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { Droplets, CornerDownRight } from 'lucide-vue-next'
-import StationCard from '../components/StationCard.vue'
 import { type Station } from '../hydroService'
+import StationCard from '../components/StationCard.vue'
 
 const props = defineProps<{
   sites: Station[]
   loading: boolean
 }>()
 
+const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000
+
+function isStationExpired(site: Station): boolean {
+  if (!site || !site.observation) return true
+  if (site.observation.result === -9999 || site.observation.result === null) return true
+  if (!site.observation.phenomenonTime) return true
+
+  const obsTime = new Date(site.observation.phenomenonTime).getTime()
+  const cutoffTime = Date.now() - ONE_YEAR_MS
+
+  return obsTime < cutoffTime
+}
+
 function findLiveStation(schematicName: string): Station | undefined {
   return props.sites.find((site) => {
+    if (isStationExpired(site)) return false
+
     const liveName = site.displayName.toLowerCase()
     const targetName = schematicName.toLowerCase()
     return liveName.includes(targetName) || targetName.includes(liveName)
@@ -434,6 +449,7 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
+/* Keeping your exact CSS rules exactly as they are */
 .schematic-container {
   width: 100%;
   max-width: 1200px;
@@ -466,7 +482,6 @@ onUnmounted(() => {
   align-items: center;
   position: relative;
   z-index: 2;
-
   min-width: 950px;
 }
 
@@ -479,8 +494,6 @@ onUnmounted(() => {
   pointer-events: none;
   z-index: 1;
   shape-rendering: geometricPrecision;
-
-  /* Matches the grid's minimum horizontal width boundary */
   min-width: 950px;
 }
 
