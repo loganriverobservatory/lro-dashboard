@@ -85,6 +85,8 @@ onMounted(() => {
     zoom: 12,
   })
 
+  map.zoomControl.setPosition('topright')
+
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap contributors',
   }).addTo(map)
@@ -133,15 +135,16 @@ watch(
 <style scoped>
 .map-container {
   width: 100%;
-  height: 600px;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
   position: relative;
-  border: 1px solid #ccc;
-  border-radius: 8px;
+  border-top: 1px solid #ccc;
   overflow: hidden;
 }
 
 #map-div {
-  width: 100%;
+  flex-grow: 1;
   height: 100%;
   background: #f8f9fa;
 }
@@ -152,7 +155,7 @@ watch(
 }
 
 :deep(.leaflet-control-container) {
-  z-index: 1000;
+  z-index: 800;
 }
 
 :deep(.leaflet-tooltip.clean-tooltip) {

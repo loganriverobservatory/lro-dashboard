@@ -26,7 +26,7 @@ const emit = defineEmits(['change-view'])
           <div class="icon-frame frame-blue">
             <List :size="20" />
           </div>
-          <h3>Station List View</h3>
+          <h3>Station List</h3>
         </div>
         <p class="card-desc">
           Browse all active monitoring stations in a sortable list. Scan current discharge levels
@@ -40,7 +40,7 @@ const emit = defineEmits(['change-view'])
           <div class="icon-frame frame-emerald">
             <MapIcon :size="20" />
           </div>
-          <h3>Interactive Map View</h3>
+          <h3>Interactive Map</h3>
         </div>
         <p class="card-desc">
           Locate physical sensor installations on an interactive map. View geographic relationships

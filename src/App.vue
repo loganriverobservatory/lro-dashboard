@@ -4,6 +4,7 @@ import { getDischargeStations, getLatestObservation, type Station } from './hydr
 import AppHeader from './components/AppHeader.vue'
 import AppSidebar from './components/AppSidebar.vue'
 import HomeView from './views/HomeView.vue'
+import HelpView from './views/HelpView.vue'
 import ListView from './views/ListView.vue'
 import MapView from './views/MapView.vue'
 import SchematicView from './views/SchematicView.vue'
@@ -49,11 +50,17 @@ onMounted(async () => {
       :is-open="sidebarOpen"
       :current-view="currentView"
       @close-sidebar="sidebarOpen = false"
-      @change-view="(view) => (currentView = view)"
+      @change-view="
+        (view) => {
+          currentView = view
+          sidebarOpen = false
+        }
+      "
     />
 
     <main class="main-container">
       <HomeView v-if="currentView === 'home'" @change-view="(view) => (currentView = view)" />
+      <HelpView v-if="currentView === 'help'" />
       <ListView v-if="currentView === 'list'" :sites="sites" :loading="loading" />
       <MapView
         v-if="currentView === 'map'"
@@ -71,6 +78,7 @@ onMounted(async () => {
 body {
   margin: 0;
   font-family: sans-serif;
+  overflow: hidden;
 }
 
 .grid-container {
@@ -86,8 +94,11 @@ body {
 .main-container {
   grid-area: main;
   background-color: #6376c1;
-  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
 @media screen and (max-width: 992px) {
