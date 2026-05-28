@@ -1,10 +1,8 @@
 <script setup lang="ts">
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-// 1. Import createApp and h from Vue to mount the component dynamically
 import { onMounted, watch, onBeforeUnmount, createApp, h } from 'vue'
 import { type Station } from '../hydroService'
-// 2. Import your upgraded StationCard component
 import StationCard from '../components/StationCard.vue'
 
 const props = defineProps<{
@@ -15,67 +13,73 @@ const props = defineProps<{
 const emit = defineEmits(['select'])
 
 let map: L.Map | null = null
-const markerMap = new Map<string, L.CircleMarker>()
+const markerMap = new Map<string, L.Marker>()
 
 const syncMarkers = () => {
   if (!map) return
 
-  // 1. Clear existing markers from the map and the tracking Map
+  // 1. Clean up old markers
   markerMap.forEach((m) => m.remove())
   markerMap.clear()
 
-  console.log(`MAP_DEBUG: Syncing ${props.sites.length} stations...`)
+  const allCoords: L.LatLngTuple[] = []
 
-  // 3. RENDER REAL DATA
+  // 2. Loop through sites
   props.sites.forEach((station: Station) => {
+    // Check if coordinates exist and are valid
     if (station.coordinates && station.coordinates.length === 2) {
-      const [lat, lng] = station.coordinates
+      const coords = station.coordinates as L.LatLngTuple
+      allCoords.push(coords)
 
-      // A. Create the container element and give it a strict style block so Leaflet sees it
+      // A. Create the container for the Vue component
       const popupContainer = document.createElement('div')
-      popupContainer.style.minWidth = '180px'
-      popupContainer.style.minHeight = '50px'
 
-      // B. Boot up the Vue app instance
+      // B. Mount the StationCard into the div
       const app = createApp({
         render: () => h(StationCard, { site: station, mapMode: true }),
       })
-
-      // C. Mount it to our container element
       app.mount(popupContainer)
 
-      // Create the blue circle marker
-      const newMarker = L.circleMarker([lat, lng], {
-        radius: 9,
-        fillColor: '#3b82f6', // Logan Blue
-        color: '#ffffff',
-        weight: 2,
-        fillOpacity: 0.9,
+      // C. Define the custom Red Pin
+      const pinSvg = `
+        <svg viewBox="0 0 24 24" width="22" height="28">
+          <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="#ef4444" stroke="#b91c1c" stroke-width="1"/>
+          <circle cx="12" cy="9" r="3" fill="white"/>
+        </svg>`
+
+      const redPin = L.divIcon({
+        className: 'custom-pin',
+        html: pinSvg,
+        iconSize: [28, 28],
+        iconAnchor: [14, 28],
+        popupAnchor: [0, -28],
       })
+
+      // D. Create and add marker
+      const marker = L.marker(coords, { icon: redPin })
         .addTo(map!)
-        .bindPopup(popupContainer, {
-          maxWidth: 300,
-          // This tells Leaflet NOT to close this popup when a user clicks another dot
-          autoClose: false,
-          // This stops the map from closing popups when the map background is clicked
-          closeOnClick: false,
+        .bindTooltip(popupContainer, {
+          permanent: true,
+          direction: 'top',
+          offset: [0, -20],
+          className: 'clean-tooltip',
+          interactive: true,
         })
-        // LIGHT IT UP: This forces the popup to open automatically on load!
-        .openPopup()
-        .on('click', () => {
-          console.log('Pin clicked:', station.id)
-          emit('select', station.id)
-        })
-      // Store reference for the watcher
-      markerMap.set(station.id, newMarker)
+        .on('click', () => emit('select', station.id))
+
+      marker.openPopup()
+      markerMap.set(station.id, marker)
     }
   })
+
+  // 3. THE AUTO-ZOOM (Now correctly inside the syncMarkers function)
+  if (allCoords.length > 0) {
+    const bounds = L.latLngBounds(allCoords)
+    map.fitBounds(bounds, { padding: [50, 50] })
+  }
 }
 
 onMounted(() => {
-  console.log('MAP_DEBUG: Initializing Leaflet map...')
-
-  // Standard initialization
   map = L.map('map-div', {
     center: [41.737, -111.83],
     zoom: 12,
@@ -85,7 +89,6 @@ onMounted(() => {
     attribution: '&copy; OpenStreetMap contributors',
   }).addTo(map)
 
-  // Wait a beat for the DOM/CSS to settle, then draw
   setTimeout(() => {
     if (map) {
       map.invalidateSize()
@@ -101,16 +104,12 @@ onBeforeUnmount(() => {
   }
 })
 
-// Watch for changes in the sites array (e.g., after the HydroServer fetch completes)
 watch(
   () => props.sites,
-  () => {
-    syncMarkers()
-  },
+  () => syncMarkers(),
   { deep: true },
 )
 
-// Watch for external selection (e.g., clicking a row in the Sidebar)
 watch(
   () => props.selectedId,
   (newId) => {
@@ -147,27 +146,35 @@ watch(
   background: #f8f9fa;
 }
 
-/* Ensure Leaflet controls don't get hidden */
+:deep(.custom-pin) {
+  background: transparent;
+  border: none;
+}
+
 :deep(.leaflet-control-container) {
   z-index: 1000;
 }
 
-/* FORCE LEAFLET'S POPUP WRAPPER TO ACCOMMODATE THE WHITE CARD */
-:deep(.leaflet-popup-content-wrapper) {
-  background: #ffffff !important; /* Changed from transparent to white */
-  background-color: #ffffff !important;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important; /* Restores a nice map shadow */
-  padding: 0 !important; /* Keeps padding at 0 so your StationCard handles the layout spacing */
+:deep(.leaflet-tooltip.clean-tooltip) {
+  background: #b6b6b6c0 !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
 }
 
-/* 2. HIDE THE LITTLE LEAFLET ARROW/TIP UNDERNEATH */
-:deep(.leaflet-popup-tip-container) {
+:deep(.leaflet-tooltip.clean-tooltip::before) {
   display: none !important;
 }
 
-/* 3. OPTIONAL: Move Leaflet's 'X' close button out of the way or style it */
-:deep(.leaflet-popup-close-button) {
-  color: #64748b !important;
-  padding: 8px 8px 0 0 !important;
+:deep(.leaflet-tooltip) {
+  z-index: 600;
+  transition:
+    z-index 0.2s,
+    transform 0.2s;
+}
+
+:deep(.leaflet-tooltip:hover) {
+  z-index: 1000 !important;
+  transform: scale(1.05);
 }
 </style>
