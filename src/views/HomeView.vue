@@ -2,7 +2,7 @@
 /** * HomeView.vue
  * Serves as the landing page with a hero section and quick-access links for the general public.
  */
-import { Droplets, List, Map as MapIcon } from 'lucide-vue-next'
+import { Droplets, List, Map as MapIcon, Network } from 'lucide-vue-next'
 
 const emit = defineEmits(['change-view'])
 </script>
@@ -47,6 +47,20 @@ const emit = defineEmits(['change-view'])
           canal corridors.
         </p>
         <span class="card-action-text">Open Map View →</span>
+      </div>
+
+      <div class="nav-card" @click="emit('change-view', 'schematic')">
+        <div class="card-header-row">
+          <div class="icon-frame frame-sky">
+            <Network :size="20" />
+          </div>
+          <h3>Hydrologic Schematic</h3>
+        </div>
+        <p class="card-desc">
+          Explore a topological node map tracing parallel sub-basins, stream paths, and confluences
+          across the watershed matrix.
+        </p>
+        <span class="card-action-text">Open Schematic View →</span>
       </div>
     </div>
   </div>
@@ -113,7 +127,8 @@ const emit = defineEmits(['change-view'])
 
 .navigation-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  /* Updated minmax to 250px so three columns comfortably fit row layout space */
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 24px;
 }
 
@@ -162,6 +177,12 @@ const emit = defineEmits(['change-view'])
 .frame-emerald {
   background-color: #dcfce7;
   color: #15803d;
+}
+
+/* Added background and token color for the new schematic icon frame */
+.frame-sky {
+  background-color: #e0f2fe;
+  color: #0284c7;
 }
 
 .nav-card h3 {
