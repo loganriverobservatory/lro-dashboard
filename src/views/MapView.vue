@@ -67,11 +67,12 @@ const syncMarkers = () => {
         })
         .on('click', () => emit('select', station.id))
 
+      marker.openPopup()
       markerMap.set(station.id, marker)
     }
   })
 
-  // 3. THE AUTO-ZOOM
+  // 3. THE AUTO-ZOOM (Now correctly inside the syncMarkers function)
   if (allCoords.length > 0) {
     const bounds = L.latLngBounds(allCoords)
     map.fitBounds(bounds, { padding: [50, 50] })
@@ -81,7 +82,7 @@ const syncMarkers = () => {
 onMounted(() => {
   map = L.map('map-div', {
     center: [41.737, -111.83],
-    zoom: 12, // Default zoom look over Logan River
+    zoom: 12,
   })
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -115,6 +116,7 @@ watch(
     if (newId && markerMap.has(newId) && map) {
       const marker = markerMap.get(newId)
       if (marker) {
+        marker.openPopup()
         map.panTo(marker.getLatLng())
       }
     }
@@ -154,7 +156,7 @@ watch(
 }
 
 :deep(.leaflet-tooltip.clean-tooltip) {
-  background: transparent !important;
+  background: #b6b6b6c0 !important;
   border: none !important;
   box-shadow: none !important;
   padding: 0 !important;
