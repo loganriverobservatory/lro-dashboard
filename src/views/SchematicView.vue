@@ -126,15 +126,24 @@ const updateLineCoordinates = async () => {
   leftTributaries.value.forEach((trib) => {
     const startPt = getMarkerCenter(trib.id)
     const juncPt = getMarkerCenter(trib.juncId)
+
     if (startPt.x > 0 && juncPt.x > 0) {
       const curveRadius = 30
       const cardBottomY = startPt.y + 32
 
-      leftTribPaths.value[trib.id] =
-        `M ${startPt.x},${cardBottomY} ` +
-        `V ${juncPt.y - curveRadius} ` +
-        `Q ${startPt.x},${juncPt.y} ${startPt.x + curveRadius},${juncPt.y} ` +
-        `L ${juncPt.x - 35},${juncPt.y}`
+      if (trib.id === 'temple' || trib.id === 'right_hand') {
+        leftTribPaths.value[trib.id] =
+          `M ${startPt.x},${cardBottomY} ` +
+          `V ${juncPt.y - curveRadius} ` +
+          `Q ${startPt.x},${juncPt.y} ${startPt.x - curveRadius},${juncPt.y} ` +
+          `L ${juncPt.x + 40},${juncPt.y}`
+      } else {
+        leftTribPaths.value[trib.id] =
+          `M ${startPt.x},${cardBottomY} ` +
+          `V ${juncPt.y - curveRadius} ` +
+          `Q ${startPt.x},${juncPt.y} ${startPt.x + curveRadius},${juncPt.y} ` +
+          `L ${juncPt.x - 40},${juncPt.y}`
+      }
     }
   })
 
@@ -324,7 +333,10 @@ onUnmounted(() => {
           <div
             v-for="node in leftTributaries"
             :key="node.id"
-            class="grid-cell col-1"
+            :class="[
+              'grid-cell',
+              node.id === 'temple' || node.id === 'right_hand' ? 'col-3' : 'col-1',
+            ]"
             :style="{ gridRow: node.row }"
             :data-marker="node.id"
           >
@@ -437,6 +449,41 @@ onUnmounted(() => {
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
 
+.schematic-grid-wrapper {
+  position: relative;
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 1rem;
+}
+
+.schematic-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 1.3fr 1.1fr;
+  grid-template-rows: repeat(17, auto) auto;
+  row-gap: 32px;
+  column-gap: 60px;
+  align-items: center;
+  position: relative;
+  z-index: 2;
+
+  min-width: 950px;
+}
+
+.global-routing-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+  shape-rendering: geometricPrecision;
+
+  /* Matches the grid's minimum horizontal width boundary */
+  min-width: 950px;
+}
+
 .header-block {
   display: flex;
   align-items: center;
@@ -478,33 +525,6 @@ h2 {
   border-top: 3px solid #0284c7;
   border-radius: 50%;
   animation: spin 1s linear infinite;
-}
-
-.schematic-grid-wrapper {
-  position: relative;
-  width: 100%;
-}
-
-.global-routing-svg {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 1;
-  shape-rendering: geometricPrecision;
-}
-
-.schematic-grid {
-  display: grid;
-  grid-template-columns: 1.1fr 1.3fr 1.1fr;
-  grid-template-rows: repeat(17, auto) auto;
-  row-gap: 32px;
-  column-gap: 60px;
-  align-items: center;
-  position: relative;
-  z-index: 2;
 }
 
 .col-1 {
@@ -668,6 +688,12 @@ h2 {
   border-color: #fed7aa;
 }
 
+.grid-cell[data-marker='temple'],
+.grid-cell[data-marker='right_hand'] {
+  background-color: #f0fdf4 !important;
+  border-color: #e2e8f0 !important;
+}
+
 .grid-cell[data-marker='beaver_junc'],
 .grid-cell[data-marker='ricks_junc'],
 .grid-cell[data-marker='temple_junc'],
@@ -679,5 +705,11 @@ h2 {
   border-color: transparent !important;
   box-shadow: none !important;
   padding: 0 !important;
+}
+
+@media (max-width: 640px) {
+  .schematic-card {
+    padding: 1rem;
+  }
 }
 </style>

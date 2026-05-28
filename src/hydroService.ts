@@ -4,6 +4,7 @@ const BASE_URL = 'https://lro.hydroserver.org/api/sensorthings/v1.1'
 // Each View pulls from Station interface
 export interface Station {
   id: string
+  uuid: string
   displayName: string
   description?: string
   observation?: any
@@ -82,6 +83,7 @@ export async function getDischargeStations(): Promise<Station[]> {
 
       return {
         id: ds['@iot.id']?.toString(),
+        uuid: ds.Thing?.['@iot.id']?.toString() || '',
         displayName: STATION_NAME_MAP[cleanName] || cleanName || ds.name,
         description: ds.description,
         observation: null,

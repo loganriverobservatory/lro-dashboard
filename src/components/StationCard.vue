@@ -62,7 +62,6 @@ function getFreshnessClass(dateStr: string | undefined): string {
 }
 
 const shortDisplayName = computed(() => {
-  // get rid of this when the new variable data thing is up
   const name = props.site?.displayName || ''
   return name.split(':')[0].trim()
 })
@@ -109,9 +108,36 @@ const hasAnyLiveTelemetry = computed(() => {
     ]"
   >
     <div class="card-header">
-      <h2 class="location-name">
-        {{ mapMode ? shortDisplayName : site.displayName }}
-      </h2>
+      <div class="title-with-link">
+        <h2 class="location-name">
+          {{ mapMode ? shortDisplayName : site.displayName }}
+        </h2>
+
+        <a
+          v-if="site.uuid"
+          :href="`https://lro.hydroserver.org/sites/${site.uuid}`"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="external-site-link"
+          title="Open complete historical data on HydroServer"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="2.5"
+            stroke="currentColor"
+            class="link-svg"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"
+            />
+          </svg>
+        </a>
+      </div>
+
       <span
         v-if="!mapMode"
         :class="['status-badge', hasAnyLiveTelemetry ? 'badge-online' : 'badge-offline']"
@@ -204,12 +230,40 @@ const hasAnyLiveTelemetry = computed(() => {
   margin-bottom: 1rem;
 }
 
+.title-with-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+}
+
 .location-name {
   font-size: 1.35rem;
   font-weight: 700;
   color: #1e293b;
   line-height: 1.3;
   margin: 0;
+}
+
+.external-site-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  padding: 6px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  margin-left: 4px;
+}
+
+.external-site-link:hover {
+  color: #2563eb;
+  background-color: #eff6ff;
+}
+
+.link-svg {
+  width: 1.25rem;
+  height: 1.25rem;
 }
 
 .status-badge {
@@ -219,6 +273,7 @@ const hasAnyLiveTelemetry = computed(() => {
   border-radius: 9999px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  flex-shrink: 0;
 }
 
 .badge-online {
@@ -325,7 +380,6 @@ const hasAnyLiveTelemetry = computed(() => {
   }
 }
 
-/* Variant A: Schematic Compact Tiles */
 .station-card.is-compact {
   padding: 0.65rem 1rem;
   margin-bottom: 0;
@@ -369,29 +423,36 @@ const hasAnyLiveTelemetry = computed(() => {
   margin-top: 0.25rem;
 }
 
-/* Variant B: Map Leaflet Popover Specific Overrides */
+.station-card.is-compact .link-svg {
+  width: 0.95rem;
+  height: 0.95rem;
+}
+
 .station-card.is-map {
-  background: #ffffff !important; /* Changed from transparent to white */
-  background-color: #ffffff !important;
-  border: 1px solid #e2e8f0 !important; /* Adds a clean, subtle border wrapper */
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important; /* Adds a soft shadow */
-  padding: 0.75rem !important; /* Gives the text some breathing room inside the white box */
-  border-radius: 8px;
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  margin-bottom: 0 !important;
+  padding: 0.25rem 0.5rem !important;
   min-width: 180px;
 }
 
-/* Fixes any text contrast issues over the bare map */
 .station-card.is-map .location-name {
   font-size: 0.95rem !important;
   font-weight: 800;
-  color: #0f172a; /* Nice dark charcoal so it's easy to read */
+  color: #0f172a;
 }
-
 .station-card.is-map .value {
   font-size: 1.5rem !important;
 }
 
 .station-card.is-map .unit {
   font-size: 0.85rem !important;
+}
+
+.station-card.is-map .link-svg {
+  width: 1rem;
+  height: 1rem;
 }
 </style>

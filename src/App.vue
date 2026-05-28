@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { getDischargeStations, getLatestObservation, type Station } from './hydroService' // 1. Imported the official type
-
+import { getDischargeStations, getLatestObservation, type Station } from './hydroService'
 import AppHeader from './components/AppHeader.vue'
 import AppSidebar from './components/AppSidebar.vue'
 import HomeView from './views/HomeView.vue'
@@ -9,14 +8,12 @@ import ListView from './views/ListView.vue'
 import MapView from './views/MapView.vue'
 import SchematicView from './views/SchematicView.vue'
 
-// 2. Removed the local interface so it uses Brooke's updated Station type globally
 const sites = ref<Station[]>([])
 const loading = ref(true)
 const sidebarOpen = ref(false)
 const currentView = ref('home')
 const selectedId = ref<string | null>(null)
 
-// 3. Added the missing handleSelect handler for the map selection
 function handleSelect(id: string | null) {
   selectedId.value = id
 }
@@ -71,7 +68,6 @@ onMounted(async () => {
 </template>
 
 <style>
-/* Global resets and layout grid only */
 body {
   margin: 0;
   font-family: sans-serif;
