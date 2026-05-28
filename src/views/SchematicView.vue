@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, nextTick } from 'vue'
-import { Droplets, CornerDownRight } from 'lucide-vue-next'
+import { Droplets } from 'lucide-vue-next'
 import { type Station } from '../hydroService'
 import StationCard from '../components/StationCard.vue'
 
@@ -9,23 +9,8 @@ const props = defineProps<{
   loading: boolean
 }>()
 
-const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000
-
-function isStationExpired(site: Station): boolean {
-  if (!site || !site.observation) return true
-  if (site.observation.result === -9999 || site.observation.result === null) return true
-  if (!site.observation.phenomenonTime) return true
-
-  const obsTime = new Date(site.observation.phenomenonTime).getTime()
-  const cutoffTime = Date.now() - ONE_YEAR_MS
-
-  return obsTime < cutoffTime
-}
-
 function findLiveStation(schematicName: string): Station | undefined {
   return props.sites.find((site) => {
-    if (isStationExpired(site)) return false
-
     const liveName = site.displayName.toLowerCase()
     const targetName = schematicName.toLowerCase()
     return liveName.includes(targetName) || targetName.includes(liveName)
@@ -82,13 +67,7 @@ const cutlerInflows = ref([
 ])
 
 const gridContainerRef = ref<HTMLElement | null>(null)
-const paths = ref({
-  logan: '',
-  blacksmith: '',
-  cutlerLittleBear: '',
-  cutlerSpringCreek: '',
-})
-
+const paths = ref({ logan: '', blacksmith: '', cutlerLittleBear: '', cutlerSpringCreek: '' })
 const leftTribPaths = ref<Record<string, string>>({})
 
 const updateLineCoordinates = async () => {
@@ -100,7 +79,6 @@ const updateLineCoordinates = async () => {
   const getMarkerCenter = (id: string) => {
     const el = gridContainerRef.value?.querySelector(`[data-marker="${id}"]`)
     if (!el) return { x: 0, y: 0, left: 0, right: 0 }
-
     const rect = el.getBoundingClientRect()
     return {
       x: rect.left + rect.width / 2 - containerRect.left,
@@ -135,7 +113,6 @@ const updateLineCoordinates = async () => {
   if (terminusEl) {
     loganPathStr += ` L ${reservoirBlueX},${reservoirTopY}`
   }
-
   paths.value.logan = loganPathStr
 
   leftTributaries.value.forEach((trib) => {
@@ -205,7 +182,6 @@ onMounted(() => {
   setTimeout(() => {
     updateLineCoordinates()
   }, 100)
-
   setTimeout(() => {
     updateLineCoordinates()
   }, 300)
@@ -216,7 +192,6 @@ onMounted(() => {
     })
     resizeObserver.observe(gridContainerRef.value)
   }
-
   window.addEventListener('resize', updateLineCoordinates)
 })
 
@@ -260,7 +235,6 @@ onUnmounted(() => {
                 style="shape-rendering: geometricPrecision"
               />
             </marker>
-
             <marker
               id="green-arrow"
               markerWidth="8"
@@ -275,7 +249,6 @@ onUnmounted(() => {
                 style="shape-rendering: geometricPrecision"
               />
             </marker>
-
             <marker
               id="orange-arrow"
               markerWidth="8"
@@ -301,7 +274,6 @@ onUnmounted(() => {
             stroke-linecap="round"
             marker-end="url(#blue-arrow)"
           />
-
           <path
             v-for="(pathD, id) in leftTribPaths"
             :key="id"
@@ -312,7 +284,6 @@ onUnmounted(() => {
             stroke-linejoin="round"
             marker-end="url(#green-arrow)"
           />
-
           <path
             :d="paths.blacksmith"
             fill="none"
@@ -322,7 +293,6 @@ onUnmounted(() => {
             stroke-linecap="butt"
             marker-end="url(#green-arrow)"
           />
-
           <path
             :d="paths.cutlerLittleBear"
             fill="none"
@@ -332,7 +302,6 @@ onUnmounted(() => {
             stroke-linecap="round"
             marker-end="url(#orange-arrow)"
           />
-
           <path
             :d="paths.cutlerSpringCreek"
             fill="none"
@@ -360,7 +329,6 @@ onUnmounted(() => {
               :site="findLiveStation(node.name)!"
               compact
             />
-
             <div v-else class="node-card inflow-card-left">
               <div class="inflow-content-wrapper">
                 <span class="node-title">{{ node.name }}</span>
@@ -378,14 +346,12 @@ onUnmounted(() => {
             <template v-if="findLiveStation(node.name)">
               <StationCard :site="findLiveStation(node.name)!" compact />
             </template>
-
             <template v-else>
               <div
                 v-if="node.type === 'line-junction'"
                 :data-marker="node.id"
                 class="junction-spacer"
               ></div>
-
               <div v-else class="node-card main-stem-card">
                 <span class="node-title">{{ node.name }}</span>
               </div>
@@ -404,7 +370,6 @@ onUnmounted(() => {
               :site="findLiveStation(node.name)!"
               compact
             />
-
             <div v-else class="node-card bsf-card">
               <span class="node-title">{{ node.name }}</span>
             </div>
@@ -422,7 +387,6 @@ onUnmounted(() => {
               :site="findLiveStation(node.name)!"
               compact
             />
-
             <div v-else class="node-card independent-card">
               <span class="node-title">{{ node.name }}</span>
               <div class="routing-label">Direct to Cutler Terminus</div>
@@ -449,14 +413,12 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-/* Keeping your exact CSS rules exactly as they are */
 .schematic-container {
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
   box-sizing: border-box;
 }
-
 .schematic-card {
   background: #ffffff;
   padding: 2.5rem;
@@ -464,15 +426,12 @@ onUnmounted(() => {
   border: 1px solid #e2e8f0;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
-
 .schematic-grid-wrapper {
   position: relative;
   width: 100%;
   overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
   padding-bottom: 1rem;
 }
-
 .schematic-grid {
   display: grid;
   grid-template-columns: 1.1fr 1.3fr 1.1fr;
@@ -484,7 +443,6 @@ onUnmounted(() => {
   z-index: 2;
   min-width: 950px;
 }
-
 .global-routing-svg {
   position: absolute;
   top: 0;
@@ -496,31 +454,26 @@ onUnmounted(() => {
   shape-rendering: geometricPrecision;
   min-width: 950px;
 }
-
 .header-block {
   display: flex;
   align-items: center;
   gap: 12px;
   margin-bottom: 0.5rem;
 }
-
 .title-icon {
   color: #0284c7;
 }
-
 h2 {
   color: #1e293b;
   font-size: 1.75rem;
   font-weight: 800;
   margin: 0;
 }
-
 .subtitle {
   color: #64748b;
   font-size: 1rem;
   margin: 0 0 2.5rem 0;
 }
-
 .loading-state {
   display: flex;
   flex-direction: column;
@@ -530,7 +483,6 @@ h2 {
   gap: 15px;
   color: #64748b;
 }
-
 .spinner {
   width: 32px;
   height: 32px;
@@ -539,30 +491,24 @@ h2 {
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
-
 .col-1 {
   grid-column: 1;
 }
-
 .col-2 {
   grid-column: 2;
 }
-
 .col-3 {
   grid-column: 3;
 }
-
 .grid-cell {
   display: flex;
   flex-direction: column;
   width: 100%;
   position: relative;
 }
-
 .junction-spacer {
   min-height: 64px;
 }
-
 .node-card {
   background: #ffffff;
   border: 1px solid #cbd5e1;
@@ -577,18 +523,15 @@ h2 {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
   box-sizing: border-box;
 }
-
 .main-stem-card {
   border: 2px solid #01377d;
   background: #f8fafc;
 }
-
 .node-title {
   font-size: 0.88rem;
   font-weight: 700;
   color: #334155;
 }
-
 .inflow-content-wrapper {
   display: flex;
   align-items: center;
@@ -596,20 +539,16 @@ h2 {
   width: 100%;
   justify-content: center;
 }
-
 .inflow-card-left {
   border-right: 4px solid #16a34a;
   background: #f0fdf4;
 }
-
 .bsf-card {
   border-left: 4px solid #16a34a;
 }
-
 .independent-card {
   border-left: 4px solid #ea580c;
 }
-
 .routing-label {
   font-size: 0.72rem;
   font-weight: 800;
@@ -617,7 +556,6 @@ h2 {
   text-transform: uppercase;
   margin-top: 4px;
 }
-
 .terminus-grid-cell {
   display: flex;
   justify-content: center;
@@ -626,7 +564,6 @@ h2 {
   position: relative;
   z-index: 5;
 }
-
 .terminus-card {
   width: 100%;
   max-width: 720px;
@@ -639,24 +576,20 @@ h2 {
   gap: 16px;
   box-shadow: 0 4px 12px rgba(234, 88, 12, 0.08);
 }
-
 .terminus-icon {
   color: #ea580c;
 }
-
 .terminus-details h3 {
   margin: 0;
   font-size: 1.2rem;
   font-weight: 800;
   color: #7c2d12;
 }
-
 .terminus-details p {
   margin: 4px 0 0 0;
   font-size: 0.85rem;
   color: #9a3412;
 }
-
 @keyframes spin {
   0% {
     transform: rotate(0deg);
@@ -665,7 +598,6 @@ h2 {
     transform: rotate(360deg);
   }
 }
-
 .grid-cell.col-1 {
   background-color: #f0fdf4 !important;
   border: 1px solid #e2e8f0;
@@ -673,7 +605,6 @@ h2 {
   padding: 10px;
   box-sizing: border-box;
 }
-
 .grid-cell.col-2 {
   background-color: #f0f7ff !important;
   border: 1px solid #cbd5e1;
@@ -681,32 +612,27 @@ h2 {
   padding: 10px;
   box-sizing: border-box;
 }
-
 .grid-cell.col-3 {
   border: 1px solid #e2e8f0;
   border-radius: 12px;
   padding: 10px;
   box-sizing: border-box;
 }
-
 .grid-cell.col-3[style*='11'],
 .grid-cell.col-3[style*='12'],
 .grid-cell.col-3[style*='13'] {
   background-color: #f0fdf4 !important;
 }
-
 .grid-cell.col-3[style*='15'],
 .grid-cell.col-3[style*='16'] {
   background-color: #fff7ed !important;
   border-color: #fed7aa;
 }
-
 .grid-cell[data-marker='temple'],
 .grid-cell[data-marker='right_hand'] {
   background-color: #f0fdf4 !important;
   border-color: #e2e8f0 !important;
 }
-
 .grid-cell[data-marker='beaver_junc'],
 .grid-cell[data-marker='ricks_junc'],
 .grid-cell[data-marker='temple_junc'],
@@ -719,7 +645,6 @@ h2 {
   box-shadow: none !important;
   padding: 0 !important;
 }
-
 @media (max-width: 640px) {
   .schematic-card {
     padding: 1rem;

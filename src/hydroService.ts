@@ -87,7 +87,7 @@ export async function getDischargeStations(): Promise<Station[]> {
         uuid: ds.Thing?.['@iot.id']?.toString() || '',
         displayName: STATION_NAME_MAP[cleanName] || cleanName || ds.name,
         description: ds.description,
-        observation: null,
+        observation: { result: null, phenomenonTime: null }, // Added the comma!
         coordinates: foundCoords,
       }
     })
