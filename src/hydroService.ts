@@ -1,4 +1,4 @@
-// src/hydroService.ts
+// service layer client for Hydroserver API
 const BASE_URL = 'https://lro.hydroserver.org/api/sensorthings/v1.1'
 
 // Each View pulls from Station interface
@@ -56,8 +56,14 @@ const STATION_NAME_MAP: Record<string, string> = {
   LR_DSC_A: 'Logan River: Dewitt Springs Campground',
 }
 
-export async function getDischargeStations(): Promise<Station[]> {
-  const listUrl = `${BASE_URL}/Datastreams?$filter=contains(name,'Discharge') and contains(name,'cfs') and not contains(name,'cms')&$top=50&$orderby=name asc&$expand=Thing($expand=Locations)`
+export async function getVariableStations(variable: string = 'Discharge'): Promise<Station[]> {
+  const isDischarge = variable.toLowerCase() === 'discharge'
+
+  const varFilter = isDischarge
+    ? `contains(name,'Discharge') and contains(name,'cfs') and not contains(name,'cms')`
+    : `contains(name,'${variable}')`
+
+  const listUrl = `${BASE_URL}/Datastreams?$filter=${varFilter}&$top=50&$orderby=name asc&$expand=Thing($expand=Locations)`
 
   const response = await fetch(listUrl)
   const data = await response.json()
@@ -69,17 +75,13 @@ export async function getDischargeStations(): Promise<Station[]> {
       const isTesting = ds.name?.includes('Testing')
       return !isDecommissioned && !isTesting
     })
-
     .map((ds: any) => {
-      // 1. YOUR ORIGINAL NAMING LOGIC
       const cleanName = ds.name
         .split(' - ')[0]
-        .split(' Discharge')[0]
-        .replace(/^[A-Z0-9_]+ /, '')
+        .split(` ${variable}`)[0]
         .replace('at Logan River at ', '')
         .trim()
 
-      // 2. GET COORDINATES WITH FALLBACK
       const foundCoords = getCoordinates(ds)
 
       return {
@@ -87,59 +89,12 @@ export async function getDischargeStations(): Promise<Station[]> {
         uuid: ds.Thing?.['@iot.id']?.toString() || '',
         displayName: STATION_NAME_MAP[cleanName] || cleanName || ds.name,
         description: ds.description,
-        observation: { result: null, phenomenonTime: null }, // Added the comma!
+        observation: { result: null, phenomenonTime: null },
         coordinates: foundCoords,
+        unit: ds.unitOfMeasurement?.symbol || '',
       }
     })
 }
-
-/**
- * Replaces getDischargeStations to support any variable (pH, Discharge, Temp, etc.)
- */
-/*export async function getVariableStations(variable: string = 'Discharge'): Promise<Station[]> {
-  const isDischarge = variable.toLowerCase() === 'discharge'
-
-  // 1. Build the dynamic variable filter
-  const varFilter = isDischarge
-    ? `contains(name,'Discharge') and contains(name,'cfs') and not contains(name,'cms')`
-    : `contains(name,'${variable}')`
-
-  const listUrl = `${BASE_URL}/Datastreams?$filter=${varFilter}&$top=50&$orderby=name asc&$expand=Thing($expand=Locations)`
-
-  const response = await fetch(listUrl)
-  const data = await response.json()
-
-  return (
-    data.value
-      // 2. YOUR ORIGINAL FILTER SETUP
-      .filter((ds: any) => {
-        const isDecommissioned =
-          ds.description?.includes('Decommissioned') || ds.name?.includes('Decommissioned')
-        const isTesting = ds.name?.includes('Testing')
-        return !isDecommissioned && !isTesting
-      })
-      // 3. YOUR ORIGINAL MAP LOGIC
-      .map((ds: any) => {
-        const cleanName = ds.name
-          .split(' - ')[0]
-          .split(' Discharge')[0]
-          .replace(/^[A-Z0-9_]+ /, '')
-          .replace('at Logan River at ', '')
-          .trim()
-
-        const foundCoords = getCoordinates(ds)
-
-        return {
-          id: ds['@iot.id']?.toString(),
-          displayName: STATION_NAME_MAP[cleanName] || cleanName || ds.name,
-         description: ds.description,
-          observation: null,
-          coordinates: foundCoords,
-          unit: ds.unitOfMeasurement?.symbol || '',
-        }
-      })
-  )
-}*/
 
 export async function getLatestObservation(stationId: string): Promise<any> {
   const obsUrl = `${BASE_URL}/Datastreams('${stationId}')/Observations?$top=1&$orderby=phenomenonTime desc`

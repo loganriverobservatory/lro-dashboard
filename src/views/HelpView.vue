@@ -1,5 +1,7 @@
 <script setup lang="ts">
-// You can import any icons or extra components here later
+/*
+Help page and other resources
+*/
 </script>
 
 <template>
