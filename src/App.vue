@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { getVariableStations, getLatestObservation, type Station, TRIBUTARY_LIST } from './hydroService'
+import {
+  getVariableStations,
+  getLatestObservation,
+  type Station,
+  TRIBUTARY_LIST,
+} from './hydroService'
 import AppHeader from './components/AppHeader.vue'
 import AppSidebar from './components/AppSidebar.vue'
 import HomeView from './views/HomeView.vue'
@@ -79,16 +84,13 @@ onMounted(() => loadStations(selectedVariable.value))
     <main class="main-container">
       <HomeView v-if="currentView === 'home'" @change-view="(view) => (currentView = view)" />
       <HelpView v-if="currentView === 'help'" />
-<<<<<<< HEAD
       <ListView
         v-if="currentView === 'list'"
         :sites="sites"
         :loading="loading"
         :selected-variable="selectedVariable"
+        :active-tributaries="activeTributaries"
       />
-=======
-      <ListView v-if="currentView === 'list'" :sites="sites" :loading="loading" :selected-variable="selectedVariable" :active-tributaries="activeTributaries" />
->>>>>>> Brooke-branch
       <MapView
         v-if="currentView === 'map'"
         :sites="sites"
@@ -98,7 +100,12 @@ onMounted(() => loadStations(selectedVariable.value))
         :active-tributaries="activeTributaries"
         @select="handleSelect"
       />
-      <SchematicView v-if="currentView === 'schematic'" :sites="sites" :loading="loading" :active-tributaries="activeTributaries" />
+      <SchematicView
+        v-if="currentView === 'schematic'"
+        :sites="sites"
+        :loading="loading"
+        :active-tributaries="activeTributaries"
+      />
     </main>
   </div>
 </template>

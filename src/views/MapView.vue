@@ -74,16 +74,13 @@ const syncMarkers = () => {
           color = statusColorMap[status] ?? statusColorMap.unknown
         }
 
-        marker.bindTooltip(
-          `<div class="pin-value" style="color:${color}">${valueStr}</div>`,
-          {
-            permanent: true,
-            direction: 'top',
-            offset: [0, -20],
-            className: 'value-tooltip',
-            interactive: true,
-          },
-        )
+        marker.bindTooltip(`<div class="pin-value" style="color:${color}">${valueStr}</div>`, {
+          permanent: true,
+          direction: 'top',
+          offset: [0, -20],
+          className: 'value-tooltip',
+          interactive: true,
+        })
 
         marker.on('click', () => {
           expandedStation.value = station
@@ -164,13 +161,19 @@ watch(
   { deep: true },
 )
 
-watch(() => props.activeTributaries, () => {
-  if (expandedStation.value && !props.activeTributaries.includes(expandedStation.value.tributary ?? '')) {
-    expandedStation.value = null
-  }
-  syncMarkers()
-}, { deep: true })
-
+watch(
+  () => props.activeTributaries,
+  () => {
+    if (
+      expandedStation.value &&
+      !props.activeTributaries.includes(expandedStation.value.tributary ?? '')
+    ) {
+      expandedStation.value = null
+    }
+    syncMarkers()
+  },
+  { deep: true },
+)
 
 watch(
   () => props.selectedId,
@@ -191,8 +194,8 @@ watch(
     <div id="map-div"></div>
 
     <div v-if="!hasZoomed" class="map-banner">
-      Zoom in/out to see <strong>{{ selectedVariable }}</strong> values.
-      Click on values for more information. Pins may take a while to load.
+      Zoom in/out to see <strong>{{ selectedVariable }}</strong> values. Click on values for more
+      information. Pins may take a while to load.
     </div>
 
     <button v-if="hasZoomed" class="reset-btn" @click="resetMap">Reset</button>

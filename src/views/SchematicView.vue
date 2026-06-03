@@ -17,7 +17,8 @@ function findLiveStation(schematicName: string): Station | undefined {
     return liveName.includes(targetName) || targetName.includes(liveName)
   })
   if (!match) return undefined
-  if (props.activeTributaries && !props.activeTributaries.includes(match.tributary ?? '')) return undefined
+  if (props.activeTributaries && !props.activeTributaries.includes(match.tributary ?? ''))
+    return undefined
   return match
 }
 
@@ -66,32 +67,32 @@ const blacksmithSystem = ref([
 ])
 
 const cutlerInflows = ref([
-  { id: 'little_bear', name: 'Little Bear River: Mendon Road', row: 15, tributary: 'Little Bear River' },
-  { id: 'spring_creek_mendon', name: 'Spring Creek: Mendon Road', row: 16, tributary: 'Spring Creek' },
+  {
+    id: 'little_bear',
+    name: 'Little Bear River: Mendon Road',
+    row: 15,
+    tributary: 'Little Bear River',
+  },
+  {
+    id: 'spring_creek_mendon',
+    name: 'Spring Creek: Mendon Road',
+    row: 16,
+    tributary: 'Spring Creek',
+  },
 ])
 
 const gridContainerRef = ref<HTMLElement | null>(null)
 const paths = ref({ logan: '', blacksmith: '', cutlerLittleBear: '', cutlerSpringCreek: '' })
 const leftTribPaths = ref<Record<string, string>>({})
-// Kept false until the first measurement runs against a settled layout, so the
-// SVG is never shown in its pre-layout (origin/garbage) state.
 const linesReady = ref(false)
 
-// --- Narrow-screen overview ----------------------------------------------
-// The diagram is laid out at NATURAL_WIDTH. When the available width is smaller,
-// we scale the whole stage (cards + SVG lines together) down to fit, instead of
-// forcing horizontal scrolling. At that scale the per-station values are too
-// small to read, so tapping a station opens its full card in a bottom sheet.
-// All of this is inert on wide screens (isCompact stays false, scale stays 1).
 const NATURAL_WIDTH = 950
-const isCompact = ref(false) // true when the diagram is scaled to fit
-const schematicScale = ref(1) // transform scale currently applied to the stage
-const wrapperHeight = ref<number | null>(null) // collapses the layout gap the scaled stage leaves
+const isCompact = ref(false)
+const schematicScale = ref(1)
+const wrapperHeight = ref<number | null>(null)
 const selectedStation = ref<Station | null>(null)
 
 function openStation(site: Station | undefined) {
-  // Only acts as a tap target in the scaled overview; a normal click on a
-  // full-size desktop card does nothing here.
   if (!isCompact.value || !site) return
   selectedStation.value = site
 }
@@ -104,17 +105,14 @@ const updateLineCoordinates = async () => {
   await nextTick()
   if (!gridContainerRef.value) return
 
-  const containerRect = gridContainerRef.value.getBoundingClientRect()
+  const containerEl = gridContainerRef.value.querySelector('.schematic-stage') as HTMLElement
+  if (!containerEl) return
 
-  // getBoundingClientRect reports the on-screen (already-scaled) geometry, so
-  // dividing by the scale currently applied to the stage recovers the diagram's
-  // natural coordinates. The SVG lives inside the same scaled stage, so feeding
-  // it natural coordinates makes the lines render correctly at any scale. On
-  // wide screens this divisor is 1 (a no-op).
+  const containerRect = containerEl.getBoundingClientRect()
   const currentScale = schematicScale.value || 1
 
   const getMarkerCenter = (id: string) => {
-    const el = gridContainerRef.value?.querySelector(`[data-marker="${id}"]`)
+    const el = containerEl.querySelector(`[data-marker="${id}"]`)
     if (!el) return { x: 0, y: 0, left: 0, right: 0 }
     const rect = el.getBoundingClientRect()
     return {
@@ -125,7 +123,7 @@ const updateLineCoordinates = async () => {
     }
   }
 
-  const terminusEl = gridContainerRef.value.querySelector('[data-marker="terminus_card"]')
+  const terminusEl = containerEl.querySelector('[data-marker="terminus_card"]')
   let reservoirTopY = containerRect.height / currentScale
   let reservoirBlueX = 0
   let reservoirOrangeX1 = 0
@@ -193,9 +191,6 @@ const updateLineCoordinates = async () => {
 
   const tightCurve = 10
 
-  // Little Bear keeps its curved routing at every width: it exits the side of
-  // its card and drops in the channel to the left of the column, so it stays
-  // clear of the Spring Creek card below it and never looks like it feeds into it.
   const lbElement = getMarkerCenter('little_bear')
   const lbTurnX = reservoirOrangeX1
   const lbTurnY = lbElement.y
@@ -205,19 +200,13 @@ const updateLineCoordinates = async () => {
     `Q ${lbTurnX},${lbTurnY} ${lbTurnX},${lbTurnY + tightCurve} ` +
     `L ${lbTurnX},${reservoirTopY}`
 
-  // Spring Creek is the one whose curved turn point lands at its own card edge
-  // on narrow screens, leaving a horizontal stub poking out. When the diagram
-  // overflows the viewport, drop it straight down from the card bottom instead.
-  // Desktop routing is unchanged.
-  // The diagram is "narrow" when its natural width can't fit the available
-  // space — which is also exactly when we scale it to fit (see end of function).
   const availableWidth =
     gridContainerRef.value.parentElement?.clientWidth ?? gridContainerRef.value.clientWidth
   const isNarrow = availableWidth < NATURAL_WIDTH
 
   const scmElement = getMarkerCenter('spring_creek_mendon')
   if (isNarrow) {
-    const dropX = scmElement.x // straight down from the card's center
+    const dropX = scmElement.x
     paths.value.cutlerSpringCreek =
       `M ${dropX},${scmElement.y + 32} ` + `L ${dropX},${reservoirTopY}`
   } else {
@@ -230,9 +219,6 @@ const updateLineCoordinates = async () => {
       `L ${scmTurnX},${reservoirTopY}`
   }
 
-  // Scale the whole stage to fit the available width on narrow screens. The
-  // paths above are already in natural coordinates, so they scale together with
-  // the cards. On wide screens fitScale is 1 and nothing changes.
   const fitScale = Math.min(1, availableWidth / NATURAL_WIDTH)
   const naturalHeight = containerRect.height / currentScale
   schematicScale.value = fitScale
@@ -240,8 +226,6 @@ const updateLineCoordinates = async () => {
   wrapperHeight.value = isCompact.value ? naturalHeight * fitScale : null
   if (!isCompact.value) selectedStation.value = null
 
-  // A valid measurement just completed against the rendered grid: make sure the
-  // size observer is attached and reveal the lines.
   attachObserver()
   linesReady.value = true
 }
@@ -250,21 +234,16 @@ let resizeObserver: ResizeObserver | null = null
 let rafId = 0
 let fontsReady = false
 
-// Resolve once when web fonts have loaded. Font swap-in reflows the grid, which
-// is one source of the "drawn wrong, then corrected" flash.
 const ensureFontsReady = async () => {
   if (fontsReady) return
   try {
     await (document as { fonts?: { ready?: Promise<unknown> } }).fonts?.ready
   } catch {
-    // Older browsers without document.fonts — proceed anyway.
+    // Fail-safe
   }
   fontsReady = true
 }
 
-// Measure only after fonts are in and the browser has laid out + painted.
-// Two rAFs guarantee we're past the layout that the current change triggered,
-// instead of guessing with a fixed setTimeout.
 const scheduleRedraw = () => {
   cancelAnimationFrame(rafId)
   const run = () => {
@@ -276,21 +255,14 @@ const scheduleRedraw = () => {
   else ensureFontsReady().then(run)
 }
 
-// Attach the size observer once the grid actually exists. Done lazily (from
-// updateLineCoordinates) so it also works when the grid mounts after loading
-// finishes or after a variable change, not just on first component mount.
 const attachObserver = () => {
   if (resizeObserver || !gridContainerRef.value) return
   resizeObserver = new ResizeObserver(() => scheduleRedraw())
   resizeObserver.observe(gridContainerRef.value)
 }
 
-// A quick scale estimate from the viewport width, applied synchronously before
-// the first measured pass so the diagram renders already-scaled on a phone
-// rather than flashing at full size for a frame. updateLineCoordinates refines
-// it with the real container width.
 const estimateScaleFromViewport = () => {
-  const approxAvailable = window.innerWidth - 64 // rough container padding allowance
+  const approxAvailable = window.innerWidth - 64
   const est = Math.min(1, approxAvailable / NATURAL_WIDTH)
   schematicScale.value = est
   isCompact.value = est < 1
@@ -309,9 +281,6 @@ onUnmounted(() => {
   window.removeEventListener('resize', scheduleRedraw)
 })
 
-<<<<<<< HEAD
-// When loading finishes the grid is (re)rendered, so re-measure. While loading,
-// hide the lines again so the next pass also reveals only once it's correct.
 watch(
   () => props.loading,
   (isLoading) => {
@@ -326,18 +295,13 @@ watch(
 watch(
   () => props.sites,
   () => scheduleRedraw(),
+  { deep: true },
 )
-=======
-watch(() => props.sites, () => {
-  setTimeout(() => updateLineCoordinates(), 100)
-  setTimeout(() => updateLineCoordinates(), 300)
-})
 
-function tributaryBg(color: string): string {
+function tributaryBg(color: string | undefined): string {
+  if (!color) return '#94a3b818'
   return color + '18'
 }
-
->>>>>>> Brooke-branch
 </script>
 
 <template>
@@ -361,25 +325,26 @@ function tributaryBg(color: string): string {
       <p>Aligning network telemetry lines...</p>
     </div>
 
-<<<<<<< HEAD
     <div
       v-else
       class="schematic-grid-wrapper"
       :class="{ 'is-compact': isCompact }"
-      :style="isCompact && wrapperHeight != null ? { height: wrapperHeight + 'px' } : {}"
+      ref="gridContainerRef"
+      :style="wrapperHeight ? { height: wrapperHeight + 'px' } : {}"
     >
       <div
         class="schematic-stage"
         :class="{ 'is-ready': linesReady }"
-        ref="gridContainerRef"
-        :style="
-          isCompact ? { transform: `scale(${schematicScale})`, transformOrigin: 'top left' } : {}
-        "
+        :style="{
+          transform: `scale(${schematicScale})`,
+          transformOrigin: 'top left',
+          width: NATURAL_WIDTH + 'px',
+        }"
       >
         <svg class="global-routing-svg" :class="{ 'lines-ready': linesReady }">
           <defs>
             <marker
-              id="blue-arrow"
+              id="black-arrow"
               markerWidth="8"
               markerHeight="8"
               refX="0"
@@ -388,12 +353,12 @@ function tributaryBg(color: string): string {
             >
               <path
                 d="M 0 1 L 7 4 L 0 7 z"
-                fill="#01377D"
+                fill="#1e293b"
                 style="shape-rendering: geometricPrecision"
               />
             </marker>
             <marker
-              id="green-arrow"
+              id="dark-gray-arrow"
               markerWidth="8"
               markerHeight="8"
               refX="0"
@@ -402,12 +367,12 @@ function tributaryBg(color: string): string {
             >
               <path
                 d="M 0 1 L 7 4 L 0 7 z"
-                fill="#16a34a"
+                fill="#475569"
                 style="shape-rendering: geometricPrecision"
               />
             </marker>
             <marker
-              id="orange-arrow"
+              id="light-gray-arrow"
               markerWidth="8"
               markerHeight="8"
               refX="0"
@@ -416,7 +381,7 @@ function tributaryBg(color: string): string {
             >
               <path
                 d="M 0 1 L 7 4 L 0 7 z"
-                fill="#ea580c"
+                fill="#94a3b8"
                 style="shape-rendering: geometricPrecision"
               />
             </marker>
@@ -425,127 +390,52 @@ function tributaryBg(color: string): string {
           <path
             :d="paths.logan"
             fill="none"
-            stroke="#01377D"
+            stroke="#1e293b"
             stroke-width="4"
             stroke-linejoin="round"
             stroke-linecap="round"
-            marker-end="url(#blue-arrow)"
-=======
-    <div v-else class="schematic-grid-wrapper" ref="gridContainerRef">
-      <svg class="global-routing-svg">
-        <defs>
-          <marker id="black-arrow" markerWidth="8" markerHeight="8" refX="0" refY="4" orient="auto-start-reverse">
-            <path d="M 0 1 L 7 4 L 0 7 z" fill="#1e293b" style="shape-rendering: geometricPrecision" />
-          </marker>
-          <marker id="dark-gray-arrow" markerWidth="8" markerHeight="8" refX="0" refY="4" orient="auto-start-reverse">
-            <path d="M 0 1 L 7 4 L 0 7 z" fill="#475569" style="shape-rendering: geometricPrecision" />
-          </marker>
-          <marker id="light-gray-arrow" markerWidth="8" markerHeight="8" refX="0" refY="4" orient="auto-start-reverse">
-            <path d="M 0 1 L 7 4 L 0 7 z" fill="#94a3b8" style="shape-rendering: geometricPrecision" />
-          </marker>
-        </defs>
-
-        <path
-          :d="paths.logan"
-          fill="none"
-          stroke="#1e293b"
-          stroke-width="4"
-          stroke-linejoin="round"
-          stroke-linecap="round"
-          marker-end="url(#black-arrow)"
-        />
-        <path
-          v-for="(pathD, id) in leftTribPaths"
-          :key="id"
-          :d="pathD"
-          fill="none"
-          stroke="#475569"
-          stroke-width="4"
-          stroke-linejoin="round"
-          marker-end="url(#dark-gray-arrow)"
-        />
-        <path
-          :d="paths.blacksmith"
-          fill="none"
-          stroke="#475569"
-          stroke-width="4"
-          stroke-linejoin="round"
-          stroke-linecap="butt"
-          marker-end="url(#dark-gray-arrow)"
-        />
-        <path
-          :d="paths.cutlerLittleBear"
-          fill="none"
-          stroke="#94a3b8"
-          stroke-width="4"
-          stroke-linejoin="round"
-          stroke-linecap="round"
-          marker-end="url(#light-gray-arrow)"
-        />
-        <path
-          :d="paths.cutlerSpringCreek"
-          fill="none"
-          stroke="#94a3b8"
-          stroke-width="4"
-          stroke-linejoin="round"
-          stroke-linecap="round"
-          marker-end="url(#light-gray-arrow)"
-        />
-      </svg>
-
-      <div class="schematic-grid">
-        <div
-          v-for="node in leftTributaries"
-          :key="node.id"
-          :class="[
-            'grid-cell',
-            node.id === 'temple' || node.id === 'right_hand' ? 'col-3' : 'col-1',
-          ]"
-          :style="{ gridRow: node.row, backgroundColor: tributaryBg(TRIBUTARY_COLORS[node.name] ?? '#94a3b8') }"
-          :data-marker="node.id"
-        >
-          <StationCard
-            v-if="findLiveStation(node.name)"
-            :site="findLiveStation(node.name)!"
-            compact
->>>>>>> Brooke-branch
+            marker-end="url(#black-arrow)"
           />
+
           <path
             v-for="(pathD, id) in leftTribPaths"
             :key="id"
             :d="pathD"
             fill="none"
-            stroke="#16a34a"
+            stroke="#475569"
             stroke-width="4"
             stroke-linejoin="round"
-            marker-end="url(#green-arrow)"
+            marker-end="url(#dark-gray-arrow)"
           />
+
           <path
             :d="paths.blacksmith"
             fill="none"
-            stroke="#16a34a"
+            stroke="#475569"
             stroke-width="4"
             stroke-linejoin="round"
             stroke-linecap="butt"
-            marker-end="url(#green-arrow)"
+            marker-end="url(#dark-gray-arrow)"
           />
+
           <path
             :d="paths.cutlerLittleBear"
             fill="none"
-            stroke="#ea580c"
+            stroke="#94a3b8"
             stroke-width="4"
             stroke-linejoin="round"
             stroke-linecap="round"
-            marker-end="url(#orange-arrow)"
+            marker-end="url(#light-gray-arrow)"
           />
+
           <path
             :d="paths.cutlerSpringCreek"
             fill="none"
-            stroke="#ea580c"
+            stroke="#94a3b8"
             stroke-width="4"
             stroke-linejoin="round"
             stroke-linecap="round"
-            marker-end="url(#orange-arrow)"
+            marker-end="url(#light-gray-arrow)"
           />
         </svg>
 
@@ -557,7 +447,10 @@ function tributaryBg(color: string): string {
               'grid-cell',
               node.id === 'temple' || node.id === 'right_hand' ? 'col-3' : 'col-1',
             ]"
-            :style="{ gridRow: node.row }"
+            :style="{
+              gridRow: node.row,
+              backgroundColor: tributaryBg(TRIBUTARY_COLORS[node.name]),
+            }"
             :data-marker="node.id"
           >
             <StationCard
@@ -577,7 +470,10 @@ function tributaryBg(color: string): string {
             v-for="node in loganMainStem"
             :key="node.id"
             class="grid-cell col-2"
-            :style="{ gridRow: node.row }"
+            :style="{
+              gridRow: node.row,
+              backgroundColor: tributaryBg(TRIBUTARY_COLORS['Logan River: Main Stem']),
+            }"
             :data-marker="node.id"
           >
             <template v-if="findLiveStation(node.name)">
@@ -595,6 +491,7 @@ function tributaryBg(color: string): string {
               ></div>
               <div v-else class="node-card main-stem-card">
                 <span class="node-title">{{ node.name }}</span>
+                <div class="routing-label"></div>
               </div>
             </template>
           </div>
@@ -603,7 +500,10 @@ function tributaryBg(color: string): string {
             v-for="node in blacksmithSystem"
             :key="node.id"
             class="grid-cell col-3"
-            :style="{ gridRow: node.row }"
+            :style="{
+              gridRow: node.row,
+              backgroundColor: tributaryBg(TRIBUTARY_COLORS['Blacksmith Fork River']),
+            }"
             :data-marker="node.id"
           >
             <StationCard
@@ -617,12 +517,14 @@ function tributaryBg(color: string): string {
             </div>
           </div>
 
-<<<<<<< HEAD
           <div
             v-for="node in cutlerInflows"
             :key="node.id"
             class="grid-cell col-3"
-            :style="{ gridRow: node.row }"
+            :style="{
+              gridRow: node.row,
+              backgroundColor: tributaryBg(TRIBUTARY_COLORS[node.tributary]),
+            }"
             :data-marker="node.id"
           >
             <StationCard
@@ -632,51 +534,11 @@ function tributaryBg(color: string): string {
               @click="openStation(findLiveStation(node.name))"
             />
             <div v-else class="node-card independent-card">
-=======
-        <div
-          v-for="node in loganMainStem"
-          :key="node.id"
-          class="grid-cell col-2"
-          :style="{ gridRow: node.row, backgroundColor: tributaryBg(TRIBUTARY_COLORS['Logan River: Main Stem']) }"
-          :data-marker="node.id"
-        >
-          <template v-if="findLiveStation(node.name)">
-            <StationCard :site="findLiveStation(node.name)!" compact />
-          </template>
-          <template v-else>
-            <div
-              v-if="node.type === 'line-junction'"
-              :data-marker="node.id"
-              class="junction-spacer"
-            ></div>
-            <div v-else class="node-card main-stem-card">
->>>>>>> Brooke-branch
               <span class="node-title">{{ node.name }}</span>
               <div class="routing-label">Direct to Cutler Terminus</div>
             </div>
-<<<<<<< HEAD
-=======
-          </template>
-        </div>
-
-        <div
-          v-for="node in blacksmithSystem"
-          :key="node.id"
-          class="grid-cell col-3"
-          :style="{ gridRow: node.row, backgroundColor: tributaryBg(TRIBUTARY_COLORS['Blacksmith Fork River']) }"
-          :data-marker="node.id"
-        >
-          <StationCard
-            v-if="findLiveStation(node.name)"
-            :site="findLiveStation(node.name)!"
-            compact
-          />
-          <div v-else class="node-card bsf-card">
-            <span class="node-title">{{ node.name }}</span>
->>>>>>> Brooke-branch
           </div>
 
-<<<<<<< HEAD
           <div
             class="terminus-grid-cell"
             style="grid-row: 18; grid-column: 1 / span 3"
@@ -688,44 +550,12 @@ function tributaryBg(color: string): string {
                 <h3>SYSTEM TERMINUS: Cutler Reservoir</h3>
                 <p>Ultimate drainage collection basin for all main channels and lateral streams.</p>
               </div>
-=======
-        <div
-          v-for="node in cutlerInflows"
-          :key="node.id"
-          class="grid-cell col-3"
-          :style="{ gridRow: node.row, backgroundColor: tributaryBg(TRIBUTARY_COLORS[node.tributary] ?? '#94a3b8') }"
-          :data-marker="node.id"
-        >
-          <StationCard
-            v-if="findLiveStation(node.name)"
-            :site="findLiveStation(node.name)!"
-            compact
-          />
-          <div v-else class="node-card independent-card">
-            <span class="node-title">{{ node.name }}</span>
-            <div class="routing-label">Direct to Cutler Terminus</div>
-          </div>
-        </div>
-
-        <div
-          class="terminus-grid-cell"
-          style="grid-row: 18; grid-column: 1 / span 3"
-          data-marker="terminus_card"
-        >
-          <div class="terminus-card">
-            <Droplets :size="26" class="terminus-icon" />
-            <div class="terminus-details">
-              <h3>SYSTEM TERMINUS: Cutler Reservoir</h3>
-              <p>Ultimate drainage collection basin for all main channels and lateral streams.</p>
->>>>>>> Brooke-branch
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Tap-for-detail bottom sheet (narrow screens). Sits outside the scaled
-         stage so it renders at full size and position:fixed works correctly. -->
     <div v-if="selectedStation" class="station-sheet-backdrop" @click="closeStation">
       <div class="station-sheet" @click.stop>
         <button class="sheet-close" type="button" aria-label="Close" @click="closeStation">
@@ -741,7 +571,7 @@ function tributaryBg(color: string): string {
 .schematic-container {
   font-size: 1rem;
   font-weight: 600;
-  color: #073763; /* Navy Blue */
+  color: #073763;
   letter-spacing: -0.01em;
   width: 100%;
   max-width: 1200px;
@@ -757,23 +587,15 @@ function tributaryBg(color: string): string {
   padding-bottom: 1rem;
 }
 
-/* Narrow screens: the stage is scaled (inline transform) to fit, so its layout
-   box still occupies the natural width/height. Clip that overflow and let the
-   inline height collapse the leftover vertical space. */
 .schematic-grid-wrapper.is-compact {
   overflow: hidden;
   padding-bottom: 0;
 }
 
-/* The stage holds the grid + SVG at natural size; it is the element scaled to
-   fit on narrow screens, and the element the line geometry is measured against. */
 .schematic-stage {
   position: relative;
   width: 100%;
   min-width: 950px;
-  /* Hidden via opacity (not display:none, so it still has a measurable layout)
-     until the first real measurement completes, so reloads fade in already
-     correct instead of showing the brief scale/position settle. */
   opacity: 0;
   transition: opacity 0.3s ease;
 }
@@ -826,7 +648,7 @@ function tributaryBg(color: string): string {
 h2 {
   font-size: 1.8rem;
   font-weight: 1000;
-  color: #073763; /* Navy Blue */
+  color: #073763;
   letter-spacing: -0.01em;
   margin: 0;
 }
@@ -1030,7 +852,6 @@ h2 {
   padding: 0 !important;
 }
 
-/* --- Mobile tap hint ---------------------------------------------------- */
 .mobile-hint {
   display: inline-flex;
   align-items: center;
@@ -1051,6 +872,7 @@ h2 {
   font-size: 0.85rem;
   font-weight: 600;
 }
+
 .hint-dot {
   width: 8px;
   height: 8px;
@@ -1059,7 +881,6 @@ h2 {
   flex-shrink: 0;
 }
 
-/* --- Tap-for-detail bottom sheet (narrow screens) ----------------------- */
 .station-sheet-backdrop {
   position: fixed;
   inset: 0;
@@ -1105,6 +926,7 @@ h2 {
   cursor: pointer;
   padding: 4px 10px;
 }
+
 .sheet-close:hover {
   color: #1e293b;
 }
