@@ -36,7 +36,22 @@ export interface Station {
   observation?: StaObservation | null
   coordinates: [number, number] | null
   unit?: string
+  tributary?: string
 }
+
+export const TRIBUTARY_COLORS: Record<string, string> = {
+  'Logan River: Main Stem': '#6b21a8',
+  'Blacksmith Fork River': '#b45309',
+  'Spring Creek': '#0369a1',
+  'Temple Fork': '#15803d',
+  'Beaver Creek': '#b91c1c',
+  'Little Bear River': '#0891b2',
+  'Dewitt Springs': '#7c3aed',
+  'Right Hand Fork': '#065f46',
+  'Ricks Spring': '#9f1239',
+}
+
+export const TRIBUTARY_LIST = Object.keys(TRIBUTARY_COLORS)
 
 export const WATER_VARIBALES = [
   { id: 'Discharge', label: 'Discharge (cfs)' },
@@ -118,14 +133,19 @@ export async function getVariableStations(variable: string = 'Discharge'): Promi
       const stationCode = ds.name.split(' ')[0]
       const foundCoords = getCoordinates(ds)
 
+      const displayName = STATION_NAME_MAP[stationCode] || stationCode
+      const tributaryBase = displayName.split(':')[0].trim()
+      const tributary = tributaryBase === 'Logan River' ? 'Logan River: Main Stem' : tributaryBase
+
       return {
         id: ds['@iot.id']?.toString(),
         uuid: ds.Thing?.['@iot.id']?.toString() || '',
-        displayName: STATION_NAME_MAP[stationCode] || stationCode,
+        displayName,
         description: ds.description,
         observation: { '@iot.id': '', result: null, phenomenonTime: null },
         coordinates: foundCoords,
         unit: ds.unitOfMeasurement?.symbol || '',
+        tributary,
       }
     })
 }

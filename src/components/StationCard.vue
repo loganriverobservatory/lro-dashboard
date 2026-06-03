@@ -195,9 +195,6 @@ const isAwaitingTelemetry = computed(() => {
         </p>
       </div>
 
-      <p v-if="site.description && !compact && !mapMode" class="description">
-        {{ site.description }}
-      </p>
     </div>
   </div>
 </template>
@@ -336,15 +333,6 @@ const isAwaitingTelemetry = computed(() => {
   font-weight: 500;
   margin-top: 0.5rem;
   margin-bottom: 0;
-}
-.description {
-  margin-top: 1.25rem;
-  padding-top: 1rem;
-  border-top: 1px dashed #e2e8f0;
-  font-size: 0.85rem;
-  color: #64748b;
-  line-height: 1.6;
-  font-style: italic;
 }
 .status-msg {
   display: flex;

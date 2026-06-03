@@ -1,16 +1,14 @@
 <script setup lang="ts">
-/** * AppSidebar.vue
- * Manages side navigation and variable filtering for the dashboard.
- */
 import { ref } from 'vue'
-import { X, List, Map as MapIcon, MapPin, Droplets } from 'lucide-vue-next'
+import { X, List, Map as MapIcon, MapPin, Droplets, ChevronDown, ChevronRight } from 'lucide-vue-next'
+import { TRIBUTARY_COLORS, TRIBUTARY_LIST } from '../hydroService'
 
-defineProps<{
+const props = defineProps<{
   isOpen: boolean
   currentView: string
+  activeTributaries: string[]
 }>()
 
-// Define the available system variables
 const variables = [
   { id: 'Discharge', label: 'Discharge' },
   { id: 'Water Temperature', label: 'Water Temperature' },
@@ -20,11 +18,41 @@ const variables = [
 ]
 
 const selectedVariable = ref('Discharge')
-const emit = defineEmits(['close-sidebar', 'change-view', 'variable-changed'])
+const legendOpen = ref(true)
+const freshnessOpen = ref(true)
+
+const freshnessItems = [
+  { label: 'Current (< 2 hrs)', color: '#16a34a' },
+  { label: 'Stale (2–24 hrs)', color: '#d97706' },
+  { label: 'Outdated (> 24 hrs)', color: '#64748b' },
+]
+const emit = defineEmits(['close-sidebar', 'change-view', 'variable-changed', 'tributary-filter-changed'])
+
+const showLegend = () => ['map', 'list', 'schematic'].includes(props.currentView)
 
 const handleVariableChange = () => {
   emit('variable-changed', selectedVariable.value)
 }
+
+function toggleTributary(name: string) {
+  const current = new Set(props.activeTributaries)
+  if (current.has(name)) {
+    current.delete(name)
+  } else {
+    current.add(name)
+  }
+  emit('tributary-filter-changed', [...current])
+}
+
+function toggleAll() {
+  if (props.activeTributaries.length === TRIBUTARY_LIST.length) {
+    emit('tributary-filter-changed', [])
+  } else {
+    emit('tributary-filter-changed', [...TRIBUTARY_LIST])
+  }
+}
+
+
 </script>
 
 <template>
@@ -71,6 +99,47 @@ const handleVariableChange = () => {
         <MapPin :size="18" /> <span>SCHEMATIC VIEW</span>
       </li>
     </ul>
+
+    <div v-if="showLegend()" class="legend-section">
+      <button class="legend-toggle" @click="legendOpen = !legendOpen">
+        <component :is="legendOpen ? ChevronDown : ChevronRight" :size="14" />
+        <span>LEGEND: SITES</span>
+      </button>
+
+      <div v-if="legendOpen" class="legend-body">
+        <button class="toggle-all-btn" @click="toggleAll">
+          {{ activeTributaries.length === TRIBUTARY_LIST.length ? 'Deselect All' : 'Select All' }}
+        </button>
+        <label
+          v-for="name in TRIBUTARY_LIST"
+          :key="name"
+          class="legend-item"
+        >
+          <input
+            type="checkbox"
+            class="legend-checkbox"
+            :checked="activeTributaries.includes(name)"
+            @change="toggleTributary(name)"
+          />
+          <span class="legend-swatch" :style="{ background: TRIBUTARY_COLORS[name] }"></span>
+          <span class="legend-name">{{ name }}</span>
+        </label>
+      </div>
+    </div>
+
+    <div v-if="showLegend()" class="legend-section">
+      <button class="legend-toggle" @click="freshnessOpen = !freshnessOpen">
+        <component :is="freshnessOpen ? ChevronDown : ChevronRight" :size="14" />
+        <span>LEGEND: DATA FRESHNESS</span>
+      </button>
+
+      <div v-if="freshnessOpen" class="legend-body">
+        <div v-for="item in freshnessItems" :key="item.label" class="legend-item">
+          <span class="legend-swatch" :style="{ background: item.color }"></span>
+          <span class="legend-name">{{ item.label }}</span>
+        </div>
+      </div>
+    </div>
   </aside>
 </template>
 
@@ -78,7 +147,6 @@ const handleVariableChange = () => {
 #sidebar {
   grid-area: sidebar;
   height: 100%;
-  /* Updated to your exact custom lake-blue background color */
   background-color: #497eae;
   color: #ffffff;
   overflow-y: auto;
@@ -125,7 +193,6 @@ const handleVariableChange = () => {
   letter-spacing: 0.06em;
 }
 
-/* Custom Styled Dropdown to fit clean dashboard layouts */
 .select-wrapper {
   position: relative;
   width: 100%;
@@ -134,7 +201,7 @@ const handleVariableChange = () => {
 .select-wrapper::after {
   content: '▼';
   font-size: 0.65rem;
-  color: #475569; /* Slate arrow tint */
+  color: #475569;
   position: absolute;
   right: 14px;
   top: 50%;
@@ -147,11 +214,11 @@ const handleVariableChange = () => {
   padding: 11px 32px 11px 14px;
   border-radius: 8px;
   border: 1px solid #e2e8f0;
-  background-color: #ffffff; /* Clean white card layout */
+  background-color: #ffffff;
   font-family: inherit;
   font-size: 0.9rem;
   font-weight: 600;
-  color: #1e293b; /* Deep text for pristine readability */
+  color: #1e293b;
   cursor: pointer;
   outline: none;
   appearance: none;
@@ -197,11 +264,96 @@ const handleVariableChange = () => {
   color: #ffffff;
 }
 
-/* Clean, modern active tracking style using a bright white marker indicator */
 .active-item {
   background-color: rgba(255, 255, 255, 0.15) !important;
   color: #ffffff !important;
   box-shadow: inset 4px 0 0 #ffffff;
+}
+
+.legend-section {
+  padding: 0 12px 16px 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  margin-top: 4px;
+}
+
+.legend-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  padding: 14px 4px 8px 4px;
+  text-align: left;
+}
+
+.legend-toggle:hover {
+  color: #ffffff;
+}
+
+.legend-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.toggle-all-btn {
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-bottom: 4px;
+  text-align: left;
+}
+
+.toggle-all-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 3px 4px;
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+
+.legend-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.legend-checkbox {
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+  flex-shrink: 0;
+  accent-color: #ffffff;
+}
+
+.legend-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 1.5px solid rgba(255, 255, 255, 0.4);
+}
+
+.legend-name {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.3;
 }
 
 .close-icon {

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { getVariableStations, getLatestObservation, type Station } from './hydroService'
+import { getVariableStations, getLatestObservation, type Station, TRIBUTARY_LIST } from './hydroService'
 import AppHeader from './components/AppHeader.vue'
 import AppSidebar from './components/AppSidebar.vue'
 import HomeView from './views/HomeView.vue'
@@ -15,6 +15,7 @@ const sidebarOpen = ref(false)
 const currentView = ref('home')
 const selectedId = ref<string | null>(null)
 const selectedVariable = ref('Discharge')
+const activeTributaries = ref<string[]>([...TRIBUTARY_LIST])
 
 function handleSelect(id: string | null) {
   selectedId.value = id
@@ -49,6 +50,10 @@ function handleVariableChange(variable: string) {
   loadStations(variable)
 }
 
+function handleTributaryFilter(updated: string[]) {
+  activeTributaries.value = updated
+}
+
 onMounted(() => loadStations(selectedVariable.value))
 </script>
 
@@ -59,6 +64,7 @@ onMounted(() => loadStations(selectedVariable.value))
     <AppSidebar
       :is-open="sidebarOpen"
       :current-view="currentView"
+      :active-tributaries="activeTributaries"
       @close-sidebar="sidebarOpen = false"
       @change-view="
         (view) => {
@@ -67,25 +73,32 @@ onMounted(() => loadStations(selectedVariable.value))
         }
       "
       @variable-changed="handleVariableChange"
+      @tributary-filter-changed="handleTributaryFilter"
     />
 
     <main class="main-container">
       <HomeView v-if="currentView === 'home'" @change-view="(view) => (currentView = view)" />
       <HelpView v-if="currentView === 'help'" />
+<<<<<<< HEAD
       <ListView
         v-if="currentView === 'list'"
         :sites="sites"
         :loading="loading"
         :selected-variable="selectedVariable"
       />
+=======
+      <ListView v-if="currentView === 'list'" :sites="sites" :loading="loading" :selected-variable="selectedVariable" :active-tributaries="activeTributaries" />
+>>>>>>> Brooke-branch
       <MapView
         v-if="currentView === 'map'"
         :sites="sites"
         :loading="loading"
         :selected-id="selectedId"
+        :selected-variable="selectedVariable"
+        :active-tributaries="activeTributaries"
         @select="handleSelect"
       />
-      <SchematicView v-if="currentView === 'schematic'" :sites="sites" :loading="loading" />
+      <SchematicView v-if="currentView === 'schematic'" :sites="sites" :loading="loading" :active-tributaries="activeTributaries" />
     </main>
   </div>
 </template>

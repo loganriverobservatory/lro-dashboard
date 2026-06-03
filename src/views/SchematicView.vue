@@ -1,20 +1,24 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { Droplets } from 'lucide-vue-next'
-import { type Station } from '../hydroService'
+import { type Station, TRIBUTARY_COLORS } from '../hydroService'
 import StationCard from '../components/StationCard.vue'
 
 const props = defineProps<{
   sites: Station[]
   loading: boolean
+  activeTributaries?: string[]
 }>()
 
 function findLiveStation(schematicName: string): Station | undefined {
-  return props.sites.find((site) => {
+  const match = props.sites.find((site) => {
     const liveName = site.displayName.toLowerCase()
     const targetName = schematicName.toLowerCase()
     return liveName.includes(targetName) || targetName.includes(liveName)
   })
+  if (!match) return undefined
+  if (props.activeTributaries && !props.activeTributaries.includes(match.tributary ?? '')) return undefined
+  return match
 }
 
 const loganMainStem = ref([
@@ -62,8 +66,8 @@ const blacksmithSystem = ref([
 ])
 
 const cutlerInflows = ref([
-  { id: 'little_bear', name: 'Little Bear River: Mendon Road', row: 15 },
-  { id: 'spring_creek_mendon', name: 'Spring Creek: Mendon Road', row: 16 },
+  { id: 'little_bear', name: 'Little Bear River: Mendon Road', row: 15, tributary: 'Little Bear River' },
+  { id: 'spring_creek_mendon', name: 'Spring Creek: Mendon Road', row: 16, tributary: 'Spring Creek' },
 ])
 
 const gridContainerRef = ref<HTMLElement | null>(null)
@@ -305,6 +309,7 @@ onUnmounted(() => {
   window.removeEventListener('resize', scheduleRedraw)
 })
 
+<<<<<<< HEAD
 // When loading finishes the grid is (re)rendered, so re-measure. While loading,
 // hide the lines again so the next pass also reveals only once it's correct.
 watch(
@@ -322,6 +327,17 @@ watch(
   () => props.sites,
   () => scheduleRedraw(),
 )
+=======
+watch(() => props.sites, () => {
+  setTimeout(() => updateLineCoordinates(), 100)
+  setTimeout(() => updateLineCoordinates(), 300)
+})
+
+function tributaryBg(color: string): string {
+  return color + '18'
+}
+
+>>>>>>> Brooke-branch
 </script>
 
 <template>
@@ -345,6 +361,7 @@ watch(
       <p>Aligning network telemetry lines...</p>
     </div>
 
+<<<<<<< HEAD
     <div
       v-else
       class="schematic-grid-wrapper"
@@ -413,6 +430,85 @@ watch(
             stroke-linejoin="round"
             stroke-linecap="round"
             marker-end="url(#blue-arrow)"
+=======
+    <div v-else class="schematic-grid-wrapper" ref="gridContainerRef">
+      <svg class="global-routing-svg">
+        <defs>
+          <marker id="black-arrow" markerWidth="8" markerHeight="8" refX="0" refY="4" orient="auto-start-reverse">
+            <path d="M 0 1 L 7 4 L 0 7 z" fill="#1e293b" style="shape-rendering: geometricPrecision" />
+          </marker>
+          <marker id="dark-gray-arrow" markerWidth="8" markerHeight="8" refX="0" refY="4" orient="auto-start-reverse">
+            <path d="M 0 1 L 7 4 L 0 7 z" fill="#475569" style="shape-rendering: geometricPrecision" />
+          </marker>
+          <marker id="light-gray-arrow" markerWidth="8" markerHeight="8" refX="0" refY="4" orient="auto-start-reverse">
+            <path d="M 0 1 L 7 4 L 0 7 z" fill="#94a3b8" style="shape-rendering: geometricPrecision" />
+          </marker>
+        </defs>
+
+        <path
+          :d="paths.logan"
+          fill="none"
+          stroke="#1e293b"
+          stroke-width="4"
+          stroke-linejoin="round"
+          stroke-linecap="round"
+          marker-end="url(#black-arrow)"
+        />
+        <path
+          v-for="(pathD, id) in leftTribPaths"
+          :key="id"
+          :d="pathD"
+          fill="none"
+          stroke="#475569"
+          stroke-width="4"
+          stroke-linejoin="round"
+          marker-end="url(#dark-gray-arrow)"
+        />
+        <path
+          :d="paths.blacksmith"
+          fill="none"
+          stroke="#475569"
+          stroke-width="4"
+          stroke-linejoin="round"
+          stroke-linecap="butt"
+          marker-end="url(#dark-gray-arrow)"
+        />
+        <path
+          :d="paths.cutlerLittleBear"
+          fill="none"
+          stroke="#94a3b8"
+          stroke-width="4"
+          stroke-linejoin="round"
+          stroke-linecap="round"
+          marker-end="url(#light-gray-arrow)"
+        />
+        <path
+          :d="paths.cutlerSpringCreek"
+          fill="none"
+          stroke="#94a3b8"
+          stroke-width="4"
+          stroke-linejoin="round"
+          stroke-linecap="round"
+          marker-end="url(#light-gray-arrow)"
+        />
+      </svg>
+
+      <div class="schematic-grid">
+        <div
+          v-for="node in leftTributaries"
+          :key="node.id"
+          :class="[
+            'grid-cell',
+            node.id === 'temple' || node.id === 'right_hand' ? 'col-3' : 'col-1',
+          ]"
+          :style="{ gridRow: node.row, backgroundColor: tributaryBg(TRIBUTARY_COLORS[node.name] ?? '#94a3b8') }"
+          :data-marker="node.id"
+        >
+          <StationCard
+            v-if="findLiveStation(node.name)"
+            :site="findLiveStation(node.name)!"
+            compact
+>>>>>>> Brooke-branch
           />
           <path
             v-for="(pathD, id) in leftTribPaths"
@@ -521,6 +617,7 @@ watch(
             </div>
           </div>
 
+<<<<<<< HEAD
           <div
             v-for="node in cutlerInflows"
             :key="node.id"
@@ -535,11 +632,51 @@ watch(
               @click="openStation(findLiveStation(node.name))"
             />
             <div v-else class="node-card independent-card">
+=======
+        <div
+          v-for="node in loganMainStem"
+          :key="node.id"
+          class="grid-cell col-2"
+          :style="{ gridRow: node.row, backgroundColor: tributaryBg(TRIBUTARY_COLORS['Logan River: Main Stem']) }"
+          :data-marker="node.id"
+        >
+          <template v-if="findLiveStation(node.name)">
+            <StationCard :site="findLiveStation(node.name)!" compact />
+          </template>
+          <template v-else>
+            <div
+              v-if="node.type === 'line-junction'"
+              :data-marker="node.id"
+              class="junction-spacer"
+            ></div>
+            <div v-else class="node-card main-stem-card">
+>>>>>>> Brooke-branch
               <span class="node-title">{{ node.name }}</span>
               <div class="routing-label">Direct to Cutler Terminus</div>
             </div>
+<<<<<<< HEAD
+=======
+          </template>
+        </div>
+
+        <div
+          v-for="node in blacksmithSystem"
+          :key="node.id"
+          class="grid-cell col-3"
+          :style="{ gridRow: node.row, backgroundColor: tributaryBg(TRIBUTARY_COLORS['Blacksmith Fork River']) }"
+          :data-marker="node.id"
+        >
+          <StationCard
+            v-if="findLiveStation(node.name)"
+            :site="findLiveStation(node.name)!"
+            compact
+          />
+          <div v-else class="node-card bsf-card">
+            <span class="node-title">{{ node.name }}</span>
+>>>>>>> Brooke-branch
           </div>
 
+<<<<<<< HEAD
           <div
             class="terminus-grid-cell"
             style="grid-row: 18; grid-column: 1 / span 3"
@@ -551,6 +688,36 @@ watch(
                 <h3>SYSTEM TERMINUS: Cutler Reservoir</h3>
                 <p>Ultimate drainage collection basin for all main channels and lateral streams.</p>
               </div>
+=======
+        <div
+          v-for="node in cutlerInflows"
+          :key="node.id"
+          class="grid-cell col-3"
+          :style="{ gridRow: node.row, backgroundColor: tributaryBg(TRIBUTARY_COLORS[node.tributary] ?? '#94a3b8') }"
+          :data-marker="node.id"
+        >
+          <StationCard
+            v-if="findLiveStation(node.name)"
+            :site="findLiveStation(node.name)!"
+            compact
+          />
+          <div v-else class="node-card independent-card">
+            <span class="node-title">{{ node.name }}</span>
+            <div class="routing-label">Direct to Cutler Terminus</div>
+          </div>
+        </div>
+
+        <div
+          class="terminus-grid-cell"
+          style="grid-row: 18; grid-column: 1 / span 3"
+          data-marker="terminus_card"
+        >
+          <div class="terminus-card">
+            <Droplets :size="26" class="terminus-icon" />
+            <div class="terminus-details">
+              <h3>SYSTEM TERMINUS: Cutler Reservoir</h3>
+              <p>Ultimate drainage collection basin for all main channels and lateral streams.</p>
+>>>>>>> Brooke-branch
             </div>
           </div>
         </div>
@@ -825,7 +992,6 @@ h2 {
 }
 
 .grid-cell.col-1 {
-  background-color: #f0fdf4 !important;
   border: 1px solid #e2e8f0;
   border-radius: 12px;
   padding: 10px;
@@ -833,7 +999,6 @@ h2 {
 }
 
 .grid-cell.col-2 {
-  background-color: #f0f7ff !important;
   border: 1px solid #cbd5e1;
   border-radius: 12px;
   padding: 10px;
@@ -847,21 +1012,8 @@ h2 {
   box-sizing: border-box;
 }
 
-.grid-cell.col-3[style*='11'],
-.grid-cell.col-3[style*='12'],
-.grid-cell.col-3[style*='13'] {
-  background-color: #f0fdf4 !important;
-}
-
-.grid-cell.col-3[style*='15'],
-.grid-cell.col-3[style*='16'] {
-  background-color: #fff7ed !important;
-  border-color: #fed7aa;
-}
-
 .grid-cell[data-marker='temple'],
 .grid-cell[data-marker='right_hand'] {
-  background-color: #f0fdf4 !important;
   border-color: #e2e8f0 !important;
 }
 

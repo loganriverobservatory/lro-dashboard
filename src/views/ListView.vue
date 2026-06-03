@@ -7,11 +7,17 @@ const props = defineProps<{
   sites: Station[]
   loading: boolean
   selectedVariable?: string
+  activeTributaries?: string[]
 }>()
 
 const variableLabel = computed(() => {
   const match = WATER_VARIBALES.find((v) => v.id === props.selectedVariable)
   return match ? match.label : props.selectedVariable || 'Live Data'
+})
+
+const filteredSites = computed(() => {
+  if (!props.activeTributaries || props.activeTributaries.length === 0) return props.sites
+  return props.sites.filter((s) => props.activeTributaries!.includes(s.tributary ?? ''))
 })
 </script>
 
@@ -29,7 +35,7 @@ const variableLabel = computed(() => {
     </div>
 
     <div v-else class="station-grid">
-      <StationCard v-for="site in sites" :key="site.uuid" :site="site" />
+      <StationCard v-for="site in filteredSites" :key="site.uuid" :site="site" />
     </div>
   </div>
 </template>
