@@ -78,6 +78,7 @@ onMounted(() => loadStations(selectedVariable.value))
         :sites="sites"
         :loading="loading"
         :selected-id="selectedId"
+        :selected-variable="selectedVariable"
         @select="handleSelect"
       />
       <SchematicView v-if="currentView === 'schematic'" :sites="sites" :loading="loading" />
