@@ -1,20 +1,24 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { Droplets } from 'lucide-vue-next'
-import { type Station } from '../hydroService'
+import { type Station, TRIBUTARY_COLORS } from '../hydroService'
 import StationCard from '../components/StationCard.vue'
 
 const props = defineProps<{
   sites: Station[]
   loading: boolean
+  activeTributaries?: string[]
 }>()
 
 function findLiveStation(schematicName: string): Station | undefined {
-  return props.sites.find((site) => {
+  const match = props.sites.find((site) => {
     const liveName = site.displayName.toLowerCase()
     const targetName = schematicName.toLowerCase()
     return liveName.includes(targetName) || targetName.includes(liveName)
   })
+  if (!match) return undefined
+  if (props.activeTributaries && !props.activeTributaries.includes(match.tributary ?? '')) return undefined
+  return match
 }
 
 const loganMainStem = ref([
@@ -62,8 +66,8 @@ const blacksmithSystem = ref([
 ])
 
 const cutlerInflows = ref([
-  { id: 'little_bear', name: 'Little Bear River: Mendon Road', row: 15 },
-  { id: 'spring_creek_mendon', name: 'Spring Creek: Mendon Road', row: 16 },
+  { id: 'little_bear', name: 'Little Bear River: Mendon Road', row: 15, tributary: 'Little Bear River' },
+  { id: 'spring_creek_mendon', name: 'Spring Creek: Mendon Road', row: 16, tributary: 'Spring Creek' },
 ])
 
 const gridContainerRef = ref<HTMLElement | null>(null)
@@ -204,6 +208,11 @@ watch(() => props.sites, () => {
   setTimeout(() => updateLineCoordinates(), 100)
   setTimeout(() => updateLineCoordinates(), 300)
 })
+
+function tributaryBg(color: string): string {
+  return color + '18'
+}
+
 </script>
 
 <template>
@@ -225,95 +234,62 @@ watch(() => props.sites, () => {
     <div v-else class="schematic-grid-wrapper" ref="gridContainerRef">
       <svg class="global-routing-svg">
         <defs>
-          <marker
-            id="blue-arrow"
-            markerWidth="8"
-            markerHeight="8"
-            refX="0"
-            refY="4"
-            orient="auto-start-reverse"
-          >
-            <path
-              d="M 0 1 L 7 4 L 0 7 z"
-              fill="#01377D"
-              style="shape-rendering: geometricPrecision"
-            />
+          <marker id="black-arrow" markerWidth="8" markerHeight="8" refX="0" refY="4" orient="auto-start-reverse">
+            <path d="M 0 1 L 7 4 L 0 7 z" fill="#1e293b" style="shape-rendering: geometricPrecision" />
           </marker>
-          <marker
-            id="green-arrow"
-            markerWidth="8"
-            markerHeight="8"
-            refX="0"
-            refY="4"
-            orient="auto-start-reverse"
-          >
-            <path
-              d="M 0 1 L 7 4 L 0 7 z"
-              fill="#16a34a"
-              style="shape-rendering: geometricPrecision"
-            />
+          <marker id="dark-gray-arrow" markerWidth="8" markerHeight="8" refX="0" refY="4" orient="auto-start-reverse">
+            <path d="M 0 1 L 7 4 L 0 7 z" fill="#475569" style="shape-rendering: geometricPrecision" />
           </marker>
-          <marker
-            id="orange-arrow"
-            markerWidth="8"
-            markerHeight="8"
-            refX="0"
-            refY="4"
-            orient="auto-start-reverse"
-          >
-            <path
-              d="M 0 1 L 7 4 L 0 7 z"
-              fill="#ea580c"
-              style="shape-rendering: geometricPrecision"
-            />
+          <marker id="light-gray-arrow" markerWidth="8" markerHeight="8" refX="0" refY="4" orient="auto-start-reverse">
+            <path d="M 0 1 L 7 4 L 0 7 z" fill="#94a3b8" style="shape-rendering: geometricPrecision" />
           </marker>
         </defs>
 
         <path
           :d="paths.logan"
           fill="none"
-          stroke="#01377D"
+          stroke="#1e293b"
           stroke-width="4"
           stroke-linejoin="round"
           stroke-linecap="round"
-          marker-end="url(#blue-arrow)"
+          marker-end="url(#black-arrow)"
         />
         <path
           v-for="(pathD, id) in leftTribPaths"
           :key="id"
           :d="pathD"
           fill="none"
-          stroke="#16a34a"
+          stroke="#475569"
           stroke-width="4"
           stroke-linejoin="round"
-          marker-end="url(#green-arrow)"
+          marker-end="url(#dark-gray-arrow)"
         />
         <path
           :d="paths.blacksmith"
           fill="none"
-          stroke="#16a34a"
+          stroke="#475569"
           stroke-width="4"
           stroke-linejoin="round"
           stroke-linecap="butt"
-          marker-end="url(#green-arrow)"
+          marker-end="url(#dark-gray-arrow)"
         />
         <path
           :d="paths.cutlerLittleBear"
           fill="none"
-          stroke="#ea580c"
+          stroke="#94a3b8"
           stroke-width="4"
           stroke-linejoin="round"
           stroke-linecap="round"
-          marker-end="url(#orange-arrow)"
+          marker-end="url(#light-gray-arrow)"
         />
         <path
           :d="paths.cutlerSpringCreek"
           fill="none"
-          stroke="#ea580c"
+          stroke="#94a3b8"
           stroke-width="4"
           stroke-linejoin="round"
           stroke-linecap="round"
-          marker-end="url(#orange-arrow)"
+          marker-end="url(#light-gray-arrow)"
         />
       </svg>
 
@@ -325,7 +301,7 @@ watch(() => props.sites, () => {
             'grid-cell',
             node.id === 'temple' || node.id === 'right_hand' ? 'col-3' : 'col-1',
           ]"
-          :style="{ gridRow: node.row }"
+          :style="{ gridRow: node.row, backgroundColor: tributaryBg(TRIBUTARY_COLORS[node.name] ?? '#94a3b8') }"
           :data-marker="node.id"
         >
           <StationCard
@@ -344,7 +320,7 @@ watch(() => props.sites, () => {
           v-for="node in loganMainStem"
           :key="node.id"
           class="grid-cell col-2"
-          :style="{ gridRow: node.row }"
+          :style="{ gridRow: node.row, backgroundColor: tributaryBg(TRIBUTARY_COLORS['Logan River: Main Stem']) }"
           :data-marker="node.id"
         >
           <template v-if="findLiveStation(node.name)">
@@ -366,7 +342,7 @@ watch(() => props.sites, () => {
           v-for="node in blacksmithSystem"
           :key="node.id"
           class="grid-cell col-3"
-          :style="{ gridRow: node.row }"
+          :style="{ gridRow: node.row, backgroundColor: tributaryBg(TRIBUTARY_COLORS['Blacksmith Fork River']) }"
           :data-marker="node.id"
         >
           <StationCard
@@ -383,7 +359,7 @@ watch(() => props.sites, () => {
           v-for="node in cutlerInflows"
           :key="node.id"
           class="grid-cell col-3"
-          :style="{ gridRow: node.row }"
+          :style="{ gridRow: node.row, backgroundColor: tributaryBg(TRIBUTARY_COLORS[node.tributary] ?? '#94a3b8') }"
           :data-marker="node.id"
         >
           <StationCard
@@ -625,7 +601,6 @@ h2 {
 }
 
 .grid-cell.col-1 {
-  background-color: #f0fdf4 !important;
   border: 1px solid #e2e8f0;
   border-radius: 12px;
   padding: 10px;
@@ -633,7 +608,6 @@ h2 {
 }
 
 .grid-cell.col-2 {
-  background-color: #f0f7ff !important;
   border: 1px solid #cbd5e1;
   border-radius: 12px;
   padding: 10px;
@@ -647,21 +621,8 @@ h2 {
   box-sizing: border-box;
 }
 
-.grid-cell.col-3[style*='11'],
-.grid-cell.col-3[style*='12'],
-.grid-cell.col-3[style*='13'] {
-  background-color: #f0fdf4 !important;
-}
-
-.grid-cell.col-3[style*='15'],
-.grid-cell.col-3[style*='16'] {
-  background-color: #fff7ed !important;
-  border-color: #fed7aa;
-}
-
 .grid-cell[data-marker='temple'],
 .grid-cell[data-marker='right_hand'] {
-  background-color: #f0fdf4 !important;
   border-color: #e2e8f0 !important;
 }
 

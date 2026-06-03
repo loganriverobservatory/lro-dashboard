@@ -2,13 +2,14 @@
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { onMounted, watch, onBeforeUnmount, ref } from 'vue'
-import { type Station, getFreshnessStatus } from '../hydroService'
+import { type Station, getFreshnessStatus, TRIBUTARY_COLORS } from '../hydroService'
 import StationCard from '../components/StationCard.vue'
 
 const props = defineProps<{
   sites: Station[]
   selectedId: string | null
   selectedVariable: string
+  activeTributaries: string[]
 }>()
 
 const emit = defineEmits(['select'])
@@ -35,14 +36,16 @@ const syncMarkers = () => {
   const allCoords: L.LatLngTuple[] = []
 
   props.sites.forEach((station: Station) => {
+    if (!props.activeTributaries.includes(station.tributary ?? '')) return
     if (station.coordinates && station.coordinates.length === 2) {
       const coords = station.coordinates as L.LatLngTuple
       allCoords.push(coords)
 
       const hasData =
         station.observation?.result !== null && station.observation?.result !== undefined
-      const pinColor = hasData ? '#ef4444' : '#94a3b8'
-      const strokeColor = hasData ? '#b91c1c' : '#475569'
+      const tributaryColor = TRIBUTARY_COLORS[station.tributary ?? ''] ?? '#ef4444'
+      const pinColor = hasData ? tributaryColor : '#94a3b8'
+      const strokeColor = hasData ? tributaryColor : '#475569'
 
       const pinSvg = `
         <svg viewBox="0 0 24 24" width="22" height="28">
@@ -160,6 +163,14 @@ watch(
   },
   { deep: true },
 )
+
+watch(() => props.activeTributaries, () => {
+  if (expandedStation.value && !props.activeTributaries.includes(expandedStation.value.tributary ?? '')) {
+    expandedStation.value = null
+  }
+  syncMarkers()
+}, { deep: true })
+
 
 watch(
   () => props.selectedId,
