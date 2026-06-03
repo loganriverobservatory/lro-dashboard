@@ -3,6 +3,7 @@
  * Handles top navigation and communicates with App.vue to control the sidebar and view state.
  */
 import { Menu, Home, HelpCircle } from 'lucide-vue-next'
+import hslogo from '../assets/hydroserver-icon.png'
 
 const emit = defineEmits(['toggle-sidebar', 'change-view'])
 </script>
@@ -35,17 +36,17 @@ const emit = defineEmits(['toggle-sidebar', 'change-view'])
         class="nav-action-btn brand-link"
         title="Open HydroServer"
       >
-        <svg
-          class="nav-icon droplet-icon"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <path d="M12 22a7 7 0 0 0 7-7c0-4.3-7-13-7-13S5 10.7 5 15a7 7 0 0 0 7 7z" />
-        </svg>
+        <img
+          :src="hslogo"
+          alt="HydroServer Icon"
+          style="
+            height: 24px;
+            width: auto;
+            object-fit: contain;
+            vertical-align: middle;
+            margin-right: 1px;
+          "
+        />
         <span class="nav-label">HydroServer</span>
       </a>
     </div>

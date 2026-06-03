@@ -33,8 +33,8 @@ Help page and other resources
         </p>
         <h2>Contact Us: Feedback/Questions</h2>
         <p>
-          If you have questions or want to report an issue/feedback about the data or your
-          experience with this dashboard, please fill out our support form.
+          If you have questions or want to report an issue/feedback about your experience with this
+          dashboard, please fill out our support form.
         </p>
 
         <a
