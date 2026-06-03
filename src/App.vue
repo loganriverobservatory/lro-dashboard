@@ -93,7 +93,7 @@ body {
 
 .main-container {
   grid-area: main;
-  background-color: #6376c1;
+  background-color: #f8fafc; /* Changed from #6376c1 to crisp modern off-white */
   display: flex;
   flex-direction: column;
   padding: 0;

@@ -203,207 +203,205 @@ onUnmounted(() => {
 
 <template>
   <div class="schematic-container">
-    <div class="schematic-card">
-      <div class="header-block">
-        <Droplets :size="28" class="title-icon" />
-        <h2>Hydrologic Network Schematic Matrix</h2>
-      </div>
+    <div class="header-block">
+      <Droplets :size="28" class="title-icon" />
+      <h2>Hydrologic Network Schematic Matrix</h2>
+    </div>
 
-      <p class="subtitle">
-        Multi-column topology tracking parallel sub-basins entering the Cutler Reservoir basin.
-      </p>
+    <p class="subtitle">
+      Multi-column topology tracking parallel sub-basins entering the Cutler Reservoir basin.
+    </p>
 
-      <div v-if="loading" class="loading-state">
-        <div class="spinner"></div>
-        <p>Aligning network telemetry lines...</p>
-      </div>
+    <div v-if="loading" class="loading-state">
+      <div class="spinner"></div>
+      <p>Aligning network telemetry lines...</p>
+    </div>
 
-      <div v-else class="schematic-grid-wrapper" ref="gridContainerRef">
-        <svg class="global-routing-svg">
-          <defs>
-            <marker
-              id="blue-arrow"
-              markerWidth="8"
-              markerHeight="8"
-              refX="0"
-              refY="4"
-              orient="auto-start-reverse"
-            >
-              <path
-                d="M 0 1 L 7 4 L 0 7 z"
-                fill="#01377D"
-                style="shape-rendering: geometricPrecision"
-              />
-            </marker>
-            <marker
-              id="green-arrow"
-              markerWidth="8"
-              markerHeight="8"
-              refX="0"
-              refY="4"
-              orient="auto-start-reverse"
-            >
-              <path
-                d="M 0 1 L 7 4 L 0 7 z"
-                fill="#16a34a"
-                style="shape-rendering: geometricPrecision"
-              />
-            </marker>
-            <marker
-              id="orange-arrow"
-              markerWidth="8"
-              markerHeight="8"
-              refX="0"
-              refY="4"
-              orient="auto-start-reverse"
-            >
-              <path
-                d="M 0 1 L 7 4 L 0 7 z"
-                fill="#ea580c"
-                style="shape-rendering: geometricPrecision"
-              />
-            </marker>
-          </defs>
-
-          <path
-            :d="paths.logan"
-            fill="none"
-            stroke="#01377D"
-            stroke-width="4"
-            stroke-linejoin="round"
-            stroke-linecap="round"
-            marker-end="url(#blue-arrow)"
-          />
-          <path
-            v-for="(pathD, id) in leftTribPaths"
-            :key="id"
-            :d="pathD"
-            fill="none"
-            stroke="#16a34a"
-            stroke-width="4"
-            stroke-linejoin="round"
-            marker-end="url(#green-arrow)"
-          />
-          <path
-            :d="paths.blacksmith"
-            fill="none"
-            stroke="#16a34a"
-            stroke-width="4"
-            stroke-linejoin="round"
-            stroke-linecap="butt"
-            marker-end="url(#green-arrow)"
-          />
-          <path
-            :d="paths.cutlerLittleBear"
-            fill="none"
-            stroke="#ea580c"
-            stroke-width="4"
-            stroke-linejoin="round"
-            stroke-linecap="round"
-            marker-end="url(#orange-arrow)"
-          />
-          <path
-            :d="paths.cutlerSpringCreek"
-            fill="none"
-            stroke="#ea580c"
-            stroke-width="4"
-            stroke-linejoin="round"
-            stroke-linecap="round"
-            marker-end="url(#orange-arrow)"
-          />
-        </svg>
-
-        <div class="schematic-grid">
-          <div
-            v-for="node in leftTributaries"
-            :key="node.id"
-            :class="[
-              'grid-cell',
-              node.id === 'temple' || node.id === 'right_hand' ? 'col-3' : 'col-1',
-            ]"
-            :style="{ gridRow: node.row }"
-            :data-marker="node.id"
+    <div v-else class="schematic-grid-wrapper" ref="gridContainerRef">
+      <svg class="global-routing-svg">
+        <defs>
+          <marker
+            id="blue-arrow"
+            markerWidth="8"
+            markerHeight="8"
+            refX="0"
+            refY="4"
+            orient="auto-start-reverse"
           >
-            <StationCard
-              v-if="findLiveStation(node.name)"
-              :site="findLiveStation(node.name)!"
-              compact
+            <path
+              d="M 0 1 L 7 4 L 0 7 z"
+              fill="#01377D"
+              style="shape-rendering: geometricPrecision"
             />
-            <div v-else class="node-card inflow-card-left">
-              <div class="inflow-content-wrapper">
-                <span class="node-title">{{ node.name }}</span>
-              </div>
-            </div>
-          </div>
-
-          <div
-            v-for="node in loganMainStem"
-            :key="node.id"
-            class="grid-cell col-2"
-            :style="{ gridRow: node.row }"
-            :data-marker="node.id"
+          </marker>
+          <marker
+            id="green-arrow"
+            markerWidth="8"
+            markerHeight="8"
+            refX="0"
+            refY="4"
+            orient="auto-start-reverse"
           >
-            <template v-if="findLiveStation(node.name)">
-              <StationCard :site="findLiveStation(node.name)!" compact />
-            </template>
-            <template v-else>
-              <div
-                v-if="node.type === 'line-junction'"
-                :data-marker="node.id"
-                class="junction-spacer"
-              ></div>
-              <div v-else class="node-card main-stem-card">
-                <span class="node-title">{{ node.name }}</span>
-              </div>
-            </template>
-          </div>
-
-          <div
-            v-for="node in blacksmithSystem"
-            :key="node.id"
-            class="grid-cell col-3"
-            :style="{ gridRow: node.row }"
-            :data-marker="node.id"
-          >
-            <StationCard
-              v-if="findLiveStation(node.name)"
-              :site="findLiveStation(node.name)!"
-              compact
+            <path
+              d="M 0 1 L 7 4 L 0 7 z"
+              fill="#16a34a"
+              style="shape-rendering: geometricPrecision"
             />
-            <div v-else class="node-card bsf-card">
+          </marker>
+          <marker
+            id="orange-arrow"
+            markerWidth="8"
+            markerHeight="8"
+            refX="0"
+            refY="4"
+            orient="auto-start-reverse"
+          >
+            <path
+              d="M 0 1 L 7 4 L 0 7 z"
+              fill="#ea580c"
+              style="shape-rendering: geometricPrecision"
+            />
+          </marker>
+        </defs>
+
+        <path
+          :d="paths.logan"
+          fill="none"
+          stroke="#01377D"
+          stroke-width="4"
+          stroke-linejoin="round"
+          stroke-linecap="round"
+          marker-end="url(#blue-arrow)"
+        />
+        <path
+          v-for="(pathD, id) in leftTribPaths"
+          :key="id"
+          :d="pathD"
+          fill="none"
+          stroke="#16a34a"
+          stroke-width="4"
+          stroke-linejoin="round"
+          marker-end="url(#green-arrow)"
+        />
+        <path
+          :d="paths.blacksmith"
+          fill="none"
+          stroke="#16a34a"
+          stroke-width="4"
+          stroke-linejoin="round"
+          stroke-linecap="butt"
+          marker-end="url(#green-arrow)"
+        />
+        <path
+          :d="paths.cutlerLittleBear"
+          fill="none"
+          stroke="#ea580c"
+          stroke-width="4"
+          stroke-linejoin="round"
+          stroke-linecap="round"
+          marker-end="url(#orange-arrow)"
+        />
+        <path
+          :d="paths.cutlerSpringCreek"
+          fill="none"
+          stroke="#ea580c"
+          stroke-width="4"
+          stroke-linejoin="round"
+          stroke-linecap="round"
+          marker-end="url(#orange-arrow)"
+        />
+      </svg>
+
+      <div class="schematic-grid">
+        <div
+          v-for="node in leftTributaries"
+          :key="node.id"
+          :class="[
+            'grid-cell',
+            node.id === 'temple' || node.id === 'right_hand' ? 'col-3' : 'col-1',
+          ]"
+          :style="{ gridRow: node.row }"
+          :data-marker="node.id"
+        >
+          <StationCard
+            v-if="findLiveStation(node.name)"
+            :site="findLiveStation(node.name)!"
+            compact
+          />
+          <div v-else class="node-card inflow-card-left">
+            <div class="inflow-content-wrapper">
               <span class="node-title">{{ node.name }}</span>
             </div>
           </div>
+        </div>
 
-          <div
-            v-for="node in cutlerInflows"
-            :key="node.id"
-            class="grid-cell col-3"
-            :style="{ gridRow: node.row }"
-            :data-marker="node.id"
-          >
-            <StationCard
-              v-if="findLiveStation(node.name)"
-              :site="findLiveStation(node.name)!"
-              compact
-            />
-            <div v-else class="node-card independent-card">
+        <div
+          v-for="node in loganMainStem"
+          :key="node.id"
+          class="grid-cell col-2"
+          :style="{ gridRow: node.row }"
+          :data-marker="node.id"
+        >
+          <template v-if="findLiveStation(node.name)">
+            <StationCard :site="findLiveStation(node.name)!" compact />
+          </template>
+          <template v-else>
+            <div
+              v-if="node.type === 'line-junction'"
+              :data-marker="node.id"
+              class="junction-spacer"
+            ></div>
+            <div v-else class="node-card main-stem-card">
               <span class="node-title">{{ node.name }}</span>
-              <div class="routing-label">Direct to Cutler Terminus</div>
             </div>
-          </div>
+          </template>
+        </div>
 
-          <div
-            class="terminus-grid-cell"
-            style="grid-row: 18; grid-column: 1 / span 3"
-            data-marker="terminus_card"
-          >
-            <div class="terminus-card">
-              <Droplets :size="26" class="terminus-icon" />
-              <div class="terminus-details">
-                <h3>SYSTEM TERMINUS: Cutler Reservoir</h3>
-                <p>Ultimate drainage collection basin for all main channels and lateral streams.</p>
-              </div>
+        <div
+          v-for="node in blacksmithSystem"
+          :key="node.id"
+          class="grid-cell col-3"
+          :style="{ gridRow: node.row }"
+          :data-marker="node.id"
+        >
+          <StationCard
+            v-if="findLiveStation(node.name)"
+            :site="findLiveStation(node.name)!"
+            compact
+          />
+          <div v-else class="node-card bsf-card">
+            <span class="node-title">{{ node.name }}</span>
+          </div>
+        </div>
+
+        <div
+          v-for="node in cutlerInflows"
+          :key="node.id"
+          class="grid-cell col-3"
+          :style="{ gridRow: node.row }"
+          :data-marker="node.id"
+        >
+          <StationCard
+            v-if="findLiveStation(node.name)"
+            :site="findLiveStation(node.name)!"
+            compact
+          />
+          <div v-else class="node-card independent-card">
+            <span class="node-title">{{ node.name }}</span>
+            <div class="routing-label">Direct to Cutler Terminus</div>
+          </div>
+        </div>
+
+        <div
+          class="terminus-grid-cell"
+          style="grid-row: 18; grid-column: 1 / span 3"
+          data-marker="terminus_card"
+        >
+          <div class="terminus-card">
+            <Droplets :size="26" class="terminus-icon" />
+            <div class="terminus-details">
+              <h3>SYSTEM TERMINUS: Cutler Reservoir</h3>
+              <p>Ultimate drainage collection basin for all main channels and lateral streams.</p>
             </div>
           </div>
         </div>
@@ -417,21 +415,17 @@ onUnmounted(() => {
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
+  padding: 2.5rem 2rem; /* Comfortable workspace gutter padding */
   box-sizing: border-box;
 }
-.schematic-card {
-  background: #ffffff;
-  padding: 2.5rem;
-  border-radius: 16px;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-}
+
 .schematic-grid-wrapper {
   position: relative;
   width: 100%;
   overflow-x: auto;
   padding-bottom: 1rem;
 }
+
 .schematic-grid {
   display: grid;
   grid-template-columns: 1.1fr 1.3fr 1.1fr;
@@ -443,6 +437,7 @@ onUnmounted(() => {
   z-index: 2;
   min-width: 950px;
 }
+
 .global-routing-svg {
   position: absolute;
   top: 0;
@@ -454,26 +449,31 @@ onUnmounted(() => {
   shape-rendering: geometricPrecision;
   min-width: 950px;
 }
+
 .header-block {
   display: flex;
   align-items: center;
   gap: 12px;
   margin-bottom: 0.5rem;
 }
+
 .title-icon {
   color: #0284c7;
 }
+
 h2 {
   color: #1e293b;
   font-size: 1.75rem;
   font-weight: 800;
   margin: 0;
 }
+
 .subtitle {
   color: #64748b;
   font-size: 1rem;
   margin: 0 0 2.5rem 0;
 }
+
 .loading-state {
   display: flex;
   flex-direction: column;
@@ -483,6 +483,7 @@ h2 {
   gap: 15px;
   color: #64748b;
 }
+
 .spinner {
   width: 32px;
   height: 32px;
@@ -491,24 +492,30 @@ h2 {
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
+
 .col-1 {
   grid-column: 1;
 }
+
 .col-2 {
   grid-column: 2;
 }
+
 .col-3 {
   grid-column: 3;
 }
+
 .grid-cell {
   display: flex;
   flex-direction: column;
   width: 100%;
   position: relative;
 }
+
 .junction-spacer {
   min-height: 64px;
 }
+
 .node-card {
   background: #ffffff;
   border: 1px solid #cbd5e1;
@@ -523,15 +530,18 @@ h2 {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
   box-sizing: border-box;
 }
+
 .main-stem-card {
   border: 2px solid #01377d;
   background: #f8fafc;
 }
+
 .node-title {
   font-size: 0.88rem;
   font-weight: 700;
   color: #334155;
 }
+
 .inflow-content-wrapper {
   display: flex;
   align-items: center;
@@ -539,16 +549,20 @@ h2 {
   width: 100%;
   justify-content: center;
 }
+
 .inflow-card-left {
   border-right: 4px solid #16a34a;
   background: #f0fdf4;
 }
+
 .bsf-card {
   border-left: 4px solid #16a34a;
 }
+
 .independent-card {
   border-left: 4px solid #ea580c;
 }
+
 .routing-label {
   font-size: 0.72rem;
   font-weight: 800;
@@ -556,6 +570,7 @@ h2 {
   text-transform: uppercase;
   margin-top: 4px;
 }
+
 .terminus-grid-cell {
   display: flex;
   justify-content: center;
@@ -564,6 +579,7 @@ h2 {
   position: relative;
   z-index: 5;
 }
+
 .terminus-card {
   width: 100%;
   max-width: 720px;
@@ -576,20 +592,24 @@ h2 {
   gap: 16px;
   box-shadow: 0 4px 12px rgba(234, 88, 12, 0.08);
 }
+
 .terminus-icon {
   color: #ea580c;
 }
+
 .terminus-details h3 {
   margin: 0;
   font-size: 1.2rem;
   font-weight: 800;
   color: #7c2d12;
 }
+
 .terminus-details p {
   margin: 4px 0 0 0;
   font-size: 0.85rem;
   color: #9a3412;
 }
+
 @keyframes spin {
   0% {
     transform: rotate(0deg);
@@ -598,6 +618,7 @@ h2 {
     transform: rotate(360deg);
   }
 }
+
 .grid-cell.col-1 {
   background-color: #f0fdf4 !important;
   border: 1px solid #e2e8f0;
@@ -605,6 +626,7 @@ h2 {
   padding: 10px;
   box-sizing: border-box;
 }
+
 .grid-cell.col-2 {
   background-color: #f0f7ff !important;
   border: 1px solid #cbd5e1;
@@ -612,27 +634,32 @@ h2 {
   padding: 10px;
   box-sizing: border-box;
 }
+
 .grid-cell.col-3 {
   border: 1px solid #e2e8f0;
   border-radius: 12px;
   padding: 10px;
   box-sizing: border-box;
 }
+
 .grid-cell.col-3[style*='11'],
 .grid-cell.col-3[style*='12'],
 .grid-cell.col-3[style*='13'] {
   background-color: #f0fdf4 !important;
 }
+
 .grid-cell.col-3[style*='15'],
 .grid-cell.col-3[style*='16'] {
   background-color: #fff7ed !important;
   border-color: #fed7aa;
 }
+
 .grid-cell[data-marker='temple'],
 .grid-cell[data-marker='right_hand'] {
   background-color: #f0fdf4 !important;
   border-color: #e2e8f0 !important;
 }
+
 .grid-cell[data-marker='beaver_junc'],
 .grid-cell[data-marker='ricks_junc'],
 .grid-cell[data-marker='temple_junc'],
@@ -644,10 +671,5 @@ h2 {
   border-color: transparent !important;
   box-shadow: none !important;
   padding: 0 !important;
-}
-@media (max-width: 640px) {
-  .schematic-card {
-    padding: 1rem;
-  }
 }
 </style>

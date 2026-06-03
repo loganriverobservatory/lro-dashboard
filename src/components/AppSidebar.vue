@@ -10,7 +10,7 @@ defineProps<{
   currentView: string
 }>()
 
-// 1. Define the available variables
+// Define the available system variables
 const variables = [
   { id: 'Discharge', label: 'Discharge' },
   { id: 'Water Temperature', label: 'Water Temp' },
@@ -22,7 +22,6 @@ const variables = [
 const selectedVariable = ref('Discharge')
 const emit = defineEmits(['close-sidebar', 'change-view', 'variable-changed'])
 
-// 2. Function to handle selection change
 const handleVariableChange = () => {
   emit('variable-changed', selectedVariable.value)
 }
@@ -31,17 +30,22 @@ const handleVariableChange = () => {
 <template>
   <aside id="sidebar" :class="{ 'sidebar-responsive': isOpen }">
     <div class="sidebar-title">
-      <div class="sidebar-brand">LRO Dashboard</div>
+      <span class="sidebar-brand">Navigation</span>
       <X @click="emit('close-sidebar')" class="close-icon" :size="20" />
     </div>
 
     <div class="filter-section">
-      <label class="filter-label"> <Droplets :size="14" /> <span>SELECT VARIABLE</span> </label>
-      <select v-model="selectedVariable" @change="handleVariableChange" class="variable-select">
-        <option v-for="v in variables" :key="v.id" :value="v.id">
-          {{ v.label }}
-        </option>
-      </select>
+      <label class="filter-label">
+        <Droplets :size="13" />
+        <span>SELECT VARIABLE</span>
+      </label>
+      <div class="select-wrapper">
+        <select v-model="selectedVariable" @change="handleVariableChange" class="variable-select">
+          <option v-for="v in variables" :key="v.id" :value="v.id">
+            {{ v.label }}
+          </option>
+        </select>
+      </div>
     </div>
 
     <ul class="sidebar-list">
@@ -74,15 +78,14 @@ const handleVariableChange = () => {
 #sidebar {
   grid-area: sidebar;
   height: 100%;
-  background-color: #9ec0ed;
-  color: #000000;
+  /* Updated to your exact custom lake-blue background color */
+  background-color: #497eae;
+  color: #ffffff;
   overflow-y: auto;
-  transition: all 0.5s;
+  transition: all 0.3s ease;
   display: flex;
   flex-direction: column;
-  border-right: 1px solid #9ec0ed;
-
-  /* FIXED: Ensure sidebar stays on top of the map */
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
   position: relative;
   z-index: 1000;
 }
@@ -91,57 +94,89 @@ const handleVariableChange = () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px 24px;
+  padding: 0 24px;
   height: 70px;
   box-sizing: border-box;
 }
 
 .sidebar-brand {
-  font-size: 1.25rem;
-  font-weight: 800;
+  font-size: 1.1rem;
+  font-weight: 700;
   color: #ffffff;
   letter-spacing: -0.01em;
+  opacity: 0.95;
 }
 
-/* NEW: Filter Styling */
 .filter-section {
-  padding: 0 24px 20px 24px;
+  padding: 0 24px 24px 24px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .filter-label {
   font-size: 0.7rem;
   font-weight: 800;
-  color: #ffffff;
+  color: rgba(255, 255, 255, 0.8);
   display: flex;
   align-items: center;
   gap: 6px;
-  opacity: 0.9;
+  letter-spacing: 0.06em;
+}
+
+/* Custom Styled Dropdown to fit clean dashboard layouts */
+.select-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.select-wrapper::after {
+  content: '▼';
+  font-size: 0.65rem;
+  color: #475569; /* Slate arrow tint */
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
 }
 
 .variable-select {
   width: 100%;
-  padding: 10px;
-  border-radius: 6px;
-  border: none;
-  background-color: white;
+  padding: 11px 32px 11px 14px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background-color: #ffffff; /* Clean white card layout */
   font-family: inherit;
   font-size: 0.9rem;
   font-weight: 600;
-  color: #0284c7;
+  color: #1e293b; /* Deep text for pristine readability */
   cursor: pointer;
   outline: none;
+  appearance: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.variable-select:hover {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.08);
+}
+
+.variable-select option {
+  background-color: #ffffff;
+  color: #1e293b;
 }
 
 .sidebar-list {
-  padding: 12px;
+  padding: 20px 12px;
   margin: 0;
   list-style-type: none;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 
 .sidebar-list-item {
@@ -151,19 +186,22 @@ const handleVariableChange = () => {
   padding: 12px 16px;
   font-size: 0.85rem;
   font-weight: 600;
-  color: #000000;
+  color: rgba(255, 255, 255, 0.8);
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .sidebar-list-item:hover {
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
 }
 
+/* Clean, modern active tracking style using a bright white marker indicator */
 .active-item {
-  background-color: #0284c7 !important;
+  background-color: rgba(255, 255, 255, 0.15) !important;
   color: #ffffff !important;
+  box-shadow: inset 4px 0 0 #ffffff;
 }
 
 .close-icon {
@@ -175,12 +213,12 @@ const handleVariableChange = () => {
 @media screen and (max-width: 992px) {
   #sidebar {
     display: none;
-    position: fixed; /* For mobile overlay */
+    position: fixed;
   }
 
   .sidebar-responsive {
     display: flex !important;
-    z-index: 10000; /* Higher than map on mobile */
+    z-index: 10000;
     width: 260px;
   }
 
