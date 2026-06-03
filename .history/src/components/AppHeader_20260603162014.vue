@@ -45,11 +45,18 @@ const emit = defineEmits(['toggle-sidebar', 'change-view'])
             object-fit: contain;
             vertical-align: middle;
             margin-right: 4px;
-            filter: brightness(0) invert(1);
+
+            /* 1. Turn the image pure white */
+            filter: brightness(0) invert(1)
+              /* 2. Add sharp, tiny white shadows around the edges to thicken the lines */
+              drop-shadow(0.5px 0px 0px #ffffff) drop-shadow(-0.5px 0px 0px #ffffff)
+              drop-shadow(0px 0.5px 0px #ffffff) drop-shadow(0px -0.5px 0px #ffffff);
+
+            /* 3. Force the browser to render the edges sharply instead of blending/blurring them */
             image-rendering: -webkit-optimize-contrast;
             image-rendering: crisp-edges;
 
-            opacity: 1;
+            opacity: 0.95;
           "
         />
         <span class="nav-label">HydroServer</span>

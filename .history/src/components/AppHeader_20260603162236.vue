@@ -45,7 +45,11 @@ const emit = defineEmits(['toggle-sidebar', 'change-view'])
             object-fit: contain;
             vertical-align: middle;
             margin-right: 4px;
+
+            /* Turn the image pure white with zero added thickness */
             filter: brightness(0) invert(1);
+
+            /* Force high-contrast sharp edge rendering */
             image-rendering: -webkit-optimize-contrast;
             image-rendering: crisp-edges;
 

@@ -40,16 +40,13 @@ const emit = defineEmits(['toggle-sidebar', 'change-view'])
           :src="hslogo"
           alt="HydroServer Icon"
           style="
-            height: 22px;
+            height: 25px;
             width: auto;
             object-fit: contain;
             vertical-align: middle;
-            margin-right: 4px;
-            filter: brightness(0) invert(1);
-            image-rendering: -webkit-optimize-contrast;
-            image-rendering: crisp-edges;
-
-            opacity: 1;
+            margin-right: 1px;
+            filter: brightness(0) invert(1); /* <--- This forces the colored image to turn pure white! */
+            opacity: 0.9;
           "
         />
         <span class="nav-label">HydroServer</span>

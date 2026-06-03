@@ -45,11 +45,18 @@ const emit = defineEmits(['toggle-sidebar', 'change-view'])
             object-fit: contain;
             vertical-align: middle;
             margin-right: 4px;
-            filter: brightness(0) invert(1);
+
+            /* 1. Turn the image pure white */
+            filter: brightness(0) invert(1)
+              /* 2. Micro-shadows for just a touch of extra crispness */
+              drop-shadow(0.25px 0px 0px #ffffff) drop-shadow(-0.25px 0px 0px #ffffff)
+              drop-shadow(0px 0.25px 0px #ffffff) drop-shadow(0px -0.25px 0px #ffffff);
+
+            /* 3. Forces sharp edge rendering */
             image-rendering: -webkit-optimize-contrast;
             image-rendering: crisp-edges;
 
-            opacity: 1;
+            opacity: 0.95;
           "
         />
         <span class="nav-label">HydroServer</span>

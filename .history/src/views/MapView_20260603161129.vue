@@ -262,7 +262,7 @@ watch(
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }
 .reset-btn:hover {
-  background: #073763;
+  background: #1d4ed8;
 }
 .expanded-overlay {
   position: absolute;

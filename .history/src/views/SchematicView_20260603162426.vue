@@ -595,7 +595,6 @@ function tributaryBg(color: string | undefined): string {
   position: relative;
   width: 100%;
   min-width: 950px;
-  margin: 0 auto; /* ← add this line */
   opacity: 0;
   transition: opacity 0.3s ease;
 }
