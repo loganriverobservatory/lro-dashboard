@@ -22,6 +22,7 @@ function handleSelect(id: string | null) {
 
 async function loadStations(variable: string) {
   loading.value = true
+  sites.value = []
   try {
     const stations = await getVariableStations(variable)
     sites.value = stations
@@ -43,12 +44,12 @@ async function loadStations(variable: string) {
   }
 }
 
-function handleVariableChanged(variable: string) {
+function handleVariableChange(variable: string) {
   selectedVariable.value = variable
   loadStations(variable)
 }
 
-onMounted(() => loadStations('Discharge'))
+onMounted(() => loadStations(selectedVariable.value))
 </script>
 
 <template>
@@ -65,13 +66,13 @@ onMounted(() => loadStations('Discharge'))
           sidebarOpen = false
         }
       "
-      @variable-changed="handleVariableChanged"
+      @variable-changed="handleVariableChange"
     />
 
     <main class="main-container">
       <HomeView v-if="currentView === 'home'" @change-view="(view) => (currentView = view)" />
       <HelpView v-if="currentView === 'help'" />
-      <ListView v-if="currentView === 'list'" :sites="sites" :loading="loading" />
+      <ListView v-if="currentView === 'list'" :sites="sites" :loading="loading" :selected-variable="selectedVariable" />
       <MapView
         v-if="currentView === 'map'"
         :sites="sites"

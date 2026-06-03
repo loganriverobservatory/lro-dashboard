@@ -1,5 +1,31 @@
-// service layer client for Hydroserver API
+// src/hydroService.ts
+import type { DatastreamExtended } from '@hydroserver/client'
+
 const BASE_URL = 'https://lro.hydroserver.org/api/sensorthings/v1.1'
+
+interface StaLocation {
+  location: { geometry: { coordinates: [number, number, ...number[]] } }
+}
+
+interface StaThing {
+  '@iot.id': string
+  Locations?: StaLocation[]
+}
+
+interface StaDatastream {
+  '@iot.id': string | number
+  name: string
+  description?: string
+  unitOfMeasurement?: { symbol: string }
+  Thing?: StaThing
+  properties?: Pick<DatastreamExtended, 'isVisible' | 'status' | 'sampledMedium' | 'isPrivate'>
+}
+
+export interface StaObservation {
+  '@iot.id': string | number
+  result: number | null
+  phenomenonTime: string | null
+}
 
 // Each View pulls from Station interface
 export interface Station {
@@ -7,7 +33,7 @@ export interface Station {
   uuid: string
   displayName: string
   description?: string
-  observation?: any
+  observation?: StaObservation | null
   coordinates: [number, number] | null
   unit?: string
 }
@@ -18,6 +44,17 @@ export const WATER_VARIBALES = [
   { id: 'Specific Conductance', label: 'SPC (uS/cm)' },
   { id: 'pH', label: 'pH' },
   { id: 'Oxygen, dissolved', label: 'Dissolved Oxygen' },
+]
+
+// Add or remove station codes here to control which sites appear in all views
+const STATIONS_NOT_DISPLAYED = [
+  'TF_SAWM_A',      // decommissioned
+  'SPC_CONF_A',     // decommissioned
+  'SLB_600W_CNL',   // canal
+  'NWF_1600N_CNL',  // canal
+  'LR_RH_SD',       // storm drain
+  'LR_SC_SD',       // storm drain
+  'LR_DSC_A',       // decommissioned
 ]
 
 function getCoordinates(ds: any): [number, number] | null {
@@ -69,40 +106,47 @@ export async function getVariableStations(variable: string = 'Discharge'): Promi
   const data = await response.json()
 
   return data.value
-    .filter((ds: any) => {
+    .filter((ds: StaDatastream) => {
+      const code = ds.name.split(' ')[0]
+      if (STATIONS_NOT_DISPLAYED.includes(code)) return false
       const isDecommissioned =
         ds.description?.includes('Decommissioned') || ds.name?.includes('Decommissioned')
       const isTesting = ds.name?.includes('Testing')
       return !isDecommissioned && !isTesting
     })
-    .map((ds: any) => {
-      const cleanName = ds.name
-        .split(' - ')[0]
-        .split(` ${variable}`)[0]
-        .replace('at Logan River at ', '')
-        .trim()
-
+    .map((ds: StaDatastream) => {
+      const stationCode = ds.name.split(' ')[0]
       const foundCoords = getCoordinates(ds)
 
       return {
         id: ds['@iot.id']?.toString(),
         uuid: ds.Thing?.['@iot.id']?.toString() || '',
-        displayName: STATION_NAME_MAP[cleanName] || cleanName || ds.name,
+        displayName: STATION_NAME_MAP[stationCode] || stationCode,
         description: ds.description,
-        observation: { result: null, phenomenonTime: null },
+        observation: { '@iot.id': '', result: null, phenomenonTime: null },
         coordinates: foundCoords,
         unit: ds.unitOfMeasurement?.symbol || '',
       }
     })
 }
 
-export async function getLatestObservation(stationId: string): Promise<any> {
+export async function getLatestObservation(stationId: string): Promise<StaObservation | null> {
   const obsUrl = `${BASE_URL}/Datastreams('${stationId}')/Observations?$top=1&$orderby=phenomenonTime desc`
   const response = await fetch(obsUrl)
   const data = await response.json()
   return data.value?.[0] || null
 }
 
-export function isStationActive(observation: any): boolean {
+export function isStationActive(observation: StaObservation | null): boolean {
   return true
+}
+
+export type FreshnessStatus = 'current' | 'stale' | 'outdated' | 'unknown'
+
+export function getFreshnessStatus(observation: StaObservation | null): FreshnessStatus {
+  if (!observation?.phenomenonTime) return 'unknown'
+  const ageHours = (Date.now() - new Date(observation.phenomenonTime).getTime()) / (1000 * 60 * 60)
+  if (ageHours < 2) return 'current'
+  if (ageHours < 24) return 'stale'
+  return 'outdated'
 }

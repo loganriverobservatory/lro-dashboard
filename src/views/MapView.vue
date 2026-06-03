@@ -15,18 +15,6 @@ const emit = defineEmits(['select'])
 let map: L.Map | null = null
 const markerMap = new Map<string, L.Marker>()
 
-const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000
-
-function isStationExpired(site: Station): boolean {
-  if (!site || !site.observation) return true
-  if (site.observation.result === -9999 || site.observation.result === null) return true
-  if (!site.observation.phenomenonTime) return true
-
-  const obsTime = new Date(site.observation.phenomenonTime).getTime()
-  const cutoffTime = Date.now() - ONE_YEAR_MS
-
-  return obsTime < cutoffTime
-}
 
 const syncMarkers = () => {
   if (!map) return
@@ -41,10 +29,9 @@ const syncMarkers = () => {
       const coords = station.coordinates as L.LatLngTuple
       allCoords.push(coords)
 
-      // Dynamic Marker Design based on expiration telemetry
-      const isOffline = isStationExpired(station)
-      const pinColor = isOffline ? '#94a3b8' : '#ef4444'
-      const strokeColor = isOffline ? '#475569' : '#b91c1c'
+      const hasData = station.observation?.result !== null && station.observation?.result !== undefined
+      const pinColor = hasData ? '#ef4444' : '#94a3b8'
+      const strokeColor = hasData ? '#b91c1c' : '#475569'
 
       const popupContainer = document.createElement('div')
 
