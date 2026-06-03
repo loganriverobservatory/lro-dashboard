@@ -15,6 +15,7 @@
     "format": "prettier --write --experimental-cli src/"
   },
   "dependencies": {
+    "@hydroserver/client": "^0.4.4",
     "leaflet": "^1.9.4",
     "lucide-vue-next": "^1.0.0",
     "vue": "^3.5.32",

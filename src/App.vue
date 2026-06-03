@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { getDischargeStations, getLatestObservation, type Station } from './hydroService'
+import { getVariableStations, getLatestObservation, type Station } from './hydroService'
 import AppHeader from './components/AppHeader.vue'
 import AppSidebar from './components/AppSidebar.vue'
 import HomeView from './views/HomeView.vue'
@@ -14,14 +14,16 @@ const loading = ref(true)
 const sidebarOpen = ref(false)
 const currentView = ref('home')
 const selectedId = ref<string | null>(null)
+const selectedVariable = ref('Discharge')
 
 function handleSelect(id: string | null) {
   selectedId.value = id
 }
 
-onMounted(async () => {
+async function loadStations(variable: string) {
+  loading.value = true
   try {
-    const stations = await getDischargeStations()
+    const stations = await getVariableStations(variable)
     sites.value = stations
 
     await Promise.all(
@@ -39,7 +41,14 @@ onMounted(async () => {
   } finally {
     loading.value = false
   }
-})
+}
+
+function handleVariableChanged(variable: string) {
+  selectedVariable.value = variable
+  loadStations(variable)
+}
+
+onMounted(() => loadStations('Discharge'))
 </script>
 
 <template>
@@ -56,6 +65,7 @@ onMounted(async () => {
           sidebarOpen = false
         }
       "
+      @variable-changed="handleVariableChanged"
     />
 
     <main class="main-container">

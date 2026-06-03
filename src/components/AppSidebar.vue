@@ -13,7 +13,7 @@ defineProps<{
 // 1. Define the available variables
 const variables = [
   { id: 'Discharge', label: 'Discharge' },
-  { id: 'Water Temperature', label: 'Water Temp' },
+  { id: 'Water Temperature', label: 'Water Temperature' },
   { id: 'Specific Conductance', label: 'Specific Conductance' },
   { id: 'pH', label: 'pH' },
   { id: 'Oxygen, dissolved', label: 'Dissolved Oxygen' },

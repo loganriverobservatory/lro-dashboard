@@ -62,7 +62,7 @@ function getFreshnessClass(dateStr: string | undefined): string {
 
 const shortDisplayName = computed(() => {
   const name = props.site?.displayName || ''
-  return name.split(':')[0].trim()
+  return (name.split(':')[0] ?? name).trim()
 })
 
 const parsedMeasurements = computed(() => {
