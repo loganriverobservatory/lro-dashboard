@@ -72,12 +72,7 @@ onMounted(() => loadStations(selectedVariable.value))
     <main class="main-container">
       <HomeView v-if="currentView === 'home'" @change-view="(view) => (currentView = view)" />
       <HelpView v-if="currentView === 'help'" />
-      <ListView
-        v-if="currentView === 'list'"
-        :sites="sites"
-        :loading="loading"
-        :selected-variable="selectedVariable"
-      />
+      <ListView v-if="currentView === 'list'" :sites="sites" :loading="loading" :selected-variable="selectedVariable" />
       <MapView
         v-if="currentView === 'map'"
         :sites="sites"
@@ -99,7 +94,7 @@ body {
 
 .grid-container {
   display: grid;
-  grid-template-columns: 260px minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: 260px 1fr 1fr 1fr;
   grid-template-rows: 70px 1fr;
   grid-template-areas:
     'sidebar header header header'
@@ -119,7 +114,7 @@ body {
 
 @media screen and (max-width: 992px) {
   .grid-container {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: 1fr;
     grid-template-areas: 'header' 'main';
   }
 }

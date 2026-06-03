@@ -99,8 +99,8 @@ const emit = defineEmits(['change-view'])
 
 .hero-logo {
   height: auto;
-  max-height: 410px;
-  max-width: min(760px, 100%);
+  max-height: 290px;
+  max-width: 540px; /* Sized up significantly to command presence on widescreen displays */
   object-fit: contain;
   margin-top: -3.5rem;
   margin-bottom: -3.2rem;

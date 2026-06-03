@@ -73,63 +73,33 @@ const leftTribPaths = ref<Record<string, string>>({})
 // SVG is never shown in its pre-layout (origin/garbage) state.
 const linesReady = ref(false)
 
-// --- Narrow-screen overview ----------------------------------------------
-// The diagram is laid out at NATURAL_WIDTH. When the available width is smaller,
-// we scale the whole stage (cards + SVG lines together) down to fit, instead of
-// forcing horizontal scrolling. At that scale the per-station values are too
-// small to read, so tapping a station opens its full card in a bottom sheet.
-// All of this is inert on wide screens (isCompact stays false, scale stays 1).
-const NATURAL_WIDTH = 950
-const isCompact = ref(false) // true when the diagram is scaled to fit
-const schematicScale = ref(1) // transform scale currently applied to the stage
-const wrapperHeight = ref<number | null>(null) // collapses the layout gap the scaled stage leaves
-const selectedStation = ref<Station | null>(null)
-
-function openStation(site: Station | undefined) {
-  // Only acts as a tap target in the scaled overview; a normal click on a
-  // full-size desktop card does nothing here.
-  if (!isCompact.value || !site) return
-  selectedStation.value = site
-}
-
-function closeStation() {
-  selectedStation.value = null
-}
-
 const updateLineCoordinates = async () => {
   await nextTick()
   if (!gridContainerRef.value) return
 
   const containerRect = gridContainerRef.value.getBoundingClientRect()
 
-  // getBoundingClientRect reports the on-screen (already-scaled) geometry, so
-  // dividing by the scale currently applied to the stage recovers the diagram's
-  // natural coordinates. The SVG lives inside the same scaled stage, so feeding
-  // it natural coordinates makes the lines render correctly at any scale. On
-  // wide screens this divisor is 1 (a no-op).
-  const currentScale = schematicScale.value || 1
-
   const getMarkerCenter = (id: string) => {
     const el = gridContainerRef.value?.querySelector(`[data-marker="${id}"]`)
     if (!el) return { x: 0, y: 0, left: 0, right: 0 }
     const rect = el.getBoundingClientRect()
     return {
-      x: (rect.left + rect.width / 2 - containerRect.left) / currentScale,
-      y: (rect.top + rect.height / 2 - containerRect.top) / currentScale,
-      left: (rect.left - containerRect.left) / currentScale,
-      right: (rect.right - containerRect.left) / currentScale,
+      x: rect.left + rect.width / 2 - containerRect.left,
+      y: rect.top + rect.height / 2 - containerRect.top,
+      left: rect.left - containerRect.left,
+      right: rect.right - containerRect.left,
     }
   }
 
   const terminusEl = gridContainerRef.value.querySelector('[data-marker="terminus_card"]')
-  let reservoirTopY = containerRect.height / currentScale
+  let reservoirTopY = containerRect.height
   let reservoirBlueX = 0
   let reservoirOrangeX1 = 0
   let reservoirOrangeX2 = 0
 
   if (terminusEl) {
     const tRect = terminusEl.getBoundingClientRect()
-    reservoirTopY = (tRect.top - containerRect.top) / currentScale - 30
+    reservoirTopY = tRect.top - containerRect.top - 30
     const blueNodePt = getMarkerCenter('before_cutler')
     reservoirBlueX = blueNodePt.x
     reservoirOrangeX1 = blueNodePt.x + 200
@@ -187,54 +157,26 @@ const updateLineCoordinates = async () => {
     `Q ${bsf3.x},${turnY} ${bsf3.x - curveRadius},${turnY} ` +
     `L ${confCenter.x + 35},${turnY}`
 
-  const tightCurve = 10
-
-  // Little Bear keeps its curved routing at every width: it exits the side of
-  // its card and drops in the channel to the left of the column, so it stays
-  // clear of the Spring Creek card below it and never looks like it feeds into it.
   const lbElement = getMarkerCenter('little_bear')
   const lbTurnX = reservoirOrangeX1
   const lbTurnY = lbElement.y
+  const tightCurve = 10
+
   paths.value.cutlerLittleBear =
     `M ${lbElement.left},${lbTurnY} ` +
     `L ${lbTurnX + tightCurve},${lbTurnY} ` +
     `Q ${lbTurnX},${lbTurnY} ${lbTurnX},${lbTurnY + tightCurve} ` +
     `L ${lbTurnX},${reservoirTopY}`
 
-  // Spring Creek is the one whose curved turn point lands at its own card edge
-  // on narrow screens, leaving a horizontal stub poking out. When the diagram
-  // overflows the viewport, drop it straight down from the card bottom instead.
-  // Desktop routing is unchanged.
-  // The diagram is "narrow" when its natural width can't fit the available
-  // space — which is also exactly when we scale it to fit (see end of function).
-  const availableWidth =
-    gridContainerRef.value.parentElement?.clientWidth ?? gridContainerRef.value.clientWidth
-  const isNarrow = availableWidth < NATURAL_WIDTH
-
   const scmElement = getMarkerCenter('spring_creek_mendon')
-  if (isNarrow) {
-    const dropX = scmElement.x // straight down from the card's center
-    paths.value.cutlerSpringCreek =
-      `M ${dropX},${scmElement.y + 32} ` + `L ${dropX},${reservoirTopY}`
-  } else {
-    const scmTurnX = reservoirOrangeX2
-    const scmTurnY = scmElement.y
-    paths.value.cutlerSpringCreek =
-      `M ${scmElement.left},${scmTurnY} ` +
-      `L ${scmTurnX + tightCurve},${scmTurnY} ` +
-      `Q ${scmTurnX},${scmTurnY} ${scmTurnX},${scmTurnY + tightCurve} ` +
-      `L ${scmTurnX},${reservoirTopY}`
-  }
+  const scmTurnX = reservoirOrangeX2
+  const scmTurnY = scmElement.y
 
-  // Scale the whole stage to fit the available width on narrow screens. The
-  // paths above are already in natural coordinates, so they scale together with
-  // the cards. On wide screens fitScale is 1 and nothing changes.
-  const fitScale = Math.min(1, availableWidth / NATURAL_WIDTH)
-  const naturalHeight = containerRect.height / currentScale
-  schematicScale.value = fitScale
-  isCompact.value = fitScale < 1
-  wrapperHeight.value = isCompact.value ? naturalHeight * fitScale : null
-  if (!isCompact.value) selectedStation.value = null
+  paths.value.cutlerSpringCreek =
+    `M ${scmElement.left},${scmTurnY} ` +
+    `L ${scmTurnX + tightCurve},${scmTurnY} ` +
+    `Q ${scmTurnX},${scmTurnY} ${scmTurnX},${scmTurnY + tightCurve} ` +
+    `L ${scmTurnX},${reservoirTopY}`
 
   // A valid measurement just completed against the rendered grid: make sure the
   // size observer is attached and reveal the lines.
@@ -281,19 +223,7 @@ const attachObserver = () => {
   resizeObserver.observe(gridContainerRef.value)
 }
 
-// A quick scale estimate from the viewport width, applied synchronously before
-// the first measured pass so the diagram renders already-scaled on a phone
-// rather than flashing at full size for a frame. updateLineCoordinates refines
-// it with the real container width.
-const estimateScaleFromViewport = () => {
-  const approxAvailable = window.innerWidth - 64 // rough container padding allowance
-  const est = Math.min(1, approxAvailable / NATURAL_WIDTH)
-  schematicScale.value = est
-  isCompact.value = est < 1
-}
-
 onMounted(() => {
-  estimateScaleFromViewport()
   scheduleRedraw()
   window.addEventListener('resize', scheduleRedraw)
 })
@@ -335,236 +265,199 @@ watch(
       Tracking how tributary sub-basins flow together and connect into the lower watershed.
     </p>
 
-    <p v-if="isCompact && !loading" class="mobile-hint">
-      <span class="hint-dot"></span>
-      Tap any station to enlarge its readings.
-    </p>
-
     <div v-if="loading" class="loading-state">
       <div class="spinner"></div>
       <p>Aligning network telemetry lines...</p>
     </div>
 
-    <div
-      v-else
-      class="schematic-grid-wrapper"
-      :class="{ 'is-compact': isCompact }"
-      :style="isCompact && wrapperHeight != null ? { height: wrapperHeight + 'px' } : {}"
-    >
-      <div
-        class="schematic-stage"
-        :class="{ 'is-ready': linesReady }"
-        ref="gridContainerRef"
-        :style="
-          isCompact ? { transform: `scale(${schematicScale})`, transformOrigin: 'top left' } : {}
-        "
-      >
-        <svg class="global-routing-svg" :class="{ 'lines-ready': linesReady }">
-          <defs>
-            <marker
-              id="blue-arrow"
-              markerWidth="8"
-              markerHeight="8"
-              refX="0"
-              refY="4"
-              orient="auto-start-reverse"
-            >
-              <path
-                d="M 0 1 L 7 4 L 0 7 z"
-                fill="#01377D"
-                style="shape-rendering: geometricPrecision"
-              />
-            </marker>
-            <marker
-              id="green-arrow"
-              markerWidth="8"
-              markerHeight="8"
-              refX="0"
-              refY="4"
-              orient="auto-start-reverse"
-            >
-              <path
-                d="M 0 1 L 7 4 L 0 7 z"
-                fill="#16a34a"
-                style="shape-rendering: geometricPrecision"
-              />
-            </marker>
-            <marker
-              id="orange-arrow"
-              markerWidth="8"
-              markerHeight="8"
-              refX="0"
-              refY="4"
-              orient="auto-start-reverse"
-            >
-              <path
-                d="M 0 1 L 7 4 L 0 7 z"
-                fill="#ea580c"
-                style="shape-rendering: geometricPrecision"
-              />
-            </marker>
-          </defs>
-
-          <path
-            :d="paths.logan"
-            fill="none"
-            stroke="#01377D"
-            stroke-width="4"
-            stroke-linejoin="round"
-            stroke-linecap="round"
-            marker-end="url(#blue-arrow)"
-          />
-          <path
-            v-for="(pathD, id) in leftTribPaths"
-            :key="id"
-            :d="pathD"
-            fill="none"
-            stroke="#16a34a"
-            stroke-width="4"
-            stroke-linejoin="round"
-            marker-end="url(#green-arrow)"
-          />
-          <path
-            :d="paths.blacksmith"
-            fill="none"
-            stroke="#16a34a"
-            stroke-width="4"
-            stroke-linejoin="round"
-            stroke-linecap="butt"
-            marker-end="url(#green-arrow)"
-          />
-          <path
-            :d="paths.cutlerLittleBear"
-            fill="none"
-            stroke="#ea580c"
-            stroke-width="4"
-            stroke-linejoin="round"
-            stroke-linecap="round"
-            marker-end="url(#orange-arrow)"
-          />
-          <path
-            :d="paths.cutlerSpringCreek"
-            fill="none"
-            stroke="#ea580c"
-            stroke-width="4"
-            stroke-linejoin="round"
-            stroke-linecap="round"
-            marker-end="url(#orange-arrow)"
-          />
-        </svg>
-
-        <div class="schematic-grid">
-          <div
-            v-for="node in leftTributaries"
-            :key="node.id"
-            :class="[
-              'grid-cell',
-              node.id === 'temple' || node.id === 'right_hand' ? 'col-3' : 'col-1',
-            ]"
-            :style="{ gridRow: node.row }"
-            :data-marker="node.id"
+    <div v-else class="schematic-grid-wrapper" ref="gridContainerRef">
+      <svg class="global-routing-svg" :class="{ 'lines-ready': linesReady }">
+        <defs>
+          <marker
+            id="blue-arrow"
+            markerWidth="8"
+            markerHeight="8"
+            refX="0"
+            refY="4"
+            orient="auto-start-reverse"
           >
-            <StationCard
-              v-if="findLiveStation(node.name)"
-              :site="findLiveStation(node.name)!"
-              compact
-              @click="openStation(findLiveStation(node.name))"
+            <path
+              d="M 0 1 L 7 4 L 0 7 z"
+              fill="#01377D"
+              style="shape-rendering: geometricPrecision"
             />
-            <div v-else class="node-card inflow-card-left">
-              <div class="inflow-content-wrapper">
-                <span class="node-title">{{ node.name }}</span>
-              </div>
-            </div>
-          </div>
-
-          <div
-            v-for="node in loganMainStem"
-            :key="node.id"
-            class="grid-cell col-2"
-            :style="{ gridRow: node.row }"
-            :data-marker="node.id"
+          </marker>
+          <marker
+            id="green-arrow"
+            markerWidth="8"
+            markerHeight="8"
+            refX="0"
+            refY="4"
+            orient="auto-start-reverse"
           >
-            <template v-if="findLiveStation(node.name)">
-              <StationCard
-                :site="findLiveStation(node.name)!"
-                compact
-                @click="openStation(findLiveStation(node.name))"
-              />
-            </template>
-            <template v-else>
-              <div
-                v-if="node.type === 'line-junction'"
-                :data-marker="node.id"
-                class="junction-spacer"
-              ></div>
-              <div v-else class="node-card main-stem-card">
-                <span class="node-title">{{ node.name }}</span>
-              </div>
-            </template>
-          </div>
-
-          <div
-            v-for="node in blacksmithSystem"
-            :key="node.id"
-            class="grid-cell col-3"
-            :style="{ gridRow: node.row }"
-            :data-marker="node.id"
-          >
-            <StationCard
-              v-if="findLiveStation(node.name)"
-              :site="findLiveStation(node.name)!"
-              compact
-              @click="openStation(findLiveStation(node.name))"
+            <path
+              d="M 0 1 L 7 4 L 0 7 z"
+              fill="#16a34a"
+              style="shape-rendering: geometricPrecision"
             />
-            <div v-else class="node-card bsf-card">
+          </marker>
+          <marker
+            id="orange-arrow"
+            markerWidth="8"
+            markerHeight="8"
+            refX="0"
+            refY="4"
+            orient="auto-start-reverse"
+          >
+            <path
+              d="M 0 1 L 7 4 L 0 7 z"
+              fill="#ea580c"
+              style="shape-rendering: geometricPrecision"
+            />
+          </marker>
+        </defs>
+
+        <path
+          :d="paths.logan"
+          fill="none"
+          stroke="#01377D"
+          stroke-width="4"
+          stroke-linejoin="round"
+          stroke-linecap="round"
+          marker-end="url(#blue-arrow)"
+        />
+        <path
+          v-for="(pathD, id) in leftTribPaths"
+          :key="id"
+          :d="pathD"
+          fill="none"
+          stroke="#16a34a"
+          stroke-width="4"
+          stroke-linejoin="round"
+          marker-end="url(#green-arrow)"
+        />
+        <path
+          :d="paths.blacksmith"
+          fill="none"
+          stroke="#16a34a"
+          stroke-width="4"
+          stroke-linejoin="round"
+          stroke-linecap="butt"
+          marker-end="url(#green-arrow)"
+        />
+        <path
+          :d="paths.cutlerLittleBear"
+          fill="none"
+          stroke="#ea580c"
+          stroke-width="4"
+          stroke-linejoin="round"
+          stroke-linecap="round"
+          marker-end="url(#orange-arrow)"
+        />
+        <path
+          :d="paths.cutlerSpringCreek"
+          fill="none"
+          stroke="#ea580c"
+          stroke-width="4"
+          stroke-linejoin="round"
+          stroke-linecap="round"
+          marker-end="url(#orange-arrow)"
+        />
+      </svg>
+
+      <div class="schematic-grid">
+        <div
+          v-for="node in leftTributaries"
+          :key="node.id"
+          :class="[
+            'grid-cell',
+            node.id === 'temple' || node.id === 'right_hand' ? 'col-3' : 'col-1',
+          ]"
+          :style="{ gridRow: node.row }"
+          :data-marker="node.id"
+        >
+          <StationCard
+            v-if="findLiveStation(node.name)"
+            :site="findLiveStation(node.name)!"
+            compact
+          />
+          <div v-else class="node-card inflow-card-left">
+            <div class="inflow-content-wrapper">
               <span class="node-title">{{ node.name }}</span>
-            </div>
-          </div>
-
-          <div
-            v-for="node in cutlerInflows"
-            :key="node.id"
-            class="grid-cell col-3"
-            :style="{ gridRow: node.row }"
-            :data-marker="node.id"
-          >
-            <StationCard
-              v-if="findLiveStation(node.name)"
-              :site="findLiveStation(node.name)!"
-              compact
-              @click="openStation(findLiveStation(node.name))"
-            />
-            <div v-else class="node-card independent-card">
-              <span class="node-title">{{ node.name }}</span>
-              <div class="routing-label">Direct to Cutler Terminus</div>
-            </div>
-          </div>
-
-          <div
-            class="terminus-grid-cell"
-            style="grid-row: 18; grid-column: 1 / span 3"
-            data-marker="terminus_card"
-          >
-            <div class="terminus-card">
-              <Droplets :size="26" class="terminus-icon" />
-              <div class="terminus-details">
-                <h3>SYSTEM TERMINUS: Cutler Reservoir</h3>
-                <p>Ultimate drainage collection basin for all main channels and lateral streams.</p>
-              </div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
 
-    <!-- Tap-for-detail bottom sheet (narrow screens). Sits outside the scaled
-         stage so it renders at full size and position:fixed works correctly. -->
-    <div v-if="selectedStation" class="station-sheet-backdrop" @click="closeStation">
-      <div class="station-sheet" @click.stop>
-        <button class="sheet-close" type="button" aria-label="Close" @click="closeStation">
-          &times;
-        </button>
-        <StationCard :site="selectedStation!" />
+        <div
+          v-for="node in loganMainStem"
+          :key="node.id"
+          class="grid-cell col-2"
+          :style="{ gridRow: node.row }"
+          :data-marker="node.id"
+        >
+          <template v-if="findLiveStation(node.name)">
+            <StationCard :site="findLiveStation(node.name)!" compact />
+          </template>
+          <template v-else>
+            <div
+              v-if="node.type === 'line-junction'"
+              :data-marker="node.id"
+              class="junction-spacer"
+            ></div>
+            <div v-else class="node-card main-stem-card">
+              <span class="node-title">{{ node.name }}</span>
+            </div>
+          </template>
+        </div>
+
+        <div
+          v-for="node in blacksmithSystem"
+          :key="node.id"
+          class="grid-cell col-3"
+          :style="{ gridRow: node.row }"
+          :data-marker="node.id"
+        >
+          <StationCard
+            v-if="findLiveStation(node.name)"
+            :site="findLiveStation(node.name)!"
+            compact
+          />
+          <div v-else class="node-card bsf-card">
+            <span class="node-title">{{ node.name }}</span>
+          </div>
+        </div>
+
+        <div
+          v-for="node in cutlerInflows"
+          :key="node.id"
+          class="grid-cell col-3"
+          :style="{ gridRow: node.row }"
+          :data-marker="node.id"
+        >
+          <StationCard
+            v-if="findLiveStation(node.name)"
+            :site="findLiveStation(node.name)!"
+            compact
+          />
+          <div v-else class="node-card independent-card">
+            <span class="node-title">{{ node.name }}</span>
+            <div class="routing-label">Direct to Cutler Terminus</div>
+          </div>
+        </div>
+
+        <div
+          class="terminus-grid-cell"
+          style="grid-row: 18; grid-column: 1 / span 3"
+          data-marker="terminus_card"
+        >
+          <div class="terminus-card">
+            <Droplets :size="26" class="terminus-icon" />
+            <div class="terminus-details">
+              <h3>SYSTEM TERMINUS: Cutler Reservoir</h3>
+              <p>Ultimate drainage collection basin for all main channels and lateral streams.</p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -588,31 +481,6 @@ watch(
   width: 100%;
   overflow-x: auto;
   padding-bottom: 1rem;
-}
-
-/* Narrow screens: the stage is scaled (inline transform) to fit, so its layout
-   box still occupies the natural width/height. Clip that overflow and let the
-   inline height collapse the leftover vertical space. */
-.schematic-grid-wrapper.is-compact {
-  overflow: hidden;
-  padding-bottom: 0;
-}
-
-/* The stage holds the grid + SVG at natural size; it is the element scaled to
-   fit on narrow screens, and the element the line geometry is measured against. */
-.schematic-stage {
-  position: relative;
-  width: 100%;
-  min-width: 950px;
-  /* Hidden via opacity (not display:none, so it still has a measurable layout)
-     until the first real measurement completes, so reloads fade in already
-     correct instead of showing the brief scale/position settle. */
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.schematic-stage.is-ready {
-  opacity: 1;
 }
 
 .schematic-grid {
@@ -653,7 +521,7 @@ watch(
 }
 
 .title-icon {
-  color: #01377d;
+  color: #073763;
 }
 
 h2 {
@@ -876,84 +744,5 @@ h2 {
   border-color: transparent !important;
   box-shadow: none !important;
   padding: 0 !important;
-}
-
-/* --- Mobile tap hint ---------------------------------------------------- */
-.mobile-hint {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0 0 1.5rem 0;
-  padding: 6px 12px;
-  border-radius: 9999px;
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
-  color: #1d4ed8;
-  font-family:
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    Roboto,
-    sans-serif;
-  font-size: 0.85rem;
-  font-weight: 600;
-}
-.hint-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #3b82f6;
-  flex-shrink: 0;
-}
-
-/* --- Tap-for-detail bottom sheet (narrow screens) ----------------------- */
-.station-sheet-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 1000;
-  background: rgba(15, 23, 42, 0.45);
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-}
-
-.station-sheet {
-  position: relative;
-  width: 100%;
-  max-width: 560px;
-  max-height: 85vh;
-  overflow-y: auto;
-  background: #ffffff;
-  border-radius: 16px 16px 0 0;
-  padding: 1.25rem 1rem 1.5rem;
-  box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.2);
-  animation: sheet-up 0.22s ease;
-}
-
-@keyframes sheet-up {
-  from {
-    transform: translateY(100%);
-  }
-  to {
-    transform: translateY(0);
-  }
-}
-
-.sheet-close {
-  position: absolute;
-  top: 8px;
-  right: 12px;
-  z-index: 1;
-  border: none;
-  background: transparent;
-  font-size: 1.8rem;
-  line-height: 1;
-  color: #64748b;
-  cursor: pointer;
-  padding: 4px 10px;
-}
-.sheet-close:hover {
-  color: #1e293b;
 }
 </style>

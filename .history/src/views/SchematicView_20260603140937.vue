@@ -353,7 +353,6 @@ watch(
     >
       <div
         class="schematic-stage"
-        :class="{ 'is-ready': linesReady }"
         ref="gridContainerRef"
         :style="
           isCompact ? { transform: `scale(${schematicScale})`, transformOrigin: 'top left' } : {}
@@ -604,15 +603,6 @@ watch(
   position: relative;
   width: 100%;
   min-width: 950px;
-  /* Hidden via opacity (not display:none, so it still has a measurable layout)
-     until the first real measurement completes, so reloads fade in already
-     correct instead of showing the brief scale/position settle. */
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.schematic-stage.is-ready {
-  opacity: 1;
 }
 
 .schematic-grid {

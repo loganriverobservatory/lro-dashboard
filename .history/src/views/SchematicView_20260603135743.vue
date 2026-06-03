@@ -335,11 +335,6 @@ watch(
       Tracking how tributary sub-basins flow together and connect into the lower watershed.
     </p>
 
-    <p v-if="isCompact && !loading" class="mobile-hint">
-      <span class="hint-dot"></span>
-      Tap any station to enlarge its readings.
-    </p>
-
     <div v-if="loading" class="loading-state">
       <div class="spinner"></div>
       <p>Aligning network telemetry lines...</p>
@@ -353,7 +348,6 @@ watch(
     >
       <div
         class="schematic-stage"
-        :class="{ 'is-ready': linesReady }"
         ref="gridContainerRef"
         :style="
           isCompact ? { transform: `scale(${schematicScale})`, transformOrigin: 'top left' } : {}
@@ -604,15 +598,6 @@ watch(
   position: relative;
   width: 100%;
   min-width: 950px;
-  /* Hidden via opacity (not display:none, so it still has a measurable layout)
-     until the first real measurement completes, so reloads fade in already
-     correct instead of showing the brief scale/position settle. */
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.schematic-stage.is-ready {
-  opacity: 1;
 }
 
 .schematic-grid {
@@ -876,35 +861,6 @@ h2 {
   border-color: transparent !important;
   box-shadow: none !important;
   padding: 0 !important;
-}
-
-/* --- Mobile tap hint ---------------------------------------------------- */
-.mobile-hint {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0 0 1.5rem 0;
-  padding: 6px 12px;
-  border-radius: 9999px;
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
-  color: #1d4ed8;
-  font-family:
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    Roboto,
-    sans-serif;
-  font-size: 0.85rem;
-  font-weight: 600;
-}
-.hint-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #3b82f6;
-  flex-shrink: 0;
 }
 
 /* --- Tap-for-detail bottom sheet (narrow screens) ----------------------- */

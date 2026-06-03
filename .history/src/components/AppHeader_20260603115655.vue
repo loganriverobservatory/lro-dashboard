@@ -147,15 +147,5 @@ const emit = defineEmits(['toggle-sidebar', 'change-view'])
   .dashboard-tag {
     display: none;
   }
-
-  /* Collapse the action buttons to icons only so the row fits a phone width
-     instead of pushing "HydroServer" off the right edge. */
-  .nav-label {
-    display: none;
-  }
-
-  .nav-action-btn {
-    padding: 8px;
-  }
 }
 </style>
