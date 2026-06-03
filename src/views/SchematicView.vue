@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { Droplets } from 'lucide-vue-next'
 import { type Station } from '../hydroService'
 import StationCard from '../components/StationCard.vue'
@@ -198,6 +198,11 @@ onMounted(() => {
 onUnmounted(() => {
   if (resizeObserver) resizeObserver.disconnect()
   window.removeEventListener('resize', updateLineCoordinates)
+})
+
+watch(() => props.sites, () => {
+  setTimeout(() => updateLineCoordinates(), 100)
+  setTimeout(() => updateLineCoordinates(), 300)
 })
 </script>
 

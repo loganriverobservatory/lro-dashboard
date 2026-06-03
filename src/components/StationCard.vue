@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { type Station } from '../hydroService'
+import { type Station, getFreshnessStatus } from '../hydroService'
 
 const props = withDefaults(
   defineProps<{
@@ -50,19 +50,15 @@ function isDataFresh(observation: any): boolean {
 }
 
 function getFreshnessClass(dateStr: string | undefined): string {
-  if (!dateStr) return 'color-stale'
-
-  const obsTime = new Date(dateStr).getTime()
-  const hoursAgo = (Date.now() - obsTime) / (1000 * 60 * 60)
-
-  if (hoursAgo <= 4) return 'color-fresh'
-  if (hoursAgo <= 24) return 'color-warning'
-  return 'color-stale'
+  const status = getFreshnessStatus(
+    dateStr ? { '@iot.id': '', result: null, phenomenonTime: dateStr } : null,
+  )
+  return { current: 'color-fresh', stale: 'color-warning', outdated: 'color-stale', unknown: 'color-stale' }[status]
 }
 
 const shortDisplayName = computed(() => {
   const name = props.site?.displayName || ''
-  return name.split(':')[0].trim()
+  return (name.split(':')[0] ?? name).trim()
 })
 
 const parsedMeasurements = computed(() => {
@@ -74,9 +70,9 @@ const parsedMeasurements = computed(() => {
   if (obs.result === null) {
     return [
       {
-        label: 'Discharge',
+        label: '',
         value: '---',
-        unit: props.site.unit || 'cfs',
+        unit: props.site.unit || '',
         time: obs.phenomenonTime,
         fresh: false,
       },
@@ -95,9 +91,9 @@ const parsedMeasurements = computed(() => {
 
   return [
     {
-      label: 'Discharge',
+      label: '',
       value: Number(obs.result).toFixed(2),
-      unit: props.site.unit || 'cfs',
+      unit: props.site.unit || '',
       time: obs.phenomenonTime,
       fresh: isDataFresh(obs),
     },
@@ -191,7 +187,7 @@ const isAwaitingTelemetry = computed(() => {
         </div>
 
         <div v-if="!hasAnyLiveTelemetry" class="value-row offline-row">
-          <span class="value fallback-text">No Live Data Available</span>
+          <span class="value fallback-text">{{ mapMode ? 'n/a' : 'No data available' }}</span>
         </div>
 
         <p v-if="site.observation?.phenomenonTime && !mapMode" class="timestamp">

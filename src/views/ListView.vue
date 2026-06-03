@@ -1,33 +1,17 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import StationCard from '../components/StationCard.vue'
-import { type Station } from '../hydroService'
+import { type Station, WATER_VARIBALES } from '../hydroService'
 
 const props = defineProps<{
   sites: Station[]
   loading: boolean
+  selectedVariable?: string
 }>()
 
-const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000
-
-function isStationExpired(site: Station): boolean {
-  if (!site || !site.observation) return true
-  if (!site.observation.phenomenonTime) return true
-
-  const obsTime = new Date(site.observation.phenomenonTime).getTime()
-  const cutoffTime = Date.now() - ONE_YEAR_MS
-
-  return obsTime < cutoffTime
-}
-
-const activeSites = computed(() => {
-  return props.sites.filter((site) => {
-    if (site.displayName.includes('1000 West') || site.displayName.includes('10th West')) {
-      return true
-    }
-
-    return !isStationExpired(site)
-  })
+const variableLabel = computed(() => {
+  const match = WATER_VARIBALES.find((v) => v.id === props.selectedVariable)
+  return match ? match.label : props.selectedVariable || 'Live Data'
 })
 </script>
 
@@ -36,7 +20,7 @@ const activeSites = computed(() => {
     <header class="dashboard-header">
       <h1>Logan River Observatory</h1>
       <div class="status-banner">
-        <h2>Live Discharge Monitoring (cfs)</h2>
+        <h2>Live {{ variableLabel }} Monitoring</h2>
       </div>
     </header>
 
@@ -45,7 +29,7 @@ const activeSites = computed(() => {
     </div>
 
     <div v-else class="station-grid">
-      <StationCard v-for="site in activeSites" :key="site.uuid" :site="site" />
+      <StationCard v-for="site in sites" :key="site.uuid" :site="site" />
     </div>
   </div>
 </template>
