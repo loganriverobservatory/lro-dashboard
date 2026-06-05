@@ -1,7 +1,15 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { X, List, Map as MapIcon, MapPin, Droplets, ChevronDown, ChevronRight } from 'lucide-vue-next'
-import { TRIBUTARY_COLORS, TRIBUTARY_LIST } from '../hydroService'
+import {
+  X,
+  List,
+  Map as MapIcon,
+  MapPin,
+  Droplets,
+  ChevronDown,
+  ChevronRight,
+} from 'lucide-vue-next'
+import { STATUS_COLORS, TRIBUTARY_COLORS, TRIBUTARY_LIST } from '../hydroService'
 
 const props = defineProps<{
   isOpen: boolean
@@ -26,7 +34,12 @@ const freshnessItems = [
   { label: 'Stale (2–24 hrs)', color: '#d97706' },
   { label: 'Outdated (> 24 hrs)', color: '#64748b' },
 ]
-const emit = defineEmits(['close-sidebar', 'change-view', 'variable-changed', 'tributary-filter-changed'])
+const emit = defineEmits([
+  'close-sidebar',
+  'change-view',
+  'variable-changed',
+  'tributary-filter-changed',
+])
 
 const showLegend = () => ['map', 'list', 'schematic'].includes(props.currentView)
 
@@ -51,8 +64,6 @@ function toggleAll() {
     emit('tributary-filter-changed', [...TRIBUTARY_LIST])
   }
 }
-
-
 </script>
 
 <template>
@@ -103,18 +114,14 @@ function toggleAll() {
     <div v-if="showLegend()" class="legend-section">
       <button class="legend-toggle" @click="legendOpen = !legendOpen">
         <component :is="legendOpen ? ChevronDown : ChevronRight" :size="14" />
-        <span>LEGEND: SITES</span>
+        <span>LEGEND: TRIBUTARIES</span>
       </button>
 
       <div v-if="legendOpen" class="legend-body">
         <button class="toggle-all-btn" @click="toggleAll">
           {{ activeTributaries.length === TRIBUTARY_LIST.length ? 'Deselect All' : 'Select All' }}
         </button>
-        <label
-          v-for="name in TRIBUTARY_LIST"
-          :key="name"
-          class="legend-item"
-        >
+        <label v-for="name in TRIBUTARY_LIST" :key="name" class="legend-item">
           <input
             type="checkbox"
             class="legend-checkbox"
@@ -130,7 +137,10 @@ function toggleAll() {
     <div v-if="showLegend()" class="legend-section">
       <button class="legend-toggle" @click="freshnessOpen = !freshnessOpen">
         <component :is="freshnessOpen ? ChevronDown : ChevronRight" :size="14" />
-        <span>LEGEND: DATA FRESHNESS</span>
+        <span>DATA STATUS</span>
+        <span :style="{ color: STATUS_COLORS.current }">Current</span>
+        <span :style="{ color: STATUS_COLORS.stale }">Stale</span>
+        <span :style="{ color: STATUS_COLORS.outdated }">Outdated</span>
       </button>
 
       <div v-if="freshnessOpen" class="legend-body">

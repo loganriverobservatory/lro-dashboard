@@ -1,8 +1,9 @@
 <script setup lang="ts">
+// MapView.vue - Displays the map with station pins
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { onMounted, watch, onBeforeUnmount, ref } from 'vue'
-import { type Station, getFreshnessStatus, TRIBUTARY_COLORS } from '../hydroService'
+import { type Station, getFreshnessStatus, STATUS_COLORS, TRIBUTARY_COLORS } from '../hydroService'
 import StationCard from '../components/StationCard.vue'
 
 const props = defineProps<{
@@ -19,13 +20,6 @@ const markerMap = new Map<string, L.Marker>()
 const hasZoomed = ref(false)
 const expandedStation = ref<Station | null>(null)
 let isProgrammaticZoom = false
-
-const statusColorMap: Record<string, string> = {
-  current: '#16a34a',
-  stale: '#d97706',
-  outdated: '#64748b',
-  unknown: '#64748b',
-}
 
 const syncMarkers = () => {
   if (!map) return
@@ -66,12 +60,12 @@ const syncMarkers = () => {
       if (hasZoomed.value) {
         const obs = station.observation
         let valueStr = 'n/a'
-        let color = statusColorMap.unknown
+        let color = STATUS_COLORS.unknown
 
         if (obs && obs.result !== null && obs.result !== undefined) {
           valueStr = `${Number(obs.result).toFixed(2)} ${station.unit || ''}`
           const status = getFreshnessStatus(obs)
-          color = statusColorMap[status] ?? statusColorMap.unknown
+          color = STATUS_COLORS[status as keyof typeof STATUS_COLORS] ?? STATUS_COLORS.unknown
         }
 
         marker.bindTooltip(`<div class="pin-value" style="color:${color}">${valueStr}</div>`, {

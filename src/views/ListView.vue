@@ -1,7 +1,13 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import StationCard from '../components/StationCard.vue'
-import { type Station, WATER_VARIBALES } from '../hydroService'
+import {
+  type Station,
+  WATER_VARIBALES,
+  TRIBUTARY_COLORS,
+  getFreshnessStatus,
+  STATUS_COLORS,
+} from '../hydroService'
 
 const props = defineProps<{
   sites: Station[]
@@ -19,6 +25,12 @@ const filteredSites = computed(() => {
   if (!props.activeTributaries || props.activeTributaries.length === 0) return props.sites
   return props.sites.filter((s) => props.activeTributaries!.includes(s.tributary ?? ''))
 })
+
+function getStationStatusColor(station: Station): string {
+  if (!station.observation) return STATUS_COLORS.unknown
+  const status = getFreshnessStatus(station.observation)
+  return STATUS_COLORS[status]
+}
 </script>
 
 <template>

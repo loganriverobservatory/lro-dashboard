@@ -1,4 +1,4 @@
-// src/hydroService.ts
+// src/hydroService.ts --
 import type { DatastreamExtended } from '@hydroserver/client'
 
 const BASE_URL = 'https://lro.hydroserver.org/api/sensorthings/v1.1'
@@ -57,22 +57,23 @@ export const WATER_VARIBALES = [
   { id: 'Discharge', label: 'Discharge (cfs)' },
   { id: 'Water Temperature', label: 'Temperature (°C)' },
   { id: 'Specific Conductance', label: 'SPC (uS/cm)' },
-  { id: 'pH', label: 'pH' },
-  { id: 'Oxygen, dissolved', label: 'Dissolved Oxygen' },
+  { id: 'pH', label: 'pH (pH)' },
+  { id: 'Oxygen, dissolved', label: 'Dissolved Oxygen (mg/L)' },
 ]
 
 // Add or remove station codes here to control which sites appear in all views
+// HS: ADD AS TAG ON HS
 const STATIONS_NOT_DISPLAYED = [
-  'TF_SAWM_A',      // decommissioned
-  'SPC_CONF_A',     // decommissioned
-  'SLB_600W_CNL',   // canal
-  'NWF_1600N_CNL',  // canal
-  'LR_RH_SD',       // storm drain
-  'LR_SC_SD',       // storm drain
-  'LR_DSC_A',       // decommissioned
+  'TF_SAWM_A', // decommissioned
+  'SPC_CONF_A', // decommissioned
+  'SLB_600W_CNL', // canal
+  'NWF_1600N_CNL', // canal
+  'LR_RH_SD', // storm drain
+  'LR_SC_SD', // storm drain
+  'LR_DSC_A', // decommissioned
 ]
 
-function getCoordinates(ds: any): [number, number] | null {
+function getCoordinates(ds: StaDatastream): [number, number] | null {
   const p = ds.Thing?.Locations?.[0]?.location?.geometry?.coordinates
 
   if (p && p.length >= 2) {
@@ -83,6 +84,7 @@ function getCoordinates(ds: any): [number, number] | null {
   }
 }
 
+//HS: ADD AS TAG ON HS
 const STATION_NAME_MAP: Record<string, string> = {
   BC_CONF_A: 'Beaver Creek: Before Confluence with the Logan River',
   BSF_1700S_A: 'Blacksmith Fork River: 1700 South Footbridge',
@@ -122,26 +124,30 @@ export async function getVariableStations(variable: string = 'Discharge'): Promi
 
   return data.value
     .filter((ds: StaDatastream) => {
+      if (!ds.name) return false
       const code = ds.name.split(' ')[0]
-      if (STATIONS_NOT_DISPLAYED.includes(code)) return false
+      if (code && STATIONS_NOT_DISPLAYED.includes(code)) return false
       const isDecommissioned =
-        ds.description?.includes('Decommissioned') || ds.name?.includes('Decommissioned')
-      const isTesting = ds.name?.includes('Testing')
+        ds.description?.includes('Decommissioned') || ds.name.includes('Decommissioned')
+      const isTesting = ds.name.includes('Testing')
       return !isDecommissioned && !isTesting
     })
     .map((ds: StaDatastream) => {
-      const stationCode = ds.name.split(' ')[0]
+      const stationCode = ds.name.split(' ')[0] || 'UNKNOWN'
       const foundCoords = getCoordinates(ds)
 
-      const displayName = STATION_NAME_MAP[stationCode] || stationCode
-      const tributaryBase = displayName.split(':')[0].trim()
+      const displayNameText: string = STATION_NAME_MAP[stationCode] || stationCode
+      const tributaryBase = displayNameText.includes(':')
+        ? displayNameText.split(':')[0].trim()
+        : 'Unknown Tributary'
+
       const tributary = tributaryBase === 'Logan River' ? 'Logan River: Main Stem' : tributaryBase
 
       return {
         id: ds['@iot.id']?.toString(),
         uuid: ds.Thing?.['@iot.id']?.toString() || '',
-        displayName,
-        description: ds.description,
+        displayName: displayNameText,
+        description: ds.description || '',
         observation: { '@iot.id': '', result: null, phenomenonTime: null },
         coordinates: foundCoords,
         unit: ds.unitOfMeasurement?.symbol || '',
@@ -157,11 +163,18 @@ export async function getLatestObservation(stationId: string): Promise<StaObserv
   return data.value?.[0] || null
 }
 
-export function isStationActive(observation: StaObservation | null): boolean {
+export function isStationActive(_observation: StaObservation | null): boolean {
   return true
 }
 
 export type FreshnessStatus = 'current' | 'stale' | 'outdated' | 'unknown'
+
+export const STATUS_COLORS: Record<FreshnessStatus, string> = {
+  current: '#16a34a',
+  stale: '#d97706',
+  outdated: '#973131',
+  unknown: '#64748b',
+}
 
 export function getFreshnessStatus(observation: StaObservation | null): FreshnessStatus {
   if (!observation?.phenomenonTime) return 'unknown'

@@ -53,7 +53,12 @@ function getFreshnessClass(dateStr: string | undefined): string {
   const status = getFreshnessStatus(
     dateStr ? { '@iot.id': '', result: null, phenomenonTime: dateStr } : null,
   )
-  return { current: 'color-fresh', stale: 'color-warning', outdated: 'color-stale', unknown: 'color-stale' }[status]
+  return {
+    current: 'color-fresh',
+    stale: 'color-warning',
+    outdated: 'color-stale',
+    unknown: 'color-stale',
+  }[status]
 }
 
 const shortDisplayName = computed(() => {
@@ -171,7 +176,7 @@ const isAwaitingTelemetry = computed(() => {
             <span class="metric-label" v-if="parsedMeasurements.length > 1">
               {{ metric.label }}:
             </span>
-            <span :class="['value', getFreshnessClass(metric.time || '')]">
+            <span :class="['value', `color-${getFreshnessClass(metric.time || '')}`]">
               {{ metric.value }}
             </span>
             <span class="unit">
@@ -194,7 +199,6 @@ const isAwaitingTelemetry = computed(() => {
           Last Reading: {{ formatDate(site.observation.phenomenonTime) }}
         </p>
       </div>
-
     </div>
   </div>
 </template>
@@ -220,7 +224,6 @@ const isAwaitingTelemetry = computed(() => {
     0 4px 6px -2px rgba(0, 0, 0, 0.03);
 }
 .card-stale {
-  /* Changed background color to a distinct off-white grey so it pop outs visibly on the dashboard view */
   background: #f1f5f9;
   border-left: 4px solid #94a3b8;
   box-shadow: none;
@@ -309,10 +312,10 @@ const isAwaitingTelemetry = computed(() => {
   color: #16a34a;
 }
 .color-warning {
-  color: #d97706;
+  color: #c28743;
 }
 .color-stale {
-  color: #64748b;
+  color: #502121;
 }
 .unit {
   font-size: 1.1rem;
