@@ -133,6 +133,7 @@ const updateLineCoordinates = async () => {
   let reservoirTopY = containerRect.height / currentScale
   let reservoirBlueX = 0
   let reservoirOrangeX1 = 0
+  let reservoirOrangeX2 = 0
 
   if (terminusEl) {
     const tRect = terminusEl.getBoundingClientRect()
@@ -140,6 +141,7 @@ const updateLineCoordinates = async () => {
     const blueNodePt = getMarkerCenter('before_cutler')
     reservoirBlueX = blueNodePt.x
     reservoirOrangeX1 = blueNodePt.x + 200
+    reservoirOrangeX2 = blueNodePt.x + 230
   }
 
   let loganPathStr = ''
@@ -205,12 +207,22 @@ const updateLineCoordinates = async () => {
     `L ${lbTurnX},${reservoirTopY}`
 
   const availableWidth = gridContainerRef.value.clientWidth
+  const isNarrow = availableWidth < NATURAL_WIDTH
 
-  // Spring Creek: Mendon Road drops straight down into the Cutler terminus at
-  // every screen size (it previously curved out to the right on desktop).
   const scmElement = getMarkerCenter('spring_creek_mendon')
-  const dropX = scmElement.x
-  paths.value.cutlerSpringCreek = `M ${dropX},${scmElement.y + 32} ` + `L ${dropX},${reservoirTopY}`
+  if (isNarrow) {
+    const dropX = scmElement.x
+    paths.value.cutlerSpringCreek =
+      `M ${dropX},${scmElement.y + 32} ` + `L ${dropX},${reservoirTopY}`
+  } else {
+    const scmTurnX = reservoirOrangeX2
+    const scmTurnY = scmElement.y
+    paths.value.cutlerSpringCreek =
+      `M ${scmElement.left},${scmTurnY} ` +
+      `L ${scmTurnX + tightCurve},${scmTurnY} ` +
+      `Q ${scmTurnX},${scmTurnY} ${scmTurnX},${scmTurnY + tightCurve} ` +
+      `L ${scmTurnX},${reservoirTopY}`
+  }
 
   const fitScale = Math.min(1, availableWidth / NATURAL_WIDTH)
   const naturalHeight = containerRect.height / currentScale
