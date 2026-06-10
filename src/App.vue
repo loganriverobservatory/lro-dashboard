@@ -132,7 +132,7 @@ body {
 
 .main-container {
   grid-area: main;
-  background-color: #f8fafc; /* Changed from #6376c1 to crisp modern off-white */
+  background-color: #f8fafc;
   display: flex;
   flex-direction: column;
   padding: 0;

@@ -29,7 +29,6 @@ export interface StaObservation {
   phenomenonTime: string | null
 }
 
-// Each View pulls from Station interface
 export interface Station {
   id: string
   uuid: string
@@ -64,15 +63,15 @@ export const WATER_VARIBALES = [
 ]
 
 // Add or remove station codes here to control which sites appear in all views
-// HS: ADD AS TAG ON HS
+// HS: ADD AS TAG
 const STATIONS_NOT_DISPLAYED = [
-  'TF_SAWM_A', // decommissioned
-  'SPC_CONF_A', // decommissioned
-  'SLB_600W_CNL', // canal
-  'NWF_1600N_CNL', // canal
-  'LR_RH_SD', // storm drain
-  'LR_SC_SD', // storm drain
-  'LR_DSC_A', // decommissioned
+  'TF_SAWM_A',
+  'SPC_CONF_A',
+  'SLB_600W_CNL',
+  'NWF_1600N_CNL',
+  'LR_RH_SD',
+  'LR_SC_SD',
+  'LR_DSC_A',
 ]
 
 function getCoordinates(ds: StaDatastream): [number, number] | null {
@@ -86,7 +85,8 @@ function getCoordinates(ds: StaDatastream): [number, number] | null {
   }
 }
 
-//HS: ADD AS TAG ON HS
+// format station name
+// HS: ADD AS TAG
 const STATION_NAME_MAP: Record<string, string> = {
   BC_CONF_A: 'Beaver Creek: Before Confluence with the Logan River',
   BSF_1700S_A: 'Blacksmith Fork River: 1700 South Footbridge',
@@ -140,7 +140,7 @@ export async function getVariableStations(variable: string = 'Discharge'): Promi
 
       const displayNameText: string = STATION_NAME_MAP[stationCode] || stationCode
       const tributaryBase = displayNameText.includes(':')
-        ? displayNameText.split(':')[0].trim()
+        ? displayNameText.split(':')?.[0]?.trim()
         : 'Unknown Tributary'
 
       const tributary = tributaryBase === 'Logan River' ? 'Logan River: Main Stem' : tributaryBase

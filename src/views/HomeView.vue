@@ -4,7 +4,6 @@
  * Serves as the landing page with a hero section and quick-access links for the general public.
  */
 import { List, Map as MapIcon, Network } from 'lucide-vue-next'
-// Make sure your logo image is saved in your assets folder as lro-logo.png
 import lroLogo from '../assets/lro-logo.png'
 
 const emit = defineEmits(['change-view'])
@@ -78,9 +77,9 @@ const emit = defineEmits(['change-view'])
 .home-container {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   width: 100%;
-  max-width: 1440px; /* Bounded ceiling ensures clean scaling on huge resolutions */
-  margin: 0; /* Left aligned, not centered */
-  padding: 2.5rem 3rem 4rem 2.5rem; /* Restored elegant left tracking padding */
+  max-width: 1440px;
+  margin: 0;
+  padding: 2.5rem 3rem 4rem 2.5rem;
   box-sizing: border-box;
 }
 

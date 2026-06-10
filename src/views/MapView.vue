@@ -15,8 +15,6 @@ const props = defineProps<{
   activeWaterways: string[]
 }>()
 
-const emit = defineEmits(['select'])
-
 let map: L.Map | null = null
 const markerMap = new Map<string, L.Marker>()
 const hasZoomed = ref(false)

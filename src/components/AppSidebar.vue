@@ -114,7 +114,7 @@ function toggleAll() {
     <div v-if="showLegend()" class="legend-section">
       <button class="legend-toggle" @click="legendOpen = !legendOpen">
         <component :is="legendOpen ? ChevronDown : ChevronRight" :size="14" />
-        <span>LEGEND: REGIONAL WATERWAYS</span>
+        <span>REGIONAL WATERWAYS</span>
       </button>
 
       <div v-if="legendOpen" class="legend-body">
