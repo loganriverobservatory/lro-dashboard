@@ -1,4 +1,7 @@
 <script setup lang="ts">
+/*
+ListView.vue - Displays a list of station cards with variable values and freshness status
+*/
 import { computed } from 'vue'
 import StationCard from '../components/StationCard.vue'
 import {

@@ -1,4 +1,6 @@
-// src/hydroService.ts --
+/*
+src/hydroService.ts - fetches and processes data from HydroServer for use in the app
+*/
 import type { DatastreamExtended } from '@hydroserver/client'
 
 const BASE_URL = 'https://lro.hydroserver.org/api/sensorthings/v1.1'
@@ -40,15 +42,15 @@ export interface Station {
 }
 
 export const WATERWAY_COLORS: Record<string, string> = {
-  'Logan River: Main Stem': '#6b21a8',
+  'Logan River: Main Stem': '#13157a',
   'Blacksmith Fork River': '#b45309',
   'Spring Creek': '#0369a1',
-  'Temple Fork': '#15803d',
+  'Temple Fork': '#00b341',
   'Beaver Creek': '#b91c1c',
   'Little Bear River': '#0891b2',
   'Dewitt Springs': '#7c3aed',
   'Right Hand Fork': '#065f46',
-  'Ricks Spring': '#9f1239',
+  'Ricks Spring': '#db3464',
 }
 
 export const WATERWAY_LIST = Object.keys(WATERWAY_COLORS)

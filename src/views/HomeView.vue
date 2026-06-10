@@ -2,7 +2,6 @@
 /**
  * HomeView.vue
  * Serves as the landing page with a hero section and quick-access links for the general public.
- * Balanced layout with a larger, prominent logo asset and clean left-margin tracking.
  */
 import { List, Map as MapIcon, Network } from 'lucide-vue-next'
 // Make sure your logo image is saved in your assets folder as lro-logo.png

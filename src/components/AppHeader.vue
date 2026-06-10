@@ -126,7 +126,6 @@ const emit = defineEmits(['toggle-sidebar', 'change-view'])
   color: #ffffff; /* Fully pops to crisp white on hover */
 }
 
-/* Make the icon slightly brighter on hover to match the text behavior */
 .nav-action-btn:hover img {
   filter: brightness(0) invert(1) !important;
   opacity: 1 !important;

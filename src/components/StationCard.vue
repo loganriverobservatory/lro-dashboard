@@ -1,4 +1,8 @@
 <script setup lang="ts">
+/*
+StationCard.vue - Displays a card for each station with its latest variable value, freshness status,
+and a link to the full historical data on HydroServer. Used in ListView, MapView popups, and SchematicView.
+*/
 import { computed } from 'vue'
 import { type Station, getFreshnessStatus } from '../hydroService'
 

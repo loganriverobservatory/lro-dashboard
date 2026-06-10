@@ -1,4 +1,7 @@
 <script setup lang="ts">
+/*
+SchematicView.vue - Displays a schematic of the river system with station cards embedded in their relative positions
+*/
 import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { Droplets } from 'lucide-vue-next'
 import { type Station, WATERWAY_COLORS } from '../hydroService'

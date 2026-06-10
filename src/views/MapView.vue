@@ -1,5 +1,7 @@
 <script setup lang="ts">
-// MapView.vue - Displays the map with station pins
+/*
+MapView.vue - Displays the map with station pins and station cards in popups. Pins are colored by waterway and show variable values when zoomed in.
+*/
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { onMounted, watch, onBeforeUnmount, ref } from 'vue'

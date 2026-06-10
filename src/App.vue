@@ -1,4 +1,7 @@
 <script setup lang="ts">
+/*
+App.vue - root orchestrator
+*/
 import { ref, onMounted } from 'vue'
 import {
   getVariableStations,
