@@ -60,9 +60,6 @@ Help page and other resources
               Visit the LRO Website
             </a>
           </li>
-          <li>
-            <strong></strong>
-          </li>
         </ul>
       </div>
     </div>
