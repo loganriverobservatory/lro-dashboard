@@ -49,15 +49,31 @@ function isDataFresh(observation: any): boolean {
   return obsTime > twentyFourHoursAgo
 }
 
+function isDisplayable(observation: any): boolean {
+  if (
+    !observation ||
+    observation.result === -9999 ||
+    observation.result === null ||
+    !observation.phenomenonTime
+  ) {
+    return false
+  }
+
+  const obsTime = new Date(observation.phenomenonTime).getTime()
+  const oneYearAgo = Date.now() - 365 * 24 * 60 * 60 * 1000
+
+  return obsTime > oneYearAgo
+}
+
 function getFreshnessClass(dateStr: string | undefined): string {
   const status = getFreshnessStatus(
     dateStr ? { '@iot.id': '', result: null, phenomenonTime: dateStr } : null,
   )
   return {
-    current: 'color-fresh',
-    stale: 'color-warning',
-    outdated: 'color-stale',
-    unknown: 'color-stale',
+    current: 'fresh',
+    stale: 'warning',
+    outdated: 'stale',
+    unknown: 'unknown',
   }[status]
 }
 
@@ -80,6 +96,7 @@ const parsedMeasurements = computed(() => {
         unit: props.site.unit || '',
         time: obs.phenomenonTime,
         fresh: false,
+        displayable: false,
       },
     ]
   }
@@ -91,6 +108,7 @@ const parsedMeasurements = computed(() => {
       unit: m.unit || '',
       time: m.phenomenonTime,
       fresh: isDataFresh(m),
+      displayable: isDisplayable(m),
     }))
   }
 
@@ -101,12 +119,17 @@ const parsedMeasurements = computed(() => {
       unit: props.site.unit || '',
       time: obs.phenomenonTime,
       fresh: isDataFresh(obs),
+      displayable: isDisplayable(obs),
     },
   ]
 })
 
 const hasAnyLiveTelemetry = computed(() => {
   return parsedMeasurements.value.some((m) => m.fresh)
+})
+
+const hasDisplayableData = computed(() => {
+  return parsedMeasurements.value.some((m) => m.displayable)
 })
 
 const isAwaitingTelemetry = computed(() => {
@@ -172,7 +195,7 @@ const isAwaitingTelemetry = computed(() => {
 
       <div v-else class="measurement-container">
         <div v-for="metric in parsedMeasurements" :key="metric.label" class="metric-row">
-          <div v-if="metric.fresh" class="value-row">
+          <div v-if="metric.displayable" class="value-row">
             <span class="metric-label" v-if="parsedMeasurements.length > 1">
               {{ metric.label }}:
             </span>
@@ -191,7 +214,7 @@ const isAwaitingTelemetry = computed(() => {
           </div>
         </div>
 
-        <div v-if="!hasAnyLiveTelemetry" class="value-row offline-row">
+        <div v-if="!hasDisplayableData" class="value-row offline-row">
           <span class="value fallback-text">{{ mapMode ? 'n/a' : 'No data available' }}</span>
         </div>
 
@@ -304,7 +327,7 @@ const isAwaitingTelemetry = computed(() => {
 }
 .fallback-text {
   font-size: 1.5rem;
-  color: #475569;
+  color: #64748b;
   font-weight: 600;
   letter-spacing: normal;
 }
@@ -312,10 +335,13 @@ const isAwaitingTelemetry = computed(() => {
   color: #16a34a;
 }
 .color-warning {
-  color: #c28743;
+  color: #d97706;
 }
 .color-stale {
-  color: #502121;
+  color: #973131;
+}
+.color-unknown {
+  color: #64748b;
 }
 .unit {
   font-size: 1.1rem;

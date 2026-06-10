@@ -9,12 +9,12 @@ import {
   ChevronDown,
   ChevronRight,
 } from 'lucide-vue-next'
-import { STATUS_COLORS, TRIBUTARY_COLORS, TRIBUTARY_LIST } from '../hydroService'
+import { WATERWAY_COLORS, WATERWAY_LIST } from '../hydroService'
 
 const props = defineProps<{
   isOpen: boolean
   currentView: string
-  activeTributaries: string[]
+  activeWaterways: string[]
 }>()
 
 const variables = [
@@ -32,13 +32,13 @@ const freshnessOpen = ref(true)
 const freshnessItems = [
   { label: 'Current (< 2 hrs)', color: '#16a34a' },
   { label: 'Stale (2–24 hrs)', color: '#d97706' },
-  { label: 'Outdated (> 24 hrs)', color: '#64748b' },
+  { label: 'Outdated (> 24 hrs)', color: '#973131' },
 ]
 const emit = defineEmits([
   'close-sidebar',
   'change-view',
   'variable-changed',
-  'tributary-filter-changed',
+  'waterway-filter-changed',
 ])
 
 const showLegend = () => ['map', 'list', 'schematic'].includes(props.currentView)
@@ -47,21 +47,21 @@ const handleVariableChange = () => {
   emit('variable-changed', selectedVariable.value)
 }
 
-function toggleTributary(name: string) {
-  const current = new Set(props.activeTributaries)
+function toggleWaterway(name: string) {
+  const current = new Set(props.activeWaterways)
   if (current.has(name)) {
     current.delete(name)
   } else {
     current.add(name)
   }
-  emit('tributary-filter-changed', [...current])
+  emit('waterway-filter-changed', [...current])
 }
 
 function toggleAll() {
-  if (props.activeTributaries.length === TRIBUTARY_LIST.length) {
-    emit('tributary-filter-changed', [])
+  if (props.activeWaterways.length === WATERWAY_LIST.length) {
+    emit('waterway-filter-changed', [])
   } else {
-    emit('tributary-filter-changed', [...TRIBUTARY_LIST])
+    emit('waterway-filter-changed', [...WATERWAY_LIST])
   }
 }
 </script>
@@ -114,21 +114,21 @@ function toggleAll() {
     <div v-if="showLegend()" class="legend-section">
       <button class="legend-toggle" @click="legendOpen = !legendOpen">
         <component :is="legendOpen ? ChevronDown : ChevronRight" :size="14" />
-        <span>LEGEND: TRIBUTARIES</span>
+        <span>LEGEND: REGIONAL WATERWAYS</span>
       </button>
 
       <div v-if="legendOpen" class="legend-body">
         <button class="toggle-all-btn" @click="toggleAll">
-          {{ activeTributaries.length === TRIBUTARY_LIST.length ? 'Deselect All' : 'Select All' }}
+          {{ activeWaterways.length === WATERWAY_LIST.length ? 'Deselect All' : 'Select All' }}
         </button>
-        <label v-for="name in TRIBUTARY_LIST" :key="name" class="legend-item">
+        <label v-for="name in WATERWAY_LIST" :key="name" class="legend-item">
           <input
             type="checkbox"
             class="legend-checkbox"
-            :checked="activeTributaries.includes(name)"
-            @change="toggleTributary(name)"
+            :checked="activeWaterways.includes(name)"
+            @change="toggleWaterway(name)"
           />
-          <span class="legend-swatch" :style="{ background: TRIBUTARY_COLORS[name] }"></span>
+          <span class="legend-swatch" :style="{ background: WATERWAY_COLORS[name] }"></span>
           <span class="legend-name">{{ name }}</span>
         </label>
       </div>
@@ -138,9 +138,6 @@ function toggleAll() {
       <button class="legend-toggle" @click="freshnessOpen = !freshnessOpen">
         <component :is="freshnessOpen ? ChevronDown : ChevronRight" :size="14" />
         <span>DATA STATUS</span>
-        <span :style="{ color: STATUS_COLORS.current }">Current</span>
-        <span :style="{ color: STATUS_COLORS.stale }">Stale</span>
-        <span :style="{ color: STATUS_COLORS.outdated }">Outdated</span>
       </button>
 
       <div v-if="freshnessOpen" class="legend-body">

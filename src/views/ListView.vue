@@ -4,7 +4,7 @@ import StationCard from '../components/StationCard.vue'
 import {
   type Station,
   WATER_VARIBALES,
-  TRIBUTARY_COLORS,
+  WATERWAY_COLORS,
   getFreshnessStatus,
   STATUS_COLORS,
 } from '../hydroService'
@@ -13,7 +13,7 @@ const props = defineProps<{
   sites: Station[]
   loading: boolean
   selectedVariable?: string
-  activeTributaries?: string[]
+  activeWaterways?: string[]
 }>()
 
 const variableLabel = computed(() => {
@@ -22,8 +22,8 @@ const variableLabel = computed(() => {
 })
 
 const filteredSites = computed(() => {
-  if (!props.activeTributaries || props.activeTributaries.length === 0) return props.sites
-  return props.sites.filter((s) => props.activeTributaries!.includes(s.tributary ?? ''))
+  if (!props.activeWaterways || props.activeWaterways.length === 0) return props.sites
+  return props.sites.filter((s) => props.activeWaterways!.includes(s.tributary ?? ''))
 })
 
 function getStationStatusColor(station: Station): string {

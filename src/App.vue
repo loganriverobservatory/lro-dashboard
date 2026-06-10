@@ -4,7 +4,7 @@ import {
   getVariableStations,
   getLatestObservation,
   type Station,
-  TRIBUTARY_LIST,
+  WATERWAY_LIST,
 } from './hydroService'
 import AppHeader from './components/AppHeader.vue'
 import AppSidebar from './components/AppSidebar.vue'
@@ -20,7 +20,7 @@ const sidebarOpen = ref(false)
 const currentView = ref('home')
 const selectedId = ref<string | null>(null)
 const selectedVariable = ref('Discharge')
-const activeTributaries = ref<string[]>([...TRIBUTARY_LIST])
+const activeWaterways = ref<string[]>([...WATERWAY_LIST])
 
 function handleSelect(id: string | null) {
   selectedId.value = id
@@ -55,8 +55,8 @@ function handleVariableChange(variable: string) {
   loadStations(variable)
 }
 
-function handleTributaryFilter(updated: string[]) {
-  activeTributaries.value = updated
+function handleWaterwayFilter(updated: string[]) {
+  activeWaterways.value = updated
 }
 
 onMounted(() => loadStations(selectedVariable.value))
@@ -69,7 +69,7 @@ onMounted(() => loadStations(selectedVariable.value))
     <AppSidebar
       :is-open="sidebarOpen"
       :current-view="currentView"
-      :active-tributaries="activeTributaries"
+      :active-waterways="activeWaterways"
       @close-sidebar="sidebarOpen = false"
       @change-view="
         (view) => {
@@ -78,7 +78,7 @@ onMounted(() => loadStations(selectedVariable.value))
         }
       "
       @variable-changed="handleVariableChange"
-      @tributary-filter-changed="handleTributaryFilter"
+      @waterway-filter-changed="handleWaterwayFilter"
     />
 
     <main class="main-container">
@@ -89,7 +89,7 @@ onMounted(() => loadStations(selectedVariable.value))
         :sites="sites"
         :loading="loading"
         :selected-variable="selectedVariable"
-        :active-tributaries="activeTributaries"
+        :active-waterways="activeWaterways"
       />
       <MapView
         v-if="currentView === 'map'"
@@ -97,14 +97,14 @@ onMounted(() => loadStations(selectedVariable.value))
         :loading="loading"
         :selected-id="selectedId"
         :selected-variable="selectedVariable"
-        :active-tributaries="activeTributaries"
+        :active-waterways="activeWaterways"
         @select="handleSelect"
       />
       <SchematicView
         v-if="currentView === 'schematic'"
         :sites="sites"
         :loading="loading"
-        :active-tributaries="activeTributaries"
+        :active-waterways="activeWaterways"
       />
     </main>
   </div>

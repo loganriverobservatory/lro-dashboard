@@ -39,7 +39,7 @@ export interface Station {
   tributary?: string
 }
 
-export const TRIBUTARY_COLORS: Record<string, string> = {
+export const WATERWAY_COLORS: Record<string, string> = {
   'Logan River: Main Stem': '#6b21a8',
   'Blacksmith Fork River': '#b45309',
   'Spring Creek': '#0369a1',
@@ -51,7 +51,7 @@ export const TRIBUTARY_COLORS: Record<string, string> = {
   'Ricks Spring': '#9f1239',
 }
 
-export const TRIBUTARY_LIST = Object.keys(TRIBUTARY_COLORS)
+export const WATERWAY_LIST = Object.keys(WATERWAY_COLORS)
 
 export const WATER_VARIBALES = [
   { id: 'Discharge', label: 'Discharge (cfs)' },

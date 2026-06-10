@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { Droplets } from 'lucide-vue-next'
-import { type Station, TRIBUTARY_COLORS } from '../hydroService'
+import { type Station, WATERWAY_COLORS } from '../hydroService'
 import StationCard from '../components/StationCard.vue'
 
 const props = defineProps<{
   sites: Station[]
   loading: boolean
-  activeTributaries?: string[]
+  activeWaterways?: string[]
 }>()
 
 function findLiveStation(schematicName: string): Station | undefined {
@@ -17,7 +17,7 @@ function findLiveStation(schematicName: string): Station | undefined {
     return liveName.includes(targetName) || targetName.includes(liveName)
   })
   if (!match) return undefined
-  if (props.activeTributaries && !props.activeTributaries.includes(match.tributary ?? ''))
+  if (props.activeWaterways && !props.activeWaterways.includes(match.tributary ?? ''))
     return undefined
   return match
 }
@@ -297,7 +297,7 @@ watch(
   { deep: true },
 )
 
-function tributaryBg(color: string | undefined): string {
+function waterwayBg(color: string | undefined): string {
   if (!color) return '#94a3b818'
   return color + '18'
 }
@@ -448,7 +448,7 @@ function tributaryBg(color: string | undefined): string {
             ]"
             :style="{
               gridRow: node.row,
-              backgroundColor: tributaryBg(TRIBUTARY_COLORS[node.name]),
+              backgroundColor: waterwayBg(WATERWAY_COLORS[node.name]),
             }"
             :data-marker="node.id"
           >
@@ -471,7 +471,7 @@ function tributaryBg(color: string | undefined): string {
             class="grid-cell col-2"
             :style="{
               gridRow: node.row,
-              backgroundColor: tributaryBg(TRIBUTARY_COLORS['Logan River: Main Stem']),
+              backgroundColor: waterwayBg(WATERWAY_COLORS['Logan River: Main Stem']),
             }"
             :data-marker="node.id"
           >
@@ -501,7 +501,7 @@ function tributaryBg(color: string | undefined): string {
             class="grid-cell col-3"
             :style="{
               gridRow: node.row,
-              backgroundColor: tributaryBg(TRIBUTARY_COLORS['Blacksmith Fork River']),
+              backgroundColor: waterwayBg(WATERWAY_COLORS['Blacksmith Fork River']),
             }"
             :data-marker="node.id"
           >
@@ -522,7 +522,7 @@ function tributaryBg(color: string | undefined): string {
             class="grid-cell col-3"
             :style="{
               gridRow: node.row,
-              backgroundColor: tributaryBg(TRIBUTARY_COLORS[node.tributary]),
+              backgroundColor: waterwayBg(WATERWAY_COLORS[node.tributary]),
             }"
             :data-marker="node.id"
           >

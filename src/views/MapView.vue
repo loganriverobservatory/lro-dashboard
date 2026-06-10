@@ -3,14 +3,14 @@
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { onMounted, watch, onBeforeUnmount, ref } from 'vue'
-import { type Station, getFreshnessStatus, STATUS_COLORS, TRIBUTARY_COLORS } from '../hydroService'
+import { type Station, getFreshnessStatus, STATUS_COLORS, WATERWAY_COLORS } from '../hydroService'
 import StationCard from '../components/StationCard.vue'
 
 const props = defineProps<{
   sites: Station[]
   selectedId: string | null
   selectedVariable: string
-  activeTributaries: string[]
+  activeWaterways: string[]
 }>()
 
 const emit = defineEmits(['select'])
@@ -30,14 +30,14 @@ const syncMarkers = () => {
   const allCoords: L.LatLngTuple[] = []
 
   props.sites.forEach((station: Station) => {
-    if (!props.activeTributaries.includes(station.tributary ?? '')) return
+    if (!props.activeWaterways.includes(station.tributary ?? '')) return
     if (station.coordinates && station.coordinates.length === 2) {
       const coords = station.coordinates as L.LatLngTuple
       allCoords.push(coords)
 
       const hasData =
         station.observation?.result !== null && station.observation?.result !== undefined
-      const tributaryColor = TRIBUTARY_COLORS[station.tributary ?? ''] ?? '#ef4444'
+      const tributaryColor = WATERWAY_COLORS[station.tributary ?? ''] ?? '#ef4444'
       const pinColor = hasData ? tributaryColor : '#94a3b8'
       const strokeColor = hasData ? tributaryColor : '#475569'
 
@@ -156,11 +156,11 @@ watch(
 )
 
 watch(
-  () => props.activeTributaries,
+  () => props.activeWaterways,
   () => {
     if (
       expandedStation.value &&
-      !props.activeTributaries.includes(expandedStation.value.tributary ?? '')
+      !props.activeWaterways.includes(expandedStation.value.tributary ?? '')
     ) {
       expandedStation.value = null
     }
