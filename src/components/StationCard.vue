@@ -37,47 +37,16 @@ function formatDate(dateStr: string | undefined): string {
   })
 }
 
-function isDataFresh(observation: any): boolean {
-  if (
-    !observation ||
-    observation.result === -9999 ||
-    observation.result === null ||
-    !observation.phenomenonTime
-  ) {
-    return false
-  }
-
-  const obsTime = new Date(observation.phenomenonTime).getTime()
-  const twentyFourHoursAgo = Date.now() - 24 * 60 * 60 * 1000
-
-  return obsTime > twentyFourHoursAgo
-}
-
-function isDisplayable(observation: any): boolean {
-  if (
-    !observation ||
-    observation.result === -9999 ||
-    observation.result === null ||
-    !observation.phenomenonTime
-  ) {
-    return false
-  }
-
-  const obsTime = new Date(observation.phenomenonTime).getTime()
-  const oneYearAgo = Date.now() - 365 * 24 * 60 * 60 * 1000
-
-  return obsTime > oneYearAgo
-}
-
+// Maps your service's statuses directly to your existing green/orange/red/grey CSS classes
 function getFreshnessClass(dateStr: string | undefined): string {
-  const status = getFreshnessStatus(
-    dateStr ? { '@iot.id': '', result: null, phenomenonTime: dateStr } : null,
-  )
+  if (!dateStr) return 'unknown'
+  const status = getFreshnessStatus({ '@iot.id': '', result: null, phenomenonTime: dateStr })
+
   return {
-    current: 'fresh',
-    stale: 'warning',
-    outdated: 'stale',
-    unknown: 'unknown',
+    current: 'fresh', // Uses your .color-fresh style (Green)
+    stale: 'warning', // Uses your .color-warning style (Orange)
+    outdated: 'stale', // Uses your .color-stale style (Red)
+    unknown: 'unknown', // Uses your .color-unknown style (Grey)
   }[status]
 }
 
@@ -90,8 +59,6 @@ const parsedMeasurements = computed(() => {
   const obs = props.site?.observation
   if (!obs) return []
 
-  // If the station is offline but has a timestamp, pass a structural object
-  // so it doesn't drop out of the rendering tree
   if (obs.result === null) {
     return [
       {
@@ -105,27 +72,23 @@ const parsedMeasurements = computed(() => {
     ]
   }
 
-  if (Array.isArray(obs)) {
-    return obs.map((m: any) => ({
-      label: m.label || m.name,
+  const processObservation = (m: any) => {
+    const status = getFreshnessStatus(m)
+    return {
+      label: m.label || m.name || '',
       value: Number(m.result).toFixed(2),
-      unit: m.unit || '',
+      unit: m.unit || props.site.unit || '',
       time: m.phenomenonTime,
-      fresh: isDataFresh(m),
-      displayable: isDisplayable(m),
-    }))
+      fresh: status === 'current',
+      displayable: status !== 'unknown',
+    }
   }
 
-  return [
-    {
-      label: '',
-      value: Number(obs.result).toFixed(2),
-      unit: props.site.unit || '',
-      time: obs.phenomenonTime,
-      fresh: isDataFresh(obs),
-      displayable: isDisplayable(obs),
-    },
-  ]
+  if (Array.isArray(obs)) {
+    return obs.map(processObservation)
+  }
+
+  return [processObservation(obs)]
 })
 
 const hasAnyLiveTelemetry = computed(() => {

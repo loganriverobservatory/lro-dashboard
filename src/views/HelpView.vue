@@ -17,7 +17,7 @@ Help page and other resources
             sortable table.
           </li>
           <li>
-            <strong>Map View:</strong> Click on any red pin to see real-time discharge data for that
+            <strong>Map View:</strong> Click on any pin to see real-time discharge data for that
             specific location.
           </li>
           <li>
@@ -29,7 +29,7 @@ Help page and other resources
         <h2>Data Questions?</h2>
         <p>
           If you have questions about processing levels or sensor health, please visit the main
-          HydroServer portal by clicking in the upper right corner.
+          HydroServer portal by clicking in the upper right corner icon.
         </p>
         <h2>Contact Us: Feedback/Questions</h2>
         <p>
@@ -60,6 +60,9 @@ Help page and other resources
               Visit the LRO Website
             </a>
           </li>
+          <li>
+            <strong></strong>
+          </li>
         </ul>
       </div>
     </div>
@@ -70,8 +73,8 @@ Help page and other resources
 .help-container {
   padding: 2rem;
   height: 100%;
-  overflow-y: auto; /* Ensures it scrolls nicely on mobile */
-  background-color: #f8f9fa; /* Matches your map background */
+  overflow-y: auto;
+  background-color: #f8f9fa;
 }
 
 .help-card {

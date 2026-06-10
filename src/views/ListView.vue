@@ -4,13 +4,7 @@ ListView.vue - Displays a list of station cards with variable values and freshne
 */
 import { computed } from 'vue'
 import StationCard from '../components/StationCard.vue'
-import {
-  type Station,
-  WATER_VARIBALES,
-  WATERWAY_COLORS,
-  getFreshnessStatus,
-  STATUS_COLORS,
-} from '../hydroService'
+import { type Station, WATER_VARIBALES } from '../hydroService'
 
 const props = defineProps<{
   sites: Station[]
@@ -28,12 +22,6 @@ const filteredSites = computed(() => {
   if (!props.activeWaterways || props.activeWaterways.length === 0) return props.sites
   return props.sites.filter((s) => props.activeWaterways!.includes(s.tributary ?? ''))
 })
-
-function getStationStatusColor(station: Station): string {
-  if (!station.observation) return STATUS_COLORS.unknown
-  const status = getFreshnessStatus(station.observation)
-  return STATUS_COLORS[status]
-}
 </script>
 
 <template>

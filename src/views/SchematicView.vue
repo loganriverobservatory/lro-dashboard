@@ -862,9 +862,9 @@ h2 {
   margin: 0 0 1.5rem 0;
   padding: 6px 12px;
   border-radius: 9999px;
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
-  color: #1d4ed8;
+  background: #ffefef;
+  border: 1px solid #febfbf;
+  color: #c73535;
   font-family:
     system-ui,
     -apple-system,
@@ -880,7 +880,7 @@ h2 {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #3b82f6;
+  background: #630e0e;
   flex-shrink: 0;
 }
 
