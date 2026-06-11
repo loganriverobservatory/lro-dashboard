@@ -69,17 +69,18 @@ onMounted(() => loadStations(selectedVariable.value))
   <div class="grid-container">
     <AppHeader @toggle-sidebar="sidebarOpen = true" @change-view="(view) => (currentView = view)" />
 
+    <div
+      v-if="sidebarOpen"
+      class="sidebar-backdrop"
+      @click="sidebarOpen = false"
+    />
+
     <AppSidebar
       :is-open="sidebarOpen"
       :current-view="currentView"
       :active-waterways="activeWaterways"
       @close-sidebar="sidebarOpen = false"
-      @change-view="
-        (view) => {
-          currentView = view
-          sidebarOpen = false
-        }
-      "
+      @change-view="(view) => (currentView = view)"
       @variable-changed="handleVariableChange"
       @waterway-filter-changed="handleWaterwayFilter"
     />
@@ -144,6 +145,20 @@ body {
   .grid-container {
     grid-template-columns: minmax(0, 1fr);
     grid-template-areas: 'header' 'main';
+  }
+}
+
+.sidebar-backdrop {
+  display: none;
+}
+
+@media screen and (max-width: 992px) {
+  .sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    z-index: 999;
   }
 }
 </style>

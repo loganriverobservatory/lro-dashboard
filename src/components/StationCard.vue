@@ -37,16 +37,15 @@ function formatDate(dateStr: string | undefined): string {
   })
 }
 
-// Maps your service's statuses directly to your existing green/orange/red/grey CSS classes
 function getFreshnessClass(dateStr: string | undefined): string {
   if (!dateStr) return 'unknown'
   const status = getFreshnessStatus({ '@iot.id': '', result: null, phenomenonTime: dateStr })
 
   return {
-    current: 'fresh', // Uses your .color-fresh style (Green)
-    stale: 'warning', // Uses your .color-warning style (Orange)
-    outdated: 'stale', // Uses your .color-stale style (Red)
-    unknown: 'unknown', // Uses your .color-unknown style (Grey)
+    current: 'fresh',
+    stale: 'warning',
+    outdated: 'stale',
+    unknown: 'unknown',
   }[status]
 }
 
