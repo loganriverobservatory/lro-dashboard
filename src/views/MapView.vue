@@ -4,8 +4,14 @@ MapView.vue - Displays the map with station pins and station cards in popups. Pi
 */
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { onMounted, watch, onBeforeUnmount, ref } from 'vue'
-import { type Station, getFreshnessStatus, STATUS_COLORS, WATERWAY_COLORS } from '../hydroService'
+import { onMounted, watch, onBeforeUnmount, ref, createApp } from 'vue'
+import {
+  type Station,
+  getFreshnessStatus,
+  STATUS_COLORS,
+  WATERWAY_COLORS,
+  WATERWAY_LIST,
+} from '../hydroService'
 import StationCard from '../components/StationCard.vue'
 
 const props = defineProps<{
@@ -15,10 +21,13 @@ const props = defineProps<{
   activeWaterways: string[]
 }>()
 
+const emit = defineEmits<{
+  (e: 'resetWaterways', fallbackWaterways: string[]): void
+}>()
+
 let map: L.Map | null = null
 const markerMap = new Map<string, L.Marker>()
 const hasZoomed = ref(false)
-const expandedStation = ref<Station | null>(null)
 let isProgrammaticZoom = false
 
 const syncMarkers = () => {
@@ -76,9 +85,24 @@ const syncMarkers = () => {
           interactive: true,
         })
 
-        marker.on('click', () => {
-          expandedStation.value = station
-        })
+        marker.bindPopup(
+          () => {
+            const div = document.createElement('div')
+            div.className = 'map-popup-card-wrapper'
+
+            const app = createApp(StationCard, {
+              site: station,
+              compact: false,
+            })
+            app.mount(div)
+            return div
+          },
+          {
+            maxWidth: 520,
+            minWidth: 520,
+            className: 'custom-leaflet-popup',
+          },
+        )
       }
 
       markerMap.set(station.uuid, marker)
@@ -94,8 +118,9 @@ const syncMarkers = () => {
 
 function resetMap() {
   hasZoomed.value = false
-  expandedStation.value = null
+  emit('resetWaterways', [...WATERWAY_LIST])
   syncMarkers()
+
   const coords = props.sites
     .filter((s) => s.coordinates?.length === 2)
     .map((s) => s.coordinates as L.LatLngTuple)
@@ -146,10 +171,6 @@ onBeforeUnmount(() => {
 watch(
   () => props.sites,
   () => {
-    if (expandedStation.value) {
-      const updated = props.sites.find((s) => s.uuid === expandedStation.value!.uuid)
-      expandedStation.value = updated ?? null
-    }
     syncMarkers()
   },
   { deep: true },
@@ -158,12 +179,6 @@ watch(
 watch(
   () => props.activeWaterways,
   () => {
-    if (
-      expandedStation.value &&
-      !props.activeWaterways.includes(expandedStation.value.tributary ?? '')
-    ) {
-      expandedStation.value = null
-    }
     syncMarkers()
   },
   { deep: true },
@@ -193,13 +208,6 @@ watch(
     </div>
 
     <button v-if="hasZoomed" class="reset-btn" @click="resetMap">Reset</button>
-
-    <div v-if="expandedStation" class="expanded-overlay">
-      <div class="expanded-card-wrapper">
-        <button class="close-btn" @click="expandedStation = null">✕</button>
-        <StationCard :site="expandedStation" />
-      </div>
-    </div>
   </div>
 </template>
 
@@ -225,6 +233,7 @@ watch(
 :deep(.leaflet-control-container) {
   z-index: 800;
 }
+
 .map-banner {
   position: absolute;
   top: 12px;
@@ -256,43 +265,9 @@ watch(
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }
 .reset-btn:hover {
-  background: #073763;
+  background: #0c4d87;
 }
-.expanded-overlay {
-  position: absolute;
-  inset: 0;
-  z-index: 1100;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0, 0, 0, 0.25);
-}
-.expanded-card-wrapper {
-  position: relative;
-  width: 360px;
-  max-height: 80vh;
-  overflow-y: auto;
-}
-.close-btn {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  z-index: 10;
-  background: #f1f5f9;
-  border: none;
-  border-radius: 50%;
-  width: 28px;
-  height: 28px;
-  font-size: 0.9rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #475569;
-}
-.close-btn:hover {
-  background: #e2e8f0;
-}
+
 :deep(.value-tooltip) {
   background: rgba(255, 255, 255, 0.95) !important;
   border: 1px solid #e2e8f0 !important;
@@ -308,5 +283,53 @@ watch(
   font-size: 1.235rem;
   font-weight: 700;
   white-space: nowrap;
+}
+
+/* =========================================================================
+   GLOBAL LEAFLET POPUP OVERRIDES (Eliminates Nested Card Inner-Boxes)
+   ========================================================================= */
+:deep(.custom-leaflet-popup .leaflet-popup-content-wrapper) {
+  padding: 0 !important;
+  overflow: hidden !important;
+  border-radius: 16px !important;
+  background: #ffffff !important;
+  box-shadow:
+    0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+}
+
+:deep(.custom-leaflet-popup .leaflet-popup-content) {
+  margin: 0 !important;
+  width: 520px !important;
+  max-width: 520px !important;
+  display: block !important;
+}
+
+.map-popup-card-wrapper {
+  width: 520px !important;
+  max-width: 520px !important;
+  background: #ffffff !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+}
+
+.map-popup-card-wrapper :deep(.station-card) {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  padding: 24px !important;
+  margin: 0 !important;
+  width: 100% !important;
+  flex-grow: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+:deep(.custom-leaflet-popup .leaflet-popup-close-button) {
+  top: 16px !important;
+  right: 16px !important;
+  scale: 1.2;
+  color: #64748b !important;
 }
 </style>

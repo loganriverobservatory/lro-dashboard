@@ -5,6 +5,8 @@ and a link to the full historical data on HydroServer. Used in ListView, MapView
 */
 import { computed } from 'vue'
 import { type Station, getFreshnessStatus } from '../hydroService'
+// FIXED: Updated import path to match your multi-word component file name
+import StationSparkline from './StationSparkline.vue'
 
 const props = withDefaults(
   defineProps<{
@@ -159,34 +161,41 @@ const isAwaitingTelemetry = computed(() => {
         Updating...
       </div>
 
-      <div v-else class="measurement-container">
-        <div v-for="metric in parsedMeasurements" :key="metric.label" class="metric-row">
-          <div v-if="metric.displayable" class="value-row">
-            <span class="metric-label" v-if="parsedMeasurements.length > 1">
-              {{ metric.label }}:
-            </span>
-            <span :class="['value', `color-${getFreshnessClass(metric.time || '')}`]">
-              {{ metric.value }}
-            </span>
-            <span class="unit">
-              {{ metric.unit }}
-              <span
-                v-if="UNIT_DESCRIPTIONS[metric.unit] && !compact && !mapMode"
-                class="unit-expansion"
-              >
-                {{ UNIT_DESCRIPTIONS[metric.unit] }}
+      <div v-else class="card-flex-layout">
+        <div class="measurement-container">
+          <div v-for="metric in parsedMeasurements" :key="metric.label" class="metric-row">
+            <div v-if="metric.displayable" class="value-row">
+              <span class="metric-label" v-if="parsedMeasurements.length > 1">
+                {{ metric.label }}:
               </span>
-            </span>
+              <span :class="['value', `color-${getFreshnessClass(metric.time || '')}`]">
+                {{ metric.value }}
+              </span>
+              <span class="unit">
+                {{ metric.unit }}
+                <span
+                  v-if="UNIT_DESCRIPTIONS[metric.unit] && !compact && !mapMode"
+                  class="unit-expansion"
+                >
+                  {{ UNIT_DESCRIPTIONS[metric.unit] }}
+                </span>
+              </span>
+            </div>
           </div>
+
+          <div v-if="!hasDisplayableData" class="value-row offline-row">
+            <span class="value fallback-text">{{ mapMode ? 'n/a' : 'No data available' }}</span>
+          </div>
+
+          <p v-if="site.observation?.phenomenonTime && !mapMode" class="timestamp">
+            Last Reading: {{ formatDate(site.observation.phenomenonTime) }}
+          </p>
         </div>
 
-        <div v-if="!hasDisplayableData" class="value-row offline-row">
-          <span class="value fallback-text">{{ mapMode ? 'n/a' : 'No data available' }}</span>
+        <div v-if="!compact && !mapMode && site.id" class="sparkline-sidebar-wrapper">
+          <div class="sparkline-title">Recent 48-Hour Trend</div>
+          <StationSparkline :station-id="site.id" :latest-observation="site.observation" />
         </div>
-
-        <p v-if="site.observation?.phenomenonTime && !mapMode" class="timestamp">
-          Last Reading: {{ formatDate(site.observation.phenomenonTime) }}
-        </p>
       </div>
     </div>
   </div>
@@ -221,6 +230,14 @@ const isAwaitingTelemetry = computed(() => {
   transform: none;
   box-shadow: none;
 }
+
+.card-flex-layout {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1.5rem;
+}
+
 .card-header {
   display: flex;
   justify-content: space-between;
@@ -276,6 +293,10 @@ const isAwaitingTelemetry = computed(() => {
   background-color: #e2e8f0;
   color: #334155;
 }
+
+.measurement-container {
+  flex: 1;
+}
 .metric-row {
   margin-bottom: 0.5rem;
 }
@@ -285,6 +306,23 @@ const isAwaitingTelemetry = computed(() => {
   color: #475569;
   margin-right: 0.5rem;
 }
+
+.sparkline-sidebar-wrapper {
+  width: 180px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+}
+.sparkline-title {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.35rem;
+  text-align: right;
+}
+
 .value {
   font-size: 3.5rem;
   font-weight: 800;
@@ -352,6 +390,8 @@ const isAwaitingTelemetry = computed(() => {
     transform: rotate(360deg);
   }
 }
+
+/* Compact Configurations */
 .station-card.is-compact {
   padding: 0.65rem 1rem;
   margin-bottom: 0;
@@ -390,6 +430,8 @@ const isAwaitingTelemetry = computed(() => {
   width: 0.95rem;
   height: 0.95rem;
 }
+
+/* Map Configurations */
 .station-card.is-map {
   background: rgba(255, 255, 255, 0.95) !important;
   border: 1px solid #94a3b8 !important;
