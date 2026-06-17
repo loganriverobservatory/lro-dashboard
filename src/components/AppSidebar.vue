@@ -29,11 +29,31 @@ const selectedVariable = ref('Discharge')
 const legendOpen = ref(true)
 const freshnessOpen = ref(true)
 
+// Added badge text properties to feed the side-by-side pill layouts
 const freshnessItems = [
-  { label: 'Current (< 2 hrs)', color: '#16a34a' },
-  { label: 'Stale (2–24 hrs)', color: '#d97706' },
-  { label: 'Outdated (> 24 hrs)', color: '#973131' },
+  {
+    label: 'Current',
+    note: '< 2 hrs old',
+    color: '#16a34a',
+    badgeText: 'Live',
+    badgeClass: 'badge-online',
+  },
+  {
+    label: 'Stale',
+    note: '2–24 hrs old',
+    color: '#d97706',
+    badgeText: 'Offline',
+    badgeClass: 'badge-offline',
+  },
+  {
+    label: 'Outdated',
+    note: '> 24 hrs old',
+    color: '#973131',
+    badgeText: 'Offline',
+    badgeClass: 'badge-offline',
+  },
 ]
+
 const emit = defineEmits([
   'close-sidebar',
   'change-view',
@@ -141,9 +161,18 @@ function toggleAll() {
       </button>
 
       <div v-if="freshnessOpen" class="legend-body">
-        <div v-for="item in freshnessItems" :key="item.label" class="legend-item">
-          <span class="legend-swatch" :style="{ background: item.color }"></span>
-          <span class="legend-name">{{ item.label }}</span>
+        <div v-for="item in freshnessItems" :key="item.label" class="status-row">
+          <div class="status-info-left">
+            <span class="legend-swatch" :style="{ background: item.color }"></span>
+            <div class="status-text-stack">
+              <span class="legend-name">{{ item.label }}</span>
+              <span class="status-note">{{ item.note }}</span>
+            </div>
+          </div>
+
+          <span :class="['status-badge', item.badgeClass]">
+            {{ item.badgeText }}
+          </span>
         </div>
       </div>
     </div>
@@ -358,9 +387,59 @@ function toggleAll() {
 
 .legend-name {
   font-size: 0.78rem;
-  font-weight: 500;
+  font-weight: 600;
   color: rgba(255, 255, 255, 0.9);
   line-height: 1.3;
+}
+
+/* Status Panel Side-by-Side Specific Layouts */
+.status-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 6px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 8px;
+}
+
+.status-info-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.status-text-stack {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.status-note {
+  font-size: 0.68rem;
+  color: rgba(255, 255, 255, 0.65);
+  font-style: italic;
+  font-weight: 400;
+}
+
+/* Badge Layouts synchronized with StationCard styles */
+.status-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0.2rem 0.5rem;
+  border-radius: 9999px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+
+.badge-online {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.badge-offline {
+  background-color: #e2e8f0;
+  color: #334155;
 }
 
 .close-icon {

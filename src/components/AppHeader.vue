@@ -80,7 +80,7 @@ const emit = defineEmits(['toggle-sidebar', 'change-view'])
 .dashboard-tag {
   font-size: 1rem;
   font-weight: 600;
-  color: #ffffff; /* Crisp white header text */
+  color: #ffffff;
   letter-spacing: -0.01em;
 }
 
@@ -98,7 +98,7 @@ const emit = defineEmits(['toggle-sidebar', 'change-view'])
   padding: 8px 14px;
   border-radius: 8px;
   cursor: pointer;
-  color: #e2e8f0; /* Soft bright gray text for unselected state */
+  color: #e2e8f0;
   transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -122,8 +122,8 @@ const emit = defineEmits(['toggle-sidebar', 'change-view'])
 
 /* Hover effects adjusted to play nicely on the dark slate/gray-blue base background */
 .nav-action-btn:hover {
-  background-color: rgba(255, 255, 255, 0.12); /* Subtle overlay alpha block */
-  color: #ffffff; /* Fully pops to crisp white on hover */
+  background-color: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
 }
 
 .nav-action-btn:hover img {
@@ -160,8 +160,6 @@ const emit = defineEmits(['toggle-sidebar', 'change-view'])
     display: none;
   }
 
-  /* Collapse the action buttons to icons only so the row fits a phone width
-       instead of pushing "HydroServer" off the right edge. */
   .nav-label {
     display: none;
   }

@@ -770,22 +770,22 @@ h2 {
 }
 
 .inflow-card-left {
-  border-right: 4px solid #16a34a;
-  background: #f0fdf4;
+  border-right: 4px solid #3b3b3b2a;
+  background: #fffefe;
 }
 
 .bsf-card {
-  border-left: 4px solid #16a34a;
+  border-left: 4px solid #132b1b25;
 }
 
 .independent-card {
-  border-left: 4px solid #ea580c;
+  border-left: 4px solid #1a15125b;
 }
 
 .routing-label {
   font-size: 0.72rem;
   font-weight: 800;
-  color: #ea580c !important;
+  color: #222222 !important;
   text-transform: uppercase;
   margin-top: 4px;
 }
@@ -846,7 +846,7 @@ h2 {
 }
 
 .grid-cell.col-2 {
-  border: 1px solid #cbd5e1;
+  border: 1px solid #d4d4d4;
   border-radius: 12px;
   padding: 10px;
   box-sizing: border-box;
@@ -983,5 +983,20 @@ h2 {
 
 .sheet-close:hover {
   color: #1e293b;
+}
+.station-sheet :deep(.card-flex-layout) {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.75rem;
+}
+.station-sheet :deep(.sparkline-sidebar-wrapper) {
+  width: 100%;
+}
+.station-sheet :deep(.sparkline-title) {
+  text-align: left;
+}
+.station-sheet :deep(.sparkline-sidebar-wrapper .cursor-pointer) {
+  height: auto !important;
+  aspect-ratio: 9 / 4;
 }
 </style>

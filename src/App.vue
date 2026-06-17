@@ -69,11 +69,7 @@ onMounted(() => loadStations(selectedVariable.value))
   <div class="grid-container">
     <AppHeader @toggle-sidebar="sidebarOpen = true" @change-view="(view) => (currentView = view)" />
 
-    <div
-      v-if="sidebarOpen"
-      class="sidebar-backdrop"
-      @click="sidebarOpen = false"
-    />
+    <div v-if="sidebarOpen" class="sidebar-backdrop" @click="sidebarOpen = false" />
 
     <AppSidebar
       :is-open="sidebarOpen"
@@ -103,6 +99,7 @@ onMounted(() => loadStations(selectedVariable.value))
         :selected-variable="selectedVariable"
         :active-waterways="activeWaterways"
         @select="handleSelect"
+        @resetWaterways="(allWaterWays) => (activeWaterways = allWaterWays)"
       />
       <SchematicView
         v-if="currentView === 'schematic'"

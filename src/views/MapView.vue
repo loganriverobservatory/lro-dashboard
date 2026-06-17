@@ -5,7 +5,13 @@ MapView.vue - Displays the map with station pins and station cards in popups. Pi
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { onMounted, watch, onBeforeUnmount, ref } from 'vue'
-import { type Station, getFreshnessStatus, STATUS_COLORS, WATERWAY_COLORS } from '../hydroService'
+import {
+  type Station,
+  getFreshnessStatus,
+  STATUS_COLORS,
+  WATERWAY_COLORS,
+  WATERWAY_LIST,
+} from '../hydroService'
 import StationCard from '../components/StationCard.vue'
 
 const props = defineProps<{
@@ -13,6 +19,10 @@ const props = defineProps<{
   selectedId: string | null
   selectedVariable: string
   activeWaterways: string[]
+}>()
+
+const emit = defineEmits<{
+  (e: 'resetWaterways', fallbackWaterways: string[]): void
 }>()
 
 let map: L.Map | null = null
@@ -96,7 +106,9 @@ const syncMarkers = () => {
 function resetMap() {
   hasZoomed.value = false
   expandedStation.value = null
+  emit('resetWaterways', [...WATERWAY_LIST])
   syncMarkers()
+
   const coords = props.sites
     .filter((s) => s.coordinates?.length === 2)
     .map((s) => s.coordinates as L.LatLngTuple)
@@ -226,6 +238,7 @@ watch(
 :deep(.leaflet-control-container) {
   z-index: 800;
 }
+
 .map-banner {
   position: absolute;
   top: 12px;
@@ -294,6 +307,22 @@ watch(
 .close-btn:hover {
   background: #e2e8f0;
 }
+.expanded-card-wrapper :deep(.card-flex-layout) {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.75rem;
+}
+.expanded-card-wrapper :deep(.sparkline-sidebar-wrapper) {
+  width: 100%;
+}
+.expanded-card-wrapper :deep(.sparkline-title) {
+  text-align: left;
+}
+.expanded-card-wrapper :deep(.sparkline-sidebar-wrapper .cursor-pointer) {
+  height: auto !important;
+  aspect-ratio: 9 / 4;
+}
+
 :deep(.value-tooltip) {
   background: rgba(255, 255, 255, 0.95) !important;
   border: 1px solid #e2e8f0 !important;
@@ -310,4 +339,5 @@ watch(
   font-weight: 700;
   white-space: nowrap;
 }
+
 </style>

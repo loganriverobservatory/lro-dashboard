@@ -17,7 +17,7 @@ const emit = defineEmits(['change-view'])
       </div>
 
       <div class="hero-text-group">
-        <h2 class="hero-title">Current Watershed Conditions</h2>
+        <h2 class="hero-title">Current Basin Conditions</h2>
         <p class="hero-subtitle">
           Explore real-time climate, hydrology, and water quality data streams. This open-access
           dashboard provides live tracking of environmental conditions across the Logan River Basin.
@@ -48,8 +48,9 @@ const emit = defineEmits(['change-view'])
           <h3>Interactive Map</h3>
         </div>
         <p class="card-desc">
-          Locate physical sensor installations across the Logan River watershed. Click on individual
-          stations to view geographic relationships and explore live, localized data streams.
+          Locate physical sensor installations that are currently operational by the Logan River
+          Observatory. Click on individual stations to view geographic relationships and explore
+          live, localized data streams.
         </p>
         <span class="card-action-text text-green">Open Map View →</span>
       </div>
@@ -69,6 +70,27 @@ const emit = defineEmits(['change-view'])
         </div>
         <span class="card-action-text text-blue">Open Schematic View →</span>
       </div>
+    </div>
+    <div class="hero-text-group">
+      <h2 class="hero-title">Scope</h2>
+      <p class="hero-subtitle">
+        The Logan River Observatory (LRO) Dashboard is designed to provide the public with easy
+        access to Cache Valley watershed data. While HydroServer - the underlying data management
+        app - offers robust functionality, its complexity can present a barrier for general users.
+        The LRO Dashboard serves as a user-friendly interface, translating raw data into clear,
+        real-time informationn. For more details on site and variable information, please visit
+        HydroServer by clicking the top right corner icon or view the help page.
+      </p>
+    </div>
+    <div class="hero-text-group">
+      <h2 class="hero-title">Future Updates</h2>
+      <ul class="hero-subtitle">
+        <li>Display ΔQ between stations</li>
+        <li>Expand historical data visualizations</li>
+        <li>Mobile-responsive design improvements</li>
+        <li>Add data sources (USGS, DRWi, etc.)</li>
+        <li>Add climate stations to all views</li>
+      </ul>
     </div>
   </div>
 </template>

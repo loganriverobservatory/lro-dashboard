@@ -80,4 +80,16 @@ const filteredSites = computed(() => {
     padding: 1rem;
   }
 }
+@media screen and (max-width: 375px) {
+  :deep(.card-flex-layout) {
+    flex-direction: column;
+    /* align-items: stretch; */
+  }
+  :deep(.sparkline-sidebar-wrapper) {
+    width: 80%;
+  }
+  :deep(.sparkline-title) {
+    text-align: left;
+  }
+}
 </style>
