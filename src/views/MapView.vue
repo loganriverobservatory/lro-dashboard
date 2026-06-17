@@ -78,6 +78,7 @@ const syncMarkers = () => {
 
         marker.on('click', () => {
           expandedStation.value = station
+          if (map) map.panTo(coords)
         })
       }
 
@@ -237,7 +238,7 @@ watch(
   font-size: 1.15rem;
   color: #7f1d1d;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-  max-width: 370px;
+  max-width: min(370px, calc(100vw - 24px));
   pointer-events: none;
 }
 .reset-btn {
@@ -269,7 +270,7 @@ watch(
 }
 .expanded-card-wrapper {
   position: relative;
-  width: 360px;
+  width: min(360px, calc(100vw - 32px));
   max-height: 80vh;
   overflow-y: auto;
 }

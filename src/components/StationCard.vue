@@ -457,4 +457,15 @@ const isAwaitingTelemetry = computed(() => {
   width: 1rem;
   height: 1rem;
 }
+@media screen and (max-width: 480px) {
+  .station-card {
+    padding: 1rem;
+  }
+  .value {
+    font-size: 2.4rem;
+  }
+  .location-name {
+    font-size: 1.1rem;
+  }
+}
 </style>

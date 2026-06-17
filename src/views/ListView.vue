@@ -19,7 +19,7 @@ const variableLabel = computed(() => {
 })
 
 const filteredSites = computed(() => {
-  if (!props.activeWaterways || props.activeWaterways.length === 0) return props.sites
+  if (!props.activeWaterways) return props.sites
   return props.sites.filter((s) => props.activeWaterways!.includes(s.tributary ?? ''))
 })
 </script>
@@ -74,5 +74,10 @@ const filteredSites = computed(() => {
   display: flex;
   flex-direction: column;
   gap: 15px;
+}
+@media screen and (max-width: 480px) {
+  .container {
+    padding: 1rem;
+  }
 }
 </style>
