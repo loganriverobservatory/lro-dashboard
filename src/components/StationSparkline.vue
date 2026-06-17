@@ -101,14 +101,15 @@ const sparklinePaths = computed(() => {
     yMax += 1
   }
 
-  const scaleX = (val: number) => ((val - xMin) / (xMax - xMin)) * SPARKLINE_WIDTH
+  const scaleX = (val: number) =>
+    PADDING + ((val - xMin) / (xMax - xMin)) * (SPARKLINE_WIDTH - PADDING * 2)
   const scaleY = (val: number) =>
     SPARKLINE_HEIGHT -
     PADDING * 2 -
     ((val - yMin) / (yMax - yMin)) * (SPARKLINE_HEIGHT - PADDING * 2) +
     PADDING
 
-  const zeroY = scaleY(Math.max(0, Math.min(yMax, yMin)))
+  const zeroY = scaleY(Math.max(yMin, Math.min(yMax, 0)))
 
   const linePath = points
     .map((p, idx) => `${idx === 0 ? 'M' : 'L'}${scaleX(p.x)} ${scaleY(p.y)}`)
