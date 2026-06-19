@@ -88,8 +88,8 @@ const emit = defineEmits(['change-view'])
         <li>Display ΔQ between stations</li>
         <li>Expand historical data visualizations</li>
         <li>Mobile-responsive design improvements</li>
-        <li>Add data sources (USGS, DRWi, etc.)</li>
-        <li>Add climate stations to all views</li>
+        <li>Data source references and comparisons(USGS, DRWi, etc.)</li>
+        <li>Climate stations added to all views</li>
       </ul>
     </div>
   </div>
