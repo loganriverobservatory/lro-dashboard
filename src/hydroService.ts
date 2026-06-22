@@ -5,22 +5,18 @@ import type { DatastreamExtended } from '@hydroserver/client'
 
 const BASE_URL = 'https://lro.hydroserver.org/api/sensorthings/v1.1'
 
-interface StaLocation {
-  location: { geometry: { coordinates: [number, number, ...number[]] } }
-}
-
-interface StaThing {
-  '@iot.id': string
-  Locations?: StaLocation[]
-}
-
 interface StaDatastream {
   '@iot.id': string | number
   name: string
   description?: string
   unitOfMeasurement?: { symbol: string }
-  Thing?: StaThing
   properties?: Pick<DatastreamExtended, 'isVisible' | 'status' | 'sampledMedium' | 'isPrivate'>
+}
+
+interface StaThing {
+  '@iot.id': string
+  properties?: { samplingFeatureCode?: string }
+  Locations?: { location: { geometry: { coordinates: (number | string)[] } } }[]
 }
 
 export interface StaObservation {
@@ -74,17 +70,6 @@ const STATIONS_NOT_DISPLAYED = [
   'LR_DSC_A',
 ]
 
-function getCoordinates(ds: StaDatastream): [number, number] | null {
-  const p = ds.Thing?.Locations?.[0]?.location?.geometry?.coordinates
-
-  if (p && p.length >= 2) {
-    // API is [Lon, Lat], Map needs [Lat, Lon]
-    return [p[1], p[0]]
-  } else {
-    return null
-  }
-}
-
 // format station name
 // HS: ADD AS TAG
 const STATION_NAME_MAP: Record<string, string> = {
@@ -119,10 +104,25 @@ export async function getVariableStations(variable: string = 'Discharge'): Promi
     ? `contains(name,'Discharge') and contains(name,'cfs') and not contains(name,'cms')`
     : `contains(name,'${variable}')`
 
-  const listUrl = `${BASE_URL}/Datastreams?$filter=${varFilter}&$top=50&$orderby=name asc&$expand=Thing($expand=Locations)`
+  const listUrl = `${BASE_URL}/Datastreams?$filter=${varFilter}&$top=50&$orderby=name asc`
+  const thingsUrl = `${BASE_URL}/Things?$top=200&$expand=Locations`
 
-  const response = await fetch(listUrl)
-  const data = await response.json()
+  // Fetch Datastreams and Things in parallel.
+  // Things are fetched separately because HydroServer currently links all discharge
+  // datastreams to the same Thing (a data bug), so coordinates and UUIDs must come
+  // from the Things endpoint matched by samplingFeatureCode.
+  const [dsRes, thingsRes] = await Promise.all([fetch(listUrl), fetch(thingsUrl)])
+  const [data, thingsData] = await Promise.all([dsRes.json(), thingsRes.json()])
+
+  const thingsByCode: Record<string, { uuid: string; coords: [number, number] | null }> = {}
+  for (const t of (thingsData.value as StaThing[] | undefined) ?? []) {
+    const code = t.properties?.samplingFeatureCode
+    if (!code) continue
+    const p = t.Locations?.[0]?.location?.geometry?.coordinates
+    const coords: [number, number] | null =
+      p && p.length >= 2 ? [Number(p[1]), Number(p[0])] : null
+    thingsByCode[code] = { uuid: t['@iot.id']?.toString() ?? '', coords }
+  }
 
   return data.value
     .filter((ds: StaDatastream) => {
@@ -136,7 +136,7 @@ export async function getVariableStations(variable: string = 'Discharge'): Promi
     })
     .map((ds: StaDatastream) => {
       const stationCode = ds.name.split(' ')[0] || 'UNKNOWN'
-      const foundCoords = getCoordinates(ds)
+      const thingInfo = thingsByCode[stationCode] ?? { uuid: '', coords: null }
 
       const displayNameText: string = STATION_NAME_MAP[stationCode] || stationCode
       const tributaryBase = displayNameText.includes(':')
@@ -147,11 +147,11 @@ export async function getVariableStations(variable: string = 'Discharge'): Promi
 
       return {
         id: ds['@iot.id']?.toString(),
-        uuid: ds.Thing?.['@iot.id']?.toString() || '',
+        uuid: thingInfo.uuid,
         displayName: displayNameText,
         description: ds.description || '',
         observation: { '@iot.id': '', result: null, phenomenonTime: null },
-        coordinates: foundCoords,
+        coordinates: thingInfo.coords,
         unit: ds.unitOfMeasurement?.symbol || '',
         tributary,
       }
@@ -159,7 +159,7 @@ export async function getVariableStations(variable: string = 'Discharge'): Promi
 }
 
 export async function getLatestObservation(stationId: string): Promise<StaObservation | null> {
-  const obsUrl = `${BASE_URL}/Datastreams('${stationId}')/Observations?$top=1&$orderby=phenomenonTime desc`
+  const obsUrl = `${BASE_URL}/Datastreams('${stationId}')/Observations?$filter=result ne -9999&$top=1&$orderby=phenomenonTime desc`
   const response = await fetch(obsUrl)
   const data = await response.json()
   return data.value?.[0] || null
