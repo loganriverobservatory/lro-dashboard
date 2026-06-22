@@ -15,7 +15,7 @@
     "format": "prettier --write --experimental-cli src/"
   },
   "dependencies": {
-    "@hydroserver/client": "^0.4.4",
+    "@hydroserver/client": "^0.5.0",
     "leaflet": "^1.9.4",
     "lucide-vue-next": "^1.0.0",
     "vue": "^3.5.32",
@@ -37,7 +37,7 @@
     "oxlint": "~1.60.0",
     "prettier": "3.8.3",
     "typescript": "~6.0.0",
-    "vite": "^8.0.8",
+    "vite": "^8.0.16",
     "vite-plugin-vue-devtools": "^8.1.1",
     "vue-tsc": "^3.2.6"
   },
