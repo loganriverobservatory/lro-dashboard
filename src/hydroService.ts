@@ -10,6 +10,7 @@ interface StaDatastream {
   name: string
   description?: string
   unitOfMeasurement?: { symbol: string }
+  phenomenonTime?: string
   properties?: Pick<DatastreamExtended, 'isVisible' | 'status' | 'sampledMedium' | 'isPrivate'>
 }
 
@@ -34,6 +35,8 @@ export interface Station {
   coordinates: [number, number] | null
   unit?: string
   tributary?: string
+  latestTime?: string | null
+  isPrivate?: boolean
 }
 
 export const WATERWAY_COLORS: Record<string, string> = {
@@ -104,13 +107,11 @@ export async function getVariableStations(variable: string = 'Discharge'): Promi
     ? `contains(name,'Discharge') and contains(name,'cfs') and not contains(name,'cms')`
     : `contains(name,'${variable}')`
 
+  // 🟢 RESTORED: Fetches the matching station datasets correctly
   const listUrl = `${BASE_URL}/Datastreams?$filter=${varFilter}&$top=50&$orderby=name asc`
+
   const thingsUrl = `${BASE_URL}/Things?$top=200&$expand=Locations`
 
-  // Fetch Datastreams and Things in parallel.
-  // Things are fetched separately because HydroServer currently links all discharge
-  // datastreams to the same Thing (a data bug), so coordinates and UUIDs must come
-  // from the Things endpoint matched by samplingFeatureCode.
   const [dsRes, thingsRes] = await Promise.all([fetch(listUrl), fetch(thingsUrl)])
   const [data, thingsData] = await Promise.all([dsRes.json(), thingsRes.json()])
 
@@ -119,8 +120,7 @@ export async function getVariableStations(variable: string = 'Discharge'): Promi
     const code = t.properties?.samplingFeatureCode
     if (!code) continue
     const p = t.Locations?.[0]?.location?.geometry?.coordinates
-    const coords: [number, number] | null =
-      p && p.length >= 2 ? [Number(p[1]), Number(p[0])] : null
+    const coords: [number, number] | null = p && p.length >= 2 ? [Number(p[1]), Number(p[0])] : null
     thingsByCode[code] = { uuid: t['@iot.id']?.toString() ?? '', coords }
   }
 
@@ -145,28 +145,52 @@ export async function getVariableStations(variable: string = 'Discharge'): Promi
 
       const tributary = tributaryBase === 'Logan River' ? 'Logan River: Main Stem' : tributaryBase
 
+      // phenomenonTime is "start/end" interval — extract end as latest observation time
+      const ptParts = ds.phenomenonTime?.split('/') ?? []
+      const latestTime = ptParts[ptParts.length - 1] ?? null
+
       return {
         id: ds['@iot.id']?.toString(),
         uuid: thingInfo.uuid,
         displayName: displayNameText,
         description: ds.description || '',
-        observation: { '@iot.id': '', result: null, phenomenonTime: null },
+        observation: null,
         coordinates: thingInfo.coords,
         unit: ds.unitOfMeasurement?.symbol || '',
         tributary,
+        latestTime,
+        isPrivate: ds.properties?.isVisible === false || ds.properties?.isPrivate === true,
       }
     })
 }
 
-export async function getLatestObservation(stationId: string): Promise<StaObservation | null> {
-  const obsUrl = `${BASE_URL}/Datastreams('${stationId}')/Observations?$filter=result ne -9999&$top=1&$orderby=phenomenonTime desc`
-  const response = await fetch(obsUrl)
-  const data = await response.json()
-  return data.value?.[0] || null
-}
+export async function getLatestObservation(
+  stationId: string,
+  latestTime?: string | null,
+): Promise<StaObservation | null> {
+  // $orderby is ignored by this API; use the Datastream's phenomenonTime end as a ge filter
+  if (!latestTime) return null
 
-export function isStationActive(_observation: StaObservation | null): boolean {
-  return true
+  const endISO = new Date(latestTime).toISOString()
+  const obsUrl = `${BASE_URL}/Datastreams('${stationId}')/Observations?$filter=phenomenonTime ge ${endISO}&$top=1`
+
+  try {
+    const response = await fetch(obsUrl)
+    if (!response.ok) return null
+
+    const data = await response.json()
+    const obs = data.value?.[0] ?? null
+    if (!obs) return null
+
+    return {
+      '@iot.id': obs['@iot.id'] || '',
+      result: obs.result !== null ? Number(obs.result) : null,
+      phenomenonTime: obs.phenomenonTime ?? latestTime,
+    }
+  } catch (e) {
+    console.error(`Error fetching observation for ${stationId}:`, e)
+    return null
+  }
 }
 
 export type FreshnessStatus = 'current' | 'stale' | 'outdated' | 'unknown'
@@ -180,6 +204,7 @@ export const STATUS_COLORS: Record<FreshnessStatus, string> = {
 
 export function getFreshnessStatus(observation: StaObservation | null): FreshnessStatus {
   if (!observation?.phenomenonTime) return 'unknown'
+
   const ageHours = (Date.now() - new Date(observation.phenomenonTime).getTime()) / (1000 * 60 * 60)
   if (ageHours < 2) return 'current'
   if (ageHours < 24) return 'stale'
