@@ -100,9 +100,7 @@ const hasDisplayableData = computed(() => {
   return parsedMeasurements.value.some((m) => m.displayable)
 })
 
-const isAwaitingTelemetry = computed(() => {
-  return props.site.observation === null
-})
+const isAwaitingTelemetry = computed(() => props.site.observation === null && !props.site.isPrivate)
 </script>
 
 <template>
@@ -156,7 +154,11 @@ const isAwaitingTelemetry = computed(() => {
     </div>
 
     <div class="card-body">
-      <div v-if="isAwaitingTelemetry" class="status-msg">
+      <div v-if="site.isPrivate" class="status-msg not-available">
+        Not Available
+      </div>
+
+      <div v-else-if="isAwaitingTelemetry" class="status-msg">
         <div class="spinner"></div>
         Updating...
       </div>
@@ -373,6 +375,10 @@ const isAwaitingTelemetry = computed(() => {
   gap: 10px;
   color: #64748b;
   font-style: italic;
+}
+.not-available {
+  color: #94a3b8;
+  font-size: 0.95rem;
 }
 .spinner {
   width: 16px;

@@ -2,13 +2,14 @@
 /*
 App.vue - root orchestrator
 */
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import {
   getVariableStations,
-  getLatestObservation,
+  getLatestObservation, // 🟢 Bring this back into action
   type Station,
   WATERWAY_LIST,
 } from './hydroService'
+import hsLogo from './assets/hydroserver-icon.png'
 import AppHeader from './components/AppHeader.vue'
 import AppSidebar from './components/AppSidebar.vue'
 import HomeView from './views/HomeView.vue'
@@ -25,6 +26,17 @@ const selectedId = ref<string | null>(null)
 const selectedVariable = ref('Discharge')
 const activeWaterways = ref<string[]>([...WATERWAY_LIST])
 
+let refreshTimer: ReturnType<typeof setInterval> | null = null
+
+function scheduleRefresh() {
+  if (refreshTimer) clearInterval(refreshTimer)
+  refreshTimer = setInterval(() => loadStations(selectedVariable.value), 20 * 60 * 1000)
+}
+
+onUnmounted(() => {
+  if (refreshTimer) clearInterval(refreshTimer)
+})
+
 function handleSelect(id: string | null) {
   selectedId.value = id
 }
@@ -34,21 +46,23 @@ async function loadStations(variable: string) {
   sites.value = []
   try {
     const stations = await getVariableStations(variable)
-    sites.value = stations
 
-    await Promise.all(
-      sites.value.map(async (site) => {
-        try {
-          const obs = await getLatestObservation(String(site.id))
-          if (obs) site.observation = obs
-        } catch {
-          console.warn(`Failed: ${site.displayName}`)
-        }
-      }),
-    )
+    // Show station list immediately so cards render with "Updating..." spinner
+    sites.value = stations
+    loading.value = false
+
+    // Load each observation sequentially; update its card as it arrives
+    for (let i = 0; i < stations.length; i++) {
+      if (stations[i].isPrivate) continue
+      try {
+        const telemetry = await getLatestObservation(stations[i].id, stations[i].latestTime)
+        sites.value[i] = { ...sites.value[i], observation: telemetry }
+      } catch {
+        // leave observation null
+      }
+    }
   } catch (err) {
-    console.error('Dashboard error:', err)
-  } finally {
+    console.error('Fatal dashboard orchestrator error:', err)
     loading.value = false
   }
 }
@@ -56,13 +70,17 @@ async function loadStations(variable: string) {
 function handleVariableChange(variable: string) {
   selectedVariable.value = variable
   loadStations(variable)
+  scheduleRefresh()
 }
 
 function handleWaterwayFilter(updated: string[]) {
   activeWaterways.value = updated
 }
 
-onMounted(() => loadStations(selectedVariable.value))
+onMounted(() => {
+  loadStations(selectedVariable.value)
+  scheduleRefresh()
+})
 </script>
 
 <template>
@@ -109,6 +127,17 @@ onMounted(() => loadStations(selectedVariable.value))
       />
     </main>
   </div>
+
+  <a
+    href="https://hydroserver.org"
+    target="_blank"
+    rel="noopener noreferrer"
+    class="hs-badge"
+    title="Powered by HydroServer"
+  >
+    <img :src="hsLogo" alt="HydroServer" class="hs-badge-icon" />
+    <span class="hs-badge-text">Powered by HydroServer</span>
+  </a>
 </template>
 
 <style>
@@ -156,6 +185,52 @@ body {
     inset: 0;
     background: rgba(0, 0, 0, 0.35);
     z-index: 999;
+  }
+}
+
+.hs-badge {
+  position: fixed;
+  bottom: 10px;
+  right: 14px;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px 4px 6px;
+  background: rgba(15, 23, 42, 0.72);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  text-decoration: none;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.62rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  transition: opacity 0.2s ease, background 0.2s ease;
+  opacity: 0.8;
+}
+
+.hs-badge:hover {
+  opacity: 1;
+  background: rgba(15, 23, 42, 0.9);
+}
+
+.hs-badge-icon {
+  height: 13px;
+  width: auto;
+  filter: brightness(0) invert(1);
+  opacity: 0.9;
+}
+
+@media screen and (max-width: 992px) {
+  .hs-badge-text {
+    display: none;
+  }
+  .hs-badge {
+    padding: 5px 7px;
+  }
+  .hs-badge-icon {
+    height: 15px;
   }
 }
 </style>

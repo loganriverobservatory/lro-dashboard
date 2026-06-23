@@ -1,7 +1,16 @@
-// Sparkline.vue - Display sparkline chart for recent observations of each station.
-
 <template>
-  <v-progress-linear v-if="loading" color="secondary" indeterminate />
+  <div
+    v-if="loading"
+    class="w-full h-[80px] bg-slate-50 border border-slate-200 rounded-[6px] relative overflow-hidden flex items-center justify-center"
+  >
+    <div class="absolute top-0 left-0 w-full h-[3px] bg-blue-50 overflow-hidden">
+      <div class="h-full bg-blue-500 animate-[pulse_1.5s_infinite] w-full"></div>
+    </div>
+    <span class="text-xs text-slate-400 font-medium tracking-wide animate-pulse"
+      >Loading trend...</span
+    >
+  </div>
+
   <div v-else-if="!loading && canShowSparkline">
     <div class="w-full">
       <div class="w-full cursor-pointer" :style="sparklineContainerStyle" @click="handleEmit">
@@ -41,7 +50,13 @@
       </div>
     </div>
   </div>
-  <div v-else class="text-caption text-grey-darken-1 italic">No recent history</div>
+
+  <div
+    v-else
+    class="text-xs text-slate-400 italic font-medium h-[80px] flex items-center justify-center border border-dashed border-slate-200 rounded-[6px] bg-slate-50/50"
+  >
+    No recent history
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -139,7 +154,9 @@ const canShowSparkline = computed(() => sparklineObservations.value.length > 1)
 async function fetchRecentHistory(id: string) {
   try {
     loading.value = true
-    const url = `https://lro.hydroserver.org/api/sensorthings/v1.1/Datastreams('${id}')/Observations?$top=48&$orderby=phenomenonTime desc&$select=result,phenomenonTime`
+    // $orderby is ignored by this API; filter by 48-hour window and sort client-side
+    const since = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString()
+    const url = `https://lro.hydroserver.org/api/sensorthings/v1.1/Datastreams('${id}')/Observations?$filter=phenomenonTime ge ${since}&$top=300&$select=result,phenomenonTime`
     const res = await fetch(url)
     const data = await res.json()
 
