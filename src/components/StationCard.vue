@@ -20,13 +20,6 @@ const props = withDefaults(
   },
 )
 
-const UNIT_DESCRIPTIONS: Record<string, string> = {
-  cfs: 'cubic feet per second',
-  degC: 'degrees Celsius',
-  'mg/L': 'milligrams per liter',
-  'µS/cm': 'microsiemens per centimeter',
-}
-
 function formatDate(dateStr: string | undefined): string {
   if (!dateStr) return ''
   const date = new Date(dateStr)
@@ -154,9 +147,7 @@ const isAwaitingTelemetry = computed(() => props.site.observation === null && !p
     </div>
 
     <div class="card-body">
-      <div v-if="site.isPrivate" class="status-msg not-available">
-        Not Available
-      </div>
+      <div v-if="site.isPrivate" class="status-msg not-available">Not Available</div>
 
       <div v-else-if="isAwaitingTelemetry" class="status-msg">
         <div class="spinner"></div>
@@ -175,12 +166,6 @@ const isAwaitingTelemetry = computed(() => props.site.observation === null && !p
               </span>
               <span class="unit">
                 {{ metric.unit }}
-                <span
-                  v-if="UNIT_DESCRIPTIONS[metric.unit] && !compact && !mapMode"
-                  class="unit-expansion"
-                >
-                  {{ UNIT_DESCRIPTIONS[metric.unit] }}
-                </span>
               </span>
             </div>
           </div>
@@ -204,25 +189,32 @@ const isAwaitingTelemetry = computed(() => props.site.observation === null && !p
 </template>
 
 <style scoped>
+/* ==========================================================================
+   1. CORE LAYOUT & CARD CONTAINER
+   ========================================================================== */
 .station-card {
+  position: relative;
+  overflow: hidden;
   background: #ffffff;
-  padding: 1.75rem;
   border-radius: 16px;
+  padding: 0 clamp(0.5rem, 1vw + 0.2rem, 1.1rem) clamp(0.25rem, 0.5vw + 0.1rem, 0.75rem);
   box-shadow:
     0 4px 6px -1px rgba(0, 0, 0, 0.05),
     0 2px 4px -1px rgba(0, 0, 0, 0.03);
   border: 1px solid #e2e8f0;
-  margin-bottom: 1.5rem;
+  margin-bottom: 0;
   transition:
     transform 0.2s ease,
     box-shadow 0.2s ease;
 }
+
 .station-card:hover {
   transform: translateY(-2px);
   box-shadow:
     0 10px 15px -3px rgba(0, 0, 0, 0.05),
     0 4px 6px -2px rgba(0, 0, 0, 0.03);
 }
+
 .card-stale {
   background: #f1f5f9;
   border-left: 4px solid #94a3b8;
@@ -233,33 +225,149 @@ const isAwaitingTelemetry = computed(() => props.site.observation === null && !p
   box-shadow: none;
 }
 
-.card-flex-layout {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 1.5rem;
-}
-
 .card-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   gap: 1rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0.3rem;
 }
+
+.card-flex-layout {
+  display: flex !important;
+  flex-direction: row !important;
+  justify-content: flex-start !important;
+  align-items: center !important;
+  gap: 1.5rem !important;
+  flex-wrap: nowrap !important;
+}
+
+.metric-row {
+  margin-bottom: 0.2rem;
+}
+
+/* ==========================================================================
+   2. TYPOGRAPHY & ELEMENTS (Optimized with Fluid Sizing)
+   ========================================================================== */
 .title-with-link {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   flex: 1;
 }
+
 .location-name {
-  font-size: 1.35rem;
+  font-size: clamp(1rem, 1.2vw + 0.6rem, 1.35rem); /* Adapts fluidly without media queries */
   font-weight: 700;
   color: #1e293b;
   line-height: 1.3;
-  margin: 0;
 }
+
+.value {
+  font-size: clamp(2rem, 3.5vw + 1rem, 3.5rem); /* Shrinks nicely on small mobile screens */
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.unit {
+  font-size: clamp(0.85rem, 0.5vw + 0.8rem, 1.1rem);
+  font-weight: 600;
+  color: #64748b;
+  margin-left: 0.5rem;
+}
+
+.unit-expansion {
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: #94a3b8;
+  display: inline-block;
+  margin-left: 0.25rem;
+}
+
+.timestamp {
+  font-size: clamp(0.75rem, 0.6vw + 0.45rem, 0.85rem); /* Dynamic timestamp sizing */
+  color: #64748b;
+  font-weight: 500;
+  margin-top: 0.5rem;
+  margin-bottom: 0;
+}
+
+.sparkline-sidebar-wrapper {
+  width: 180px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  margin-top: -0.7rem;
+}
+
+.sparkline-title {
+  font-size: clamp(0.65rem, 0.4vw + 0.4rem, 0.7rem); /* Dynamic trend header sizing */
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.35rem;
+  text-align: right;
+}
+
+@media screen and (max-width: 480px) {
+  .station-card {
+    padding-bottom: 1.1rem !important;
+  }
+
+  .card-flex-layout {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    flex-wrap: nowrap !important;
+    width: 100% !important;
+  }
+
+  .measurement-container {
+    flex: 1 !important;
+    min-width: 0 !important;
+    max-width: calc(100% - 135px) !important;
+    text-align: left !important;
+  }
+
+  .value {
+    font-size: clamp(1.6rem, 6vw, 2.2rem) !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .sparkline-sidebar-wrapper {
+    width: 100px !important;
+    flex-shrink: 0 !important;
+    margin-top: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    /*margin-bottom: 0 !important;*/
+    overflow: hidden !important;
+  }
+
+  .sparkline-title {
+    text-align: right !important;
+    font-size: 0.55rem !important;
+    margin-bottom: 0.15rem !important;
+    white-space: nowrap !important;
+    width: 100% !important;
+  }
+
+  :deep(.w-full) {
+    height: 40px !important;
+  }
+
+  unit-expansion {
+    display: none !important;
+  }
+}
+
+/* UI Badges, SVGs & Utilities */
 .external-site-link {
   display: inline-flex;
   align-items: center;
@@ -295,7 +403,6 @@ const isAwaitingTelemetry = computed(() => props.site.observation === null && !p
   background-color: #e2e8f0;
   color: #334155;
 }
-
 .measurement-container {
   flex: 1;
 }
@@ -308,34 +415,10 @@ const isAwaitingTelemetry = computed(() => props.site.observation === null && !p
   color: #475569;
   margin-right: 0.5rem;
 }
-
-.sparkline-sidebar-wrapper {
-  width: 180px;
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-}
-.sparkline-title {
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: #94a3b8;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: 0.35rem;
-  text-align: right;
-}
-
-.value {
-  font-size: 3.5rem;
-  font-weight: 800;
-  letter-spacing: -0.03em;
-  line-height: 1;
-}
 .fallback-text {
   font-size: 1.5rem;
   color: #64748b;
   font-weight: 600;
-  letter-spacing: normal;
 }
 .color-fresh {
   color: #16a34a;
@@ -348,26 +431,6 @@ const isAwaitingTelemetry = computed(() => props.site.observation === null && !p
 }
 .color-unknown {
   color: #64748b;
-}
-.unit {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #64748b;
-  margin-left: 0.5rem;
-}
-.unit-expansion {
-  font-size: 0.85rem;
-  font-weight: 400;
-  color: #94a3b8;
-  display: inline-block;
-  margin-left: 0.25rem;
-}
-.timestamp {
-  font-size: 0.85rem;
-  color: #64748b;
-  font-weight: 500;
-  margin-top: 0.5rem;
-  margin-bottom: 0;
 }
 .status-msg {
   display: flex;
@@ -397,7 +460,55 @@ const isAwaitingTelemetry = computed(() => props.site.observation === null && !p
   }
 }
 
-/* Compact Configurations */
+/* ==========================================================================
+   3. RESPONSIVE MEDIA QUERIES (Unified Mobile Handling)
+   ========================================================================== */
+@media screen and (max-width: 480px) {
+  .station-card {
+    padding-bottom: 1.1rem !important;
+  }
+  .card-flex-layout {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: flex-start !important;
+    align-items: flex-end !important;
+    gap: 1.5rem !important;
+    flex-wrap: nowrap !important;
+  }
+  .measurement-container {
+    flex: 1 !important;
+    min-width: 0 !important;
+    max-width: calc(100% - 140px) !important;
+    text-align: left !important;
+  }
+  .value {
+    font-size: clamp(1.8rem, 5vw, 2.5rem) !important;
+  }
+  .sparkline-sidebar-wrapper {
+    width: 110px !important;
+    flex-shrink: 0 !important;
+    margin-top: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden;
+  }
+  .sparkline-title {
+    text-align: left !important;
+    font-size: 0.52rem !important;
+    letter-spacing: -0.01em !important;
+    margin-bottom: 0.3rem !important;
+    white-space: nowrap !important;
+    width: 100% !important;
+  }
+  :deep(.w-full) {
+    height: 40px !important;
+  }
+}
+
+/* ==========================================================================
+   4. ALTERNATE VIEW CONFIGURATIONS (Compact & Map Variants)
+   ========================================================================== */
+/* Compact View Modifications */
 .station-card.is-compact {
   padding: 0.65rem 1rem;
   margin-bottom: 0;
@@ -437,7 +548,7 @@ const isAwaitingTelemetry = computed(() => props.site.observation === null && !p
   height: 0.95rem;
 }
 
-/* Map Configurations */
+/* Map View Modifications */
 .station-card.is-map {
   background: rgba(255, 255, 255, 0.95) !important;
   border: 1px solid #94a3b8 !important;
@@ -465,7 +576,7 @@ const isAwaitingTelemetry = computed(() => props.site.observation === null && !p
 .station-card.is-map .value-row {
   margin: 0 !important;
   padding: 0 !important;
-  line-height: 1 !important;
+  line-height: 0.5 !important;
 }
 .station-card.is-map::after {
   content: '';
@@ -504,16 +615,5 @@ const isAwaitingTelemetry = computed(() => props.site.observation === null && !p
 .station-card.is-map .link-svg {
   width: 1rem;
   height: 1rem;
-}
-@media screen and (max-width: 480px) {
-  .station-card {
-    padding: 1rem;
-  }
-  .value {
-    font-size: 2.4rem;
-  }
-  .location-name {
-    font-size: 1.1rem;
-  }
 }
 </style>

@@ -54,14 +54,13 @@ export const WATERWAY_COLORS: Record<string, string> = {
 export const WATERWAY_LIST = Object.keys(WATERWAY_COLORS)
 
 export const WATER_VARIBALES = [
-  { id: 'Discharge', label: 'Discharge (cfs)' },
-  { id: 'Water Temperature', label: 'Temperature (°C)' },
-  { id: 'Specific Conductance', label: 'SPC (uS/cm)' },
-  { id: 'pH', label: 'pH (pH)' },
-  { id: 'Oxygen, dissolved', label: 'Dissolved Oxygen (mg/L)' },
+  { id: 'Discharge', label: 'Discharge (cfs)', longLabel: 'Discharge in cfs (cubic feet per second)' },
+  { id: 'Water Temperature', label: 'Temperature (°C)', longLabel: 'Water Temperature in °C (degrees Celsius)' },
+  { id: 'Specific Conductance', label: 'SPC (µS/cm)', longLabel: 'Specific Conductance in µS/cm (microsiemens per centimeter)' },
+  { id: 'pH', label: 'pH', longLabel: 'pH (potential of hydrogen)' },
+  { id: 'Oxygen, dissolved', label: 'Dissolved Oxygen (mg/L)', longLabel: 'Dissolved Oxygen in mg/L (milligrams per liter)' },
 ]
 
-// Add or remove station codes here to control which sites appear in all views
 // HS: ADD AS TAG
 const STATIONS_NOT_DISPLAYED = [
   'TF_SAWM_A',
@@ -107,7 +106,6 @@ export async function getVariableStations(variable: string = 'Discharge'): Promi
     ? `contains(name,'Discharge') and contains(name,'cfs') and not contains(name,'cms')`
     : `contains(name,'${variable}')`
 
-  // 🟢 RESTORED: Fetches the matching station datasets correctly
   const listUrl = `${BASE_URL}/Datastreams?$filter=${varFilter}&$top=50&$orderby=name asc`
 
   const thingsUrl = `${BASE_URL}/Things?$top=200&$expand=Locations`
@@ -168,7 +166,7 @@ export async function getLatestObservation(
   stationId: string,
   latestTime?: string | null,
 ): Promise<StaObservation | null> {
-  // $orderby is ignored by this API; use the Datastream's phenomenonTime end as a ge filter
+  // $orderby is ignored by API for some reason; use the Datastream's phenomenonTime end as a ge filter
   if (!latestTime) return null
 
   const endISO = new Date(latestTime).toISOString()
