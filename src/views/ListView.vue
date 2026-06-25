@@ -18,6 +18,11 @@ const variableLabel = computed(() => {
   return match ? match.label : props.selectedVariable || 'Live Data'
 })
 
+const variableLongLabel = computed(() => {
+  const match = WATER_VARIBALES.find((v) => v.id === props.selectedVariable)
+  return match?.longLabel ?? variableLabel.value
+})
+
 const filteredSites = computed(() => {
   if (!props.activeWaterways) return props.sites
   return props.sites.filter((s) => props.activeWaterways!.includes(s.tributary ?? ''))
@@ -27,9 +32,8 @@ const filteredSites = computed(() => {
 <template>
   <div class="container">
     <header class="dashboard-header">
-      <h1>Logan River Observatory</h1>
       <div class="status-banner">
-        <h2>Live {{ variableLabel }} Monitoring</h2>
+        <h2>Live {{ variableLongLabel }}</h2>
       </div>
     </header>
 
@@ -52,8 +56,16 @@ const filteredSites = computed(() => {
   border-radius: 12px;
 }
 
-.dashboard-header h1 {
-  color: #334155;
+.status-banner h2 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+@media screen and (max-width: 480px) {
+  .status-banner h2 {
+    font-size: 0.8rem;
+  }
 }
 
 .status-banner {
@@ -83,7 +95,7 @@ const filteredSites = computed(() => {
 @media screen and (max-width: 375px) {
   :deep(.card-flex-layout) {
     flex-direction: column;
-    /* align-items: stretch; */
+    align-items: stretch;
   }
   :deep(.sparkline-sidebar-wrapper) {
     width: 80%;

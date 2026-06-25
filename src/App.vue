@@ -52,11 +52,11 @@ async function loadStations(variable: string) {
     loading.value = false
 
     // Load each observation sequentially; update its card as it arrives
-    for (let i = 0; i < stations.length; i++) {
-      if (stations[i].isPrivate) continue
+    for (const [i, station] of stations.entries()) {
+      if (station.isPrivate) continue
       try {
-        const telemetry = await getLatestObservation(stations[i].id, stations[i].latestTime)
-        sites.value[i] = { ...sites.value[i], observation: telemetry }
+        const telemetry = await getLatestObservation(station.id, station.latestTime)
+        sites.value[i] = { ...station, observation: telemetry }
       } catch {
         // leave observation null
       }

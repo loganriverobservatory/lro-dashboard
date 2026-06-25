@@ -18,7 +18,7 @@
           v-if="sparklinePaths.line.length"
           class="h-full w-full"
           :viewBox="`0 0 ${SPARKLINE_WIDTH} ${SPARKLINE_HEIGHT}`"
-          preserveAspectRatio="xMidYMid meet"
+          preserveAspectRatio="none"
         >
           <defs>
             <linearGradient :id="`sparklineGradient-${stationId}`" x1="0" y1="0" x2="0" y2="1">
@@ -125,8 +125,8 @@ const sparklinePaths = computed(() => {
   const linePath = points
     .map((p, idx) => `${idx === 0 ? 'M' : 'L'}${scaleX(p.x)} ${scaleY(p.y)}`)
     .join(' ')
-  const firstX = scaleX(points[0].x)
-  const lastX = scaleX(points[points.length - 1].x)
+  const firstX = scaleX(points[0]!.x)
+  const lastX = scaleX(points[points.length - 1]!.x)
   const areaPath = `${linePath} L${lastX} ${zeroY} L${firstX} ${zeroY} Z`
 
   return { line: [linePath], area: [areaPath] }
@@ -141,7 +141,7 @@ const sparklineColors = computed(() => {
 })
 
 const sparklineContainerStyle = computed(() => ({
-  height: `80px`,
+  height: `100%`,
   width: '100%',
   border: `1px solid ${sparklineColors.value.border}`,
   borderRadius: '6px',

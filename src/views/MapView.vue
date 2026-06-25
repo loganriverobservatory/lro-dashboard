@@ -4,13 +4,14 @@ MapView.vue - Displays the map with station pins and station cards in popups. Pi
 */
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { onMounted, watch, onBeforeUnmount, ref } from 'vue'
+import { onMounted, watch, onBeforeUnmount, ref, computed } from 'vue'
 import {
   type Station,
   getFreshnessStatus,
   STATUS_COLORS,
   WATERWAY_COLORS,
   WATERWAY_LIST,
+  WATER_VARIBALES,
 } from '../hydroService'
 import StationCard from '../components/StationCard.vue'
 
@@ -24,6 +25,11 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'resetWaterways', fallbackWaterways: string[]): void
 }>()
+
+const variableLongLabel = computed(() => {
+  const match = WATER_VARIBALES.find((v) => v.id === props.selectedVariable)
+  return match?.longLabel ?? props.selectedVariable
+})
 
 let map: L.Map | null = null
 const markerMap = new Map<string, L.Marker>()
@@ -73,7 +79,7 @@ const syncMarkers = () => {
         let color = STATUS_COLORS.unknown
 
         if (obs && obs.result !== null && obs.result !== undefined) {
-          valueStr = `${Number(obs.result).toFixed(2)} ${station.unit || ''}`
+          valueStr = `${Number(obs.result).toFixed(2)}`
           const status = getFreshnessStatus(obs)
           color = STATUS_COLORS[status as keyof typeof STATUS_COLORS] ?? STATUS_COLORS.unknown
         }
@@ -201,8 +207,9 @@ watch(
     <div id="map-div"></div>
 
     <div v-if="!hasZoomed" class="map-banner">
+      <div class="banner-live-label">Live {{ variableLongLabel }}</div>
       Zoom in/out to see <strong>{{ selectedVariable }}</strong> values. Click on values for more
-      information. Pins may take a while to load.
+      information.
     </div>
 
     <button v-if="hasZoomed" class="reset-btn" @click="resetMap">Reset</button>
@@ -253,6 +260,11 @@ watch(
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
   max-width: min(370px, calc(100vw - 24px));
   pointer-events: none;
+}
+.banner-live-label {
+  font-weight: 700;
+  font-size: 1rem;
+  margin-bottom: 6px;
 }
 .reset-btn {
   position: absolute;
@@ -327,7 +339,7 @@ watch(
   background: rgba(255, 255, 255, 0.95) !important;
   border: 1px solid #e2e8f0 !important;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12) !important;
-  padding: 2px 6px !important;
+  padding: 1px 4px !important;
   border-radius: 4px !important;
   cursor: pointer;
 }
@@ -335,9 +347,17 @@ watch(
   display: none !important;
 }
 :deep(.pin-value) {
-  font-size: 1.235rem;
+  font-size: 0.95rem;
   font-weight: 700;
   white-space: nowrap;
 }
 
+@media screen and (max-width: 480px) {
+  :deep(.pin-value) {
+    font-size: 0.7rem;
+  }
+  :deep(.value-tooltip) {
+    padding: 1px 3px !important;
+  }
+}
 </style>
