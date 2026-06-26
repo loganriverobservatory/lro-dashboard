@@ -8,6 +8,7 @@ import {
   getLatestObservation,
   getUSGSStations,
   setApiToken,
+  setStationConfig,
   type Station,
   WATERWAY_LIST,
 } from './hydroService'
@@ -27,6 +28,7 @@ const currentView = ref('home')
 const selectedId = ref<string | null>(null)
 const selectedVariable = ref('Discharge')
 const activeWaterways = ref<string[]>([...WATERWAY_LIST])
+const schematicConfig = ref<any>(null)
 
 let refreshTimer: ReturnType<typeof setInterval> | null = null
 
@@ -49,9 +51,13 @@ async function loadConfig() {
     if (res.ok) {
       const config = await res.json()
       if (config.apiToken) setApiToken(config.apiToken)
+      if (config.stationsNotDisplayed || config.stationNames) {
+        setStationConfig(config.stationsNotDisplayed ?? [], config.stationNames ?? {})
+      }
+      if (config.schematic) schematicConfig.value = config.schematic
     }
   } catch {
-    // proceed without token
+    // proceed without config
   }
 }
 
@@ -144,6 +150,7 @@ onMounted(async () => {
         :sites="sites"
         :loading="loading"
         :active-waterways="activeWaterways"
+        :schematic-config="schematicConfig"
       />
     </main>
   </div>

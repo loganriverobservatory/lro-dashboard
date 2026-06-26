@@ -2,7 +2,7 @@
 /*
 SchematicView.vue - Displays a schematic of the river system with station cards embedded in their relative positions
 */
-import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { Droplets, Maximize2, Minimize2 } from 'lucide-vue-next'
 import { type Station, WATERWAY_COLORS } from '../hydroService'
 import StationCard from '../components/StationCard.vue'
@@ -11,6 +11,12 @@ const props = defineProps<{
   sites: Station[]
   loading: boolean
   activeWaterways?: string[]
+  schematicConfig?: {
+    mainStem: { id: string; name: string; row: number; type: string }[]
+    leftTributaries: { id: string; name: string; row: number; juncId: string; col: 'left' | 'right' }[]
+    blacksmithFork: { id: string; name: string; row: number }[]
+    cutlerInflows: { id: string; name: string; row: number; tributary: string }[]
+  } | null
 }>()
 
 function findLiveStation(schematicName: string): Station | undefined {
@@ -25,64 +31,10 @@ function findLiveStation(schematicName: string): Station | undefined {
   return match
 }
 
-const loganMainStem = ref([
-  { id: 'franklin', name: 'Logan River: Franklin Basin', row: 1, type: 'source' },
-  { id: 'beaver_junc', name: 'Beaver Creek Junction', row: 2, type: 'line-junction' },
-  { id: 'tony_grove', name: 'Logan River: Tony Grove', row: 3, type: 'gauge' },
-  { id: 'ricks_junc', name: 'Ricks Spring Junction', row: 4, type: 'line-junction' },
-  { id: 'temple_junc', name: 'Temple Fork Junction', row: 5, type: 'line-junction' },
-  { id: 'above_wood', name: 'Logan River: Above Wood Camp', row: 6, type: 'gauge' },
-  { id: 'wood_camp', name: 'Logan River: Wood Camp Bridge', row: 7, type: 'gauge' },
-  { id: 'right_hand_junc', name: 'Right Hand Fork Junction', row: 8, type: 'line-junction' },
-  { id: 'guinivah', name: 'Logan River: Guinavah Campground', row: 9, type: 'gauge' },
-  { id: 'dewitt_junc', name: 'Dewitt Springs Junction', row: 10, type: 'line-junction' },
-  { id: 'water_lab', name: 'Logan River: Utah Water Research Laboratory', row: 11, type: 'gauge' },
-  { id: 'mainstreet', name: 'Logan River: Main Street', row: 12, type: 'gauge' },
-  { id: 'spring_creek_junc', name: 'Spring Creek Junction', row: 13, type: 'line-junction' },
-  { id: 'bsf_confluence', name: 'Blacksmith Fork Confluence', row: 14, type: 'line-junction' },
-  { id: 'thousand_w', name: 'Logan River: 1000 West', row: 15, type: 'gauge' },
-  { id: 'mendon_rd', name: 'Logan River: Mendon Road', row: 16, type: 'gauge' },
-  {
-    id: 'before_cutler',
-    name: 'Logan River: Before Confluence with Cutler Reservoir',
-    row: 17,
-    type: 'gauge',
-  },
-])
-
-const leftTributaries = ref([
-  { id: 'beaver', name: 'Beaver Creek', row: 1, juncId: 'beaver_junc' },
-  { id: 'ricks', name: 'Ricks Spring', row: 3, juncId: 'ricks_junc' },
-  { id: 'temple', name: 'Temple Fork', row: 4, juncId: 'temple_junc' },
-  { id: 'right_hand', name: 'Right Hand Fork', row: 7, juncId: 'right_hand_junc' },
-  { id: 'dewitt', name: 'Dewitt Springs', row: 9, juncId: 'dewitt_junc' },
-  { id: 'spring_creek', name: 'Spring Creek', row: 12, juncId: 'spring_creek_junc' },
-])
-
-const blacksmithSystem = ref([
-  { id: 'hollow_rd', name: 'Blacksmith Fork River: Hollow Road', row: 11 },
-  { id: 'seventeen_s', name: 'Blacksmith Fork River: 1700 South Footbridge', row: 12 },
-  {
-    id: 'bsf_before_conf',
-    name: 'Blacksmith Fork River: Before Confluence with Logan River',
-    row: 13,
-  },
-])
-
-const cutlerInflows = ref([
-  {
-    id: 'little_bear',
-    name: 'Little Bear River: Mendon Road',
-    row: 15,
-    tributary: 'Little Bear River',
-  },
-  {
-    id: 'spring_creek_mendon',
-    name: 'Spring Creek: Mendon Road',
-    row: 16,
-    tributary: 'Spring Creek',
-  },
-])
+const loganMainStem = computed(() => props.schematicConfig?.mainStem ?? [])
+const leftTributaries = computed(() => props.schematicConfig?.leftTributaries ?? [])
+const blacksmithSystem = computed(() => props.schematicConfig?.blacksmithFork ?? [])
+const cutlerInflows = computed(() => props.schematicConfig?.cutlerInflows ?? [])
 
 const gridContainerRef = ref<HTMLElement | null>(null)
 const paths = ref({ logan: '', blacksmith: '', cutlerLittleBear: '', cutlerSpringCreek: '' })
@@ -463,7 +415,7 @@ function waterwayBg(color: string | undefined): string {
             :key="node.id"
             :class="[
               'grid-cell',
-              node.id === 'temple' || node.id === 'right_hand' ? 'col-3' : 'col-1',
+              node.col === 'right' ? 'col-3' : 'col-1',
             ]"
             :style="{
               gridRow: node.row,

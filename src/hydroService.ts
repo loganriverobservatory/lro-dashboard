@@ -70,8 +70,7 @@ export const WATER_VARIBALES = [
   { id: 'Oxygen, dissolved', label: 'Dissolved Oxygen (mg/L)', longLabel: 'Dissolved Oxygen in mg/L (milligrams per liter)' },
 ]
 
-// HS: ADD AS TAG
-const STATIONS_NOT_DISPLAYED = [
+let STATIONS_NOT_DISPLAYED: string[] = [
   'TF_SAWM_A',
   'SPC_CONF_A',
   'SLB_600W_CNL',
@@ -81,9 +80,7 @@ const STATIONS_NOT_DISPLAYED = [
   'LR_DSC_A',
 ]
 
-// format station name
-// HS: ADD AS TAG
-const STATION_NAME_MAP: Record<string, string> = {
+let STATION_NAME_MAP: Record<string, string> = {
   BC_CONF_A: 'Beaver Creek: Before Confluence with the Logan River',
   BSF_1700S_A: 'Blacksmith Fork River: 1700 South Footbridge',
   BSF_CONF_BA: 'Blacksmith Fork River: Before Confluence with Logan River',
@@ -108,6 +105,14 @@ const STATION_NAME_MAP: Record<string, string> = {
   LR_DSC_A: 'Logan River: Dewitt Springs Campground',
   'USGS-10108400': 'USGS: Cache Highline Canal Near Logan, UT',
   'USGS-10109000': 'USGS: Logan River Above First Dam',
+}
+
+export function setStationConfig(
+  notDisplayed: string[],
+  nameMap: Record<string, string>,
+) {
+  STATIONS_NOT_DISPLAYED = notDisplayed
+  STATION_NAME_MAP = { ...STATION_NAME_MAP, ...nameMap }
 }
 
 export async function getVariableStations(variable: string = 'Discharge'): Promise<Station[]> {
