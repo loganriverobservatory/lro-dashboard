@@ -5,7 +5,9 @@ App.vue - root orchestrator
 import { ref, onMounted, onUnmounted } from 'vue'
 import {
   getVariableStations,
-  getLatestObservation, // 🟢 Bring this back into action
+  getLatestObservation,
+  getUSGSStations,
+  setApiToken,
   type Station,
   WATERWAY_LIST,
 } from './hydroService'
@@ -30,7 +32,7 @@ let refreshTimer: ReturnType<typeof setInterval> | null = null
 
 function scheduleRefresh() {
   if (refreshTimer) clearInterval(refreshTimer)
-  refreshTimer = setInterval(() => loadStations(selectedVariable.value), 20 * 60 * 1000)
+  refreshTimer = setInterval(async () => { await loadConfig(); loadStations(selectedVariable.value) }, 20 * 60 * 1000)
 }
 
 onUnmounted(() => {
@@ -41,19 +43,36 @@ function handleSelect(id: string | null) {
   selectedId.value = id
 }
 
+async function loadConfig() {
+  try {
+    const res = await fetch('/config.json')
+    if (res.ok) {
+      const config = await res.json()
+      if (config.apiToken) setApiToken(config.apiToken)
+    }
+  } catch {
+    // proceed without token
+  }
+}
+
 async function loadStations(variable: string) {
   loading.value = true
   sites.value = []
   try {
-    const stations = await getVariableStations(variable)
+    const [stations, usgsStations] = await Promise.all([
+      getVariableStations(variable),
+      getUSGSStations(variable),
+    ])
+
+    const allStations = [...stations, ...usgsStations]
 
     // Show station list immediately so cards render with "Updating..." spinner
-    sites.value = stations
+    sites.value = allStations
     loading.value = false
 
-    // Load each observation sequentially; update its card as it arrives
-    for (const [i, station] of stations.entries()) {
-      if (station.isPrivate) continue
+    // Load observations for HydroServer stations; USGS stations come pre-filled
+    for (const [i, station] of allStations.entries()) {
+      if (station.isUSGS) continue
       try {
         const telemetry = await getLatestObservation(station.id, station.latestTime)
         sites.value[i] = { ...station, observation: telemetry }
@@ -77,7 +96,8 @@ function handleWaterwayFilter(updated: string[]) {
   activeWaterways.value = updated
 }
 
-onMounted(() => {
+onMounted(async () => {
+  await loadConfig()
   loadStations(selectedVariable.value)
   scheduleRefresh()
 })
@@ -206,7 +226,9 @@ body {
   font-size: 0.62rem;
   font-weight: 500;
   letter-spacing: 0.02em;
-  transition: opacity 0.2s ease, background 0.2s ease;
+  transition:
+    opacity 0.2s ease,
+    background 0.2s ease;
   opacity: 0.8;
 }
 

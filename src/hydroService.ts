@@ -5,6 +5,12 @@ import type { DatastreamExtended } from '@hydroserver/client'
 
 const BASE_URL = 'https://lro.hydroserver.org/api/sensorthings/v1.1'
 
+let apiToken: string | undefined
+export function setApiToken(token: string) { apiToken = token }
+function authHeaders(): HeadersInit {
+  return apiToken ? { Authorization: `Token ${apiToken}` } : {}
+}
+
 interface StaDatastream {
   '@iot.id': string | number
   name: string
@@ -37,6 +43,8 @@ export interface Station {
   tributary?: string
   latestTime?: string | null
   isPrivate?: boolean
+  isUSGS?: boolean
+  siteLink?: string
 }
 
 export const WATERWAY_COLORS: Record<string, string> = {
@@ -49,6 +57,7 @@ export const WATERWAY_COLORS: Record<string, string> = {
   'Dewitt Springs': '#7c3aed',
   'Right Hand Fork': '#065f46',
   'Ricks Spring': '#db3464',
+  'USGS': '#1d4ed8',
 }
 
 export const WATERWAY_LIST = Object.keys(WATERWAY_COLORS)
@@ -97,6 +106,8 @@ const STATION_NAME_MAP: Record<string, string> = {
   SC_MR_A: 'Spring Creek: Mendon Road',
   TF_CONF_A: 'Temple Fork: Before Confluence with Logan River',
   LR_DSC_A: 'Logan River: Dewitt Springs Campground',
+  'USGS-10108400': 'USGS: Cache Highline Canal Near Logan, UT',
+  'USGS-10109000': 'USGS: Logan River Above First Dam',
 }
 
 export async function getVariableStations(variable: string = 'Discharge'): Promise<Station[]> {
@@ -110,7 +121,7 @@ export async function getVariableStations(variable: string = 'Discharge'): Promi
 
   const thingsUrl = `${BASE_URL}/Things?$top=200&$expand=Locations`
 
-  const [dsRes, thingsRes] = await Promise.all([fetch(listUrl), fetch(thingsUrl)])
+  const [dsRes, thingsRes] = await Promise.all([fetch(listUrl, { headers: authHeaders() }), fetch(thingsUrl, { headers: authHeaders() })])
   const [data, thingsData] = await Promise.all([dsRes.json(), thingsRes.json()])
 
   const thingsByCode: Record<string, { uuid: string; coords: [number, number] | null }> = {}
@@ -173,7 +184,7 @@ export async function getLatestObservation(
   const obsUrl = `${BASE_URL}/Datastreams('${stationId}')/Observations?$filter=phenomenonTime ge ${endISO}&$top=1`
 
   try {
-    const response = await fetch(obsUrl)
+    const response = await fetch(obsUrl, { headers: authHeaders() })
     if (!response.ok) return null
 
     const data = await response.json()
@@ -188,6 +199,61 @@ export async function getLatestObservation(
   } catch (e) {
     console.error(`Error fetching observation for ${stationId}:`, e)
     return null
+  }
+}
+
+const USGS_SITE_CODES = ['10108400', '10109000']
+
+const USGS_SITE_LINKS: Record<string, string> = {
+  'USGS-10108400': 'https://waterdata.usgs.gov/monitoring-location/USGS-10108400/#dataTypeId=continuous-00060-0&period=P7D&showMedian=true&showFieldMeasurements=true',
+  'USGS-10109000': 'https://waterdata.usgs.gov/monitoring-location/USGS-10109000/#dataTypeId=continuous-00060-0&period=P7D&showMedian=true&showFieldMeasurements=true',
+}
+
+export async function getUSGSStations(variable: string = 'Discharge'): Promise<Station[]> {
+  if (variable.toLowerCase() !== 'discharge') return []
+
+  const url = `https://waterservices.usgs.gov/nwis/iv/?sites=${USGS_SITE_CODES.join(',')}&parameterCd=00060&format=json`
+
+  try {
+    const res = await fetch(url)
+    if (!res.ok) return []
+    const data = await res.json()
+    const timeSeries: any[] = data?.value?.timeSeries ?? []
+
+    return timeSeries.map((ts: any) => {
+      const siteCode = ts.sourceInfo?.siteCode?.[0]?.value ?? ''
+      const stationCode = `USGS-${siteCode}`
+      const displayName = STATION_NAME_MAP[stationCode] ?? stationCode
+      const tributaryBase = displayName.includes(':') ? displayName.split(':')[0].trim() : 'USGS'
+      const tributary = tributaryBase === 'Logan River' ? 'Logan River: Main Stem' : tributaryBase
+
+      const geo = ts.sourceInfo?.geoLocation?.geogLocation
+      const coordinates: [number, number] | null =
+        geo ? [Number(geo.latitude), Number(geo.longitude)] : null
+
+      const latestVal = ts.values?.[0]?.value?.[0]
+      const rawResult = latestVal?.value
+      const result = rawResult !== undefined && rawResult !== '-999999' ? Number(rawResult) : null
+      const phenomenonTime: string | null = latestVal?.dateTime ?? null
+
+      return {
+        id: stationCode,
+        uuid: stationCode,
+        displayName,
+        coordinates,
+        unit: 'cfs',
+        tributary,
+        latestTime: phenomenonTime,
+        isPrivate: false,
+        isUSGS: true,
+        siteLink: USGS_SITE_LINKS[stationCode],
+        observation: phenomenonTime
+          ? { '@iot.id': stationCode, result, phenomenonTime }
+          : null,
+      }
+    })
+  } catch {
+    return []
   }
 }
 

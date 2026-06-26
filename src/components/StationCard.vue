@@ -114,12 +114,12 @@ const isAwaitingTelemetry = computed(() => props.site.observation === null && !p
         </h2>
 
         <a
-          v-if="site.uuid"
-          :href="`https://lro.hydroserver.org/sites/${site.uuid}`"
+          v-if="site.siteLink || site.uuid"
+          :href="site.siteLink ?? `https://lro.hydroserver.org/sites/${site.uuid}`"
           target="_blank"
           rel="noopener noreferrer"
           class="external-site-link"
-          title="Open complete historical data on HydroServer"
+          :title="site.isUSGS ? 'Open on USGS Water Data' : 'Open complete historical data on HydroServer'"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
