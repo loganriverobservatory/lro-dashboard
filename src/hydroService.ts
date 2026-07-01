@@ -44,6 +44,7 @@ export interface Station {
   latestTime?: string | null
   isPrivate?: boolean
   isUSGS?: boolean
+  isDWRi?: boolean
   siteLink?: string
 }
 
@@ -58,6 +59,7 @@ export const WATERWAY_COLORS: Record<string, string> = {
   'Right Hand Fork': '#065f46',
   'Ricks Spring': '#db3464',
   'USGS': '#1d4ed8',
+  'Utah DWRi': '#0e7490',
 }
 
 export const WATERWAY_LIST = Object.keys(WATERWAY_COLORS)
@@ -107,12 +109,22 @@ let STATION_NAME_MAP: Record<string, string> = {
   'USGS-10109000': 'USGS: Logan River Above First Dam',
 }
 
+export interface DWRiStationDef {
+  id: number
+  displayName: string
+  tributary?: string
+}
+
+let DWRI_STATIONS: DWRiStationDef[] = []
+
 export function setStationConfig(
   notDisplayed: string[],
   nameMap: Record<string, string>,
+  dwriStations?: DWRiStationDef[]
 ) {
   STATIONS_NOT_DISPLAYED = notDisplayed
   STATION_NAME_MAP = { ...STATION_NAME_MAP, ...nameMap }
+  if (dwriStations?.length) DWRI_STATIONS = dwriStations
 }
 
 export async function getVariableStations(variable: string = 'Discharge'): Promise<Station[]> {
@@ -257,6 +269,47 @@ export async function getUSGSStations(variable: string = 'Discharge'): Promise<S
           : null,
       }
     })
+  } catch {
+    return []
+  }
+}
+
+const DWRI_CACHE_URL =
+  'https://raw.githubusercontent.com/loganriverobservatory/lro-dashboard/data-cache/utah-dwr-cache.json'
+
+export async function getDWRiStations(variable: string = 'Discharge'): Promise<Station[]> {
+  if (variable.toLowerCase() !== 'discharge') return []
+  if (DWRI_STATIONS.length === 0) return []
+
+  try {
+    const res = await fetch(DWRI_CACHE_URL)
+    if (!res.ok) return []
+    const data = await res.json()
+
+    const year = new Date().getFullYear()
+    const fetchedAt: string = data.fetchedAt ?? new Date().toISOString()
+    const stationIndex = new Map(DWRI_STATIONS.map(s => [s.id, s]))
+
+    return (data.stations ?? [])
+      .filter((s: { id: number; code: string }) =>
+        stationIndex.has(s.id) && !STATIONS_NOT_DISPLAYED.includes(s.code)
+      )
+      .map((s: { id: number; code: string; latestCfs: number | null }) => {
+        const def = stationIndex.get(s.id)!
+        return {
+          id: s.code,
+          uuid: s.code,
+          displayName: STATION_NAME_MAP[s.code] ?? def.displayName,
+          coordinates: null,
+          unit: 'cfs',
+          tributary: def.tributary ?? 'Utah DWRi',
+          latestTime: fetchedAt,
+          isPrivate: false,
+          isDWRi: true,
+          siteLink: `https://waterrights.utah.gov/cgi-bin/dvrtview.exe?Modinfo=StationView&STATION_ID=${s.id}&RECORD_YEAR=${year}&QuitKey=Close`,
+          observation: { '@iot.id': s.code, result: s.latestCfs, phenomenonTime: fetchedAt },
+        }
+      })
   } catch {
     return []
   }

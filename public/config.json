@@ -38,6 +38,36 @@
     "USGS-10109000":    "USGS: Logan River Above First Dam"
   },
 
+  "dwriStations": [
+    { "id": 56,    "displayName": "Logan River: 8th Ward Canal (Crockett Canal)",          "tributary": "Utah DWRi" },
+    { "id": 21,    "displayName": "Logan River: Benson Irrigation Company",                "tributary": "Utah DWRi" },
+    { "id": 26,    "displayName": "Logan River: Hyde Park and Logan Northfield",           "tributary": "Utah DWRi" },
+    { "id": 11430, "displayName": "Logan River: Hyde Park Canal",                          "tributary": "Utah DWRi" },
+    { "id": 11365, "displayName": "Logan River: Little Logan Return to Bear",              "tributary": "Utah DWRi" },
+    { "id": 17,    "displayName": "Logan River: Logan and Northern Canal",                 "tributary": "Utah DWRi" },
+    { "id": 19,    "displayName": "Logan River: Northwest Field Canal",                    "tributary": "Utah DWRi" },
+    { "id": 54,    "displayName": "Logan River: Providence Pioneer Canal",                 "tributary": "Utah DWRi" },
+    { "id": 18,    "displayName": "Logan River: Providence-Logan Irrigation Company",      "tributary": "Utah DWRi" },
+    { "id": 53,    "displayName": "Logan River: Southwest Field Canal",                    "tributary": "Utah DWRi" },
+    { "id": 2786,  "displayName": "Little Bear River: East Fork",                         "tributary": "Utah DWRi" },
+    { "id": 2779,  "displayName": "Little Bear River: Highline Canal",                    "tributary": "Utah DWRi" },
+    { "id": 12354, "displayName": "Little Bear River: Highline Canal at Pond",            "tributary": "Utah DWRi" },
+    { "id": 9739,  "displayName": "Little Bear River: Highline Canal below Weeks Farm",   "tributary": "Utah DWRi" },
+    { "id": 12355, "displayName": "Little Bear River: Highline Pond",                     "tributary": "Utah DWRi" },
+    { "id": 2771,  "displayName": "Little Bear River: Hyrum Canal at Osmonds",            "tributary": "Utah DWRi" },
+    { "id": 10516, "displayName": "Little Bear River: Hyrum Irrigating Company",          "tributary": "Utah DWRi" },
+    { "id": 10019, "displayName": "Little Bear River: Little Bear River at Paradise",     "tributary": "Utah DWRi" },
+    { "id": 2772,  "displayName": "Little Bear River: Little Feeder",                     "tributary": "Utah DWRi" },
+    { "id": 2776,  "displayName": "Little Bear River: Paradise Canal",                    "tributary": "Utah DWRi" },
+    { "id": 9738,  "displayName": "Little Bear River: Paradise Canal below Black Tube",   "tributary": "Utah DWRi" },
+    { "id": 10424, "displayName": "Little Bear River: Paradise City through Highline Canal", "tributary": "Utah DWRi" },
+    { "id": 2778,  "displayName": "Little Bear River: Porcupine Reservoir Outlet",        "tributary": "Utah DWRi" },
+    { "id": 10287, "displayName": "Little Bear River: South Fork",                        "tributary": "Utah DWRi" },
+    { "id": 2770,  "displayName": "Little Bear River: Wellsville East Field",             "tributary": "Utah DWRi" },
+    { "id": 2775,  "displayName": "Little Bear River: Wellsville Mendon Canal",           "tributary": "Utah DWRi" },
+    { "id": 9424,  "displayName": "Blacksmith Fork River: Nibley Blacksmith Fork Canal",  "tributary": "Utah DWRi" }
+  ],
+
   "schematic": {
     "mainStem": [
       { "id": "franklin",         "name": "Logan River: Franklin Basin",                          "row": 1,  "type": "source" },

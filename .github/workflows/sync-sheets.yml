@@ -1,0 +1,37 @@
+name: Sync Google Sheet Config
+
+on:
+  workflow_dispatch: # This enables the manual "Run workflow" button in GitHub Actions
+
+  permissions:
+    contents: write # Grants this specific workflow permission to commit files
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Fetch Sheet and Convert to JSON
+        run: |
+          # 1. "Publish to web as CSV from Google Sheets"
+          CSV_URL="https://docs.google.com/spreadsheets/d/e/2PACX-1vQU93G1K9-DsGkw6mOWTITY_p8eRDQHsS25tsG5wlUwOrzmRw2_hrbuDJhILXqC-NUVwhDckBCGWd-4/pub?output=csv"
+
+          # 2. Run a lightweight Python script to download the CSV and convert it to clean JSON
+          python3 -c "
+          import csv, json, urllib.request
+          url = '$CSV_URL'
+          response = urllib.request.urlopen(url)
+          lines = [line.decode('utf-8') for line in response.readlines()]
+          reader = csv.DictReader(lines)
+          data = list(reader)
+          with open('src/assets/config.json', 'w') as f:
+              json.dump(data, f, indent=2)
+          "
+
+      - name: Commit and Push Changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: 'chore: manual configuration update from Google Sheets'
+          file_pattern: 'src/assets/config.json'

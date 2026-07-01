@@ -7,6 +7,7 @@ import {
   getVariableStations,
   getLatestObservation,
   getUSGSStations,
+  getDWRiStations,
   setApiToken,
   setStationConfig,
   type Station,
@@ -47,12 +48,12 @@ function handleSelect(id: string | null) {
 
 async function loadConfig() {
   try {
-    const res = await fetch('/config.json')
+    const res = await fetch('/config.json', { cache: 'no-cache' })
     if (res.ok) {
       const config = await res.json()
       if (config.apiToken) setApiToken(config.apiToken)
-      if (config.stationsNotDisplayed || config.stationNames) {
-        setStationConfig(config.stationsNotDisplayed ?? [], config.stationNames ?? {})
+      if (config.stationsNotDisplayed || config.stationNames || config.dwriStations) {
+        setStationConfig(config.stationsNotDisplayed ?? [], config.stationNames ?? {}, config.dwriStations)
       }
       if (config.schematic) schematicConfig.value = config.schematic
     }
@@ -65,12 +66,13 @@ async function loadStations(variable: string) {
   loading.value = true
   sites.value = []
   try {
-    const [stations, usgsStations] = await Promise.all([
+    const [stations, usgsStations, dwriStations] = await Promise.all([
       getVariableStations(variable),
       getUSGSStations(variable),
+      getDWRiStations(variable),
     ])
 
-    const allStations = [...stations, ...usgsStations]
+    const allStations = [...stations, ...usgsStations, ...dwriStations]
 
     // Show station list immediately so cards render with "Updating..." spinner
     sites.value = allStations
@@ -78,7 +80,7 @@ async function loadStations(variable: string) {
 
     // Load observations for HydroServer stations; USGS stations come pre-filled
     for (const [i, station] of allStations.entries()) {
-      if (station.isUSGS) continue
+      if (station.isUSGS || station.isDWRi) continue
       try {
         const telemetry = await getLatestObservation(station.id, station.latestTime)
         sites.value[i] = { ...station, observation: telemetry }
