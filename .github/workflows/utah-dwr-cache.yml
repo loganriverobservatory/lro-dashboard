@@ -20,6 +20,8 @@ jobs:
         run: node .github/scripts/fetch-utah-dwr.js > /tmp/utah-dwr-cache.json
 
       - name: Commit to data-cache branch
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -31,6 +33,7 @@ jobs:
             git rm -rf .
           fi
 
+          git remote set-url origin "https://x-access-token:${GITHUB_TOKEN}@github.com/loganriverobservatory/lro-dashboard.git"
           cp /tmp/utah-dwr-cache.json utah-dwr-cache.json
           git add utah-dwr-cache.json
           git diff --staged --quiet || git commit -m "chore: update DWRi cache $(date -u +%Y-%m-%dT%H:%M:%SZ)"
