@@ -6,11 +6,14 @@ import { readFileSync } from 'fs'
 
 const BASE_URL = 'https://www.waterrights.utah.gov/dvrtdb/realtime-chart.asp'
 
-// Use yesterday's date so early-morning UTC runs always have a full set of readings.
-function yesterdayString() {
+function dateString(daysBack) {
   const d = new Date()
-  d.setUTCDate(d.getUTCDate() - 1)
+  d.setUTCDate(d.getUTCDate() - daysBack)
   return d.toISOString().slice(0, 10)
+}
+
+const HEADERS = {
+  'User-Agent': 'Mozilla/5.0 (compatible; LRO-Dashboard/1.0; +https://github.com/loganriverobservatory/lro-dashboard)',
 }
 
 function loadStations() {
@@ -26,8 +29,8 @@ function loadStations() {
 }
 
 async function fetchStation(id) {
-  const url = `${BASE_URL}?station_id=${id}&f=json&begin_date=${yesterdayString()}`
-  const res = await fetch(url)
+  const url = `${BASE_URL}?station_id=${id}&f=json&begin_date=${dateString(1)}&end_date=${dateString(0)}`
+  const res = await fetch(url, { headers: HEADERS })
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
 
   const data = await res.json()
@@ -43,20 +46,22 @@ async function fetchStation(id) {
   }
 }
 
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
+
 async function main() {
   const stations = loadStations()
+  const results = []
 
-  const results = await Promise.all(
-    stations.map(async ({ id, displayName }) => {
-      try {
-        const { latestCfs, latestTime, readings } = await fetchStation(id)
-        return { id, code: `DWRi-${id}`, latestCfs, latestTime, readings }
-      } catch (err) {
-        process.stderr.write(`Warning: station ${id} (${displayName}) failed: ${err.message}\n`)
-        return { id, code: `DWRi-${id}`, latestCfs: null, latestTime: null, readings: [] }
-      }
-    })
-  )
+  for (const { id, displayName } of stations) {
+    try {
+      const { latestCfs, latestTime, readings } = await fetchStation(id)
+      results.push({ id, code: `DWRi-${id}`, latestCfs, latestTime, readings })
+    } catch (err) {
+      process.stderr.write(`Warning: station ${id} (${displayName}) failed: ${err.message}\n`)
+      results.push({ id, code: `DWRi-${id}`, latestCfs: null, latestTime: null, readings: [] })
+    }
+    await sleep(500)
+  }
 
   const successCount = results.filter(s => s.latestCfs !== null).length
   if (successCount === 0)
