@@ -1,0 +1,37 @@
+name: Update Utah DWRi Cache
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+jobs:
+  update-cache:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch Utah DWRi data
+        run: node .github/scripts/fetch-utah-dwr.js > /tmp/utah-dwr-cache.json
+
+      - name: Commit to data-cache branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          if git show-ref --verify --quiet refs/remotes/origin/data-cache; then
+            git checkout data-cache
+          else
+            git checkout --orphan data-cache
+            git rm -rf .
+          fi
+
+          cp /tmp/utah-dwr-cache.json utah-dwr-cache.json
+          git add utah-dwr-cache.json
+          git diff --staged --quiet || git commit -m "chore: update DWRi cache $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          git push origin data-cache
