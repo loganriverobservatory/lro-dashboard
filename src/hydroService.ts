@@ -49,17 +49,10 @@ export interface Station {
 }
 
 export const WATERWAY_COLORS: Record<string, string> = {
-  'Logan River: Main Stem': '#13157a',
-  'Blacksmith Fork River': '#b45309',
-  'Spring Creek': '#0369a1',
-  'Temple Fork': '#00b341',
-  'Beaver Creek': '#b91c1c',
-  'Little Bear River': '#0891b2',
-  'Dewitt Springs': '#7c3aed',
-  'Right Hand Fork': '#065f46',
-  'Ricks Spring': '#db3464',
-  'USGS': '#1d4ed8',
-  'Utah DWRi': '#0e7490',
+  'Logan River: Main Stem': '#7d98c6',
+  'HydroServer: Logan River Observatory': '#7d98c6',
+  'USGS': '#d09559',
+  'DWRi': '#6fa26b',
 }
 
 export const WATERWAY_LIST = Object.keys(WATERWAY_COLORS)
@@ -169,7 +162,7 @@ export async function getVariableStations(variable: string = 'Discharge'): Promi
         ? displayNameText.split(':')?.[0]?.trim()
         : 'Unknown Tributary'
 
-      const tributary = tributaryBase === 'Logan River' ? 'Logan River: Main Stem' : tributaryBase
+      const tributary = tributaryBase === 'Logan River' ? 'Logan River: Main Stem' : 'HydroServer: Logan River Observatory'
 
       // phenomenonTime is "start/end" interval — extract end as latest observation time
       const ptParts = ds.phenomenonTime?.split('/') ?? []
@@ -275,40 +268,49 @@ export async function getUSGSStations(variable: string = 'Discharge'): Promise<S
 }
 
 const DWRI_CACHE_URL =
-  'https://raw.githubusercontent.com/loganriverobservatory/lro-dashboard/data-cache/utah-dwr-cache.json'
+  'https://docs.google.com/spreadsheets/d/e/2PACX-1vQU93G1K9-DsGkw6mOWTITY_p8eRDQHsS25tsG5wlUwOrzmRw2_hrbuDJhILXqC-NUVwhDckBCGWd-4/pub?gid=1466502877&single=true&output=csv'
 
 export async function getDWRiStations(variable: string = 'Discharge'): Promise<Station[]> {
   if (variable.toLowerCase() !== 'discharge') return []
-  if (DWRI_STATIONS.length === 0) return []
 
   try {
     const res = await fetch(DWRI_CACHE_URL)
     if (!res.ok) return []
-    const data = await res.json()
-
+    const text = await res.text()
     const year = new Date().getFullYear()
-    const fetchedAt: string = data.fetchedAt ?? new Date().toISOString()
-    const stationIndex = new Map(DWRI_STATIONS.map(s => [s.id, s]))
 
-    return (data.stations ?? [])
-      .filter((s: { id: number; code: string }) =>
-        stationIndex.has(s.id) && !STATIONS_NOT_DISPLAYED.includes(s.code)
-      )
-      .map((s: { id: number; code: string; latestCfs: number | null }) => {
-        const def = stationIndex.get(s.id)!
-        return {
-          id: s.code,
-          uuid: s.code,
-          displayName: STATION_NAME_MAP[s.code] ?? def.displayName,
+    return text
+      .trim()
+      .split('\n')
+      .slice(1)
+      .filter(line => line.trim())
+      .flatMap(line => {
+        const parts = line.split(',')
+        const id = parseInt(parts[0])
+        const code = parts[1]?.trim()
+        const displayName = parts[2]?.trim()
+        const latestCfs = parts[3]?.trim() ? parseFloat(parts[3]) : null
+        const latestTime = parts[4]?.trim() || new Date().toISOString()
+
+        if (!code || STATIONS_NOT_DISPLAYED.includes(code)) return []
+
+        return [{
+          id: code,
+          uuid: code,
+          displayName: STATION_NAME_MAP[code] ?? displayName ?? code,
           coordinates: null,
           unit: 'cfs',
-          tributary: def.tributary ?? 'Utah DWRi',
-          latestTime: fetchedAt,
+          tributary: 'DWRi',
+          latestTime,
           isPrivate: false,
           isDWRi: true,
-          siteLink: `https://waterrights.utah.gov/cgi-bin/dvrtview.exe?Modinfo=StationView&STATION_ID=${s.id}&RECORD_YEAR=${year}&QuitKey=Close`,
-          observation: { '@iot.id': s.code, result: s.latestCfs, phenomenonTime: fetchedAt },
-        }
+          siteLink: `https://waterrights.utah.gov/cgi-bin/dvrtview.exe?Modinfo=StationView&STATION_ID=${id}&RECORD_YEAR=${year}&QuitKey=Close`,
+          observation: {
+            '@iot.id': code,
+            result: latestCfs !== null && !isNaN(latestCfs) ? latestCfs : null,
+            phenomenonTime: latestTime,
+          },
+        }]
       })
   } catch {
     return []
