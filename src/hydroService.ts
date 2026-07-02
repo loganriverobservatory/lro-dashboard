@@ -106,6 +106,8 @@ export interface DWRiStationDef {
   id: number
   displayName: string
   tributary?: string
+  lat?: number
+  lng?: number
 }
 
 let DWRI_STATIONS: DWRiStationDef[] = []
@@ -279,6 +281,11 @@ export async function getDWRiStations(variable: string = 'Discharge'): Promise<S
     const text = await res.text()
     const year = new Date().getFullYear()
 
+    const coordsById: Record<number, [number, number]> = {}
+    for (const s of DWRI_STATIONS) {
+      if (s.lat != null && s.lng != null) coordsById[s.id] = [s.lat, s.lng]
+    }
+
     return text
       .trim()
       .split('\n')
@@ -298,7 +305,7 @@ export async function getDWRiStations(variable: string = 'Discharge'): Promise<S
           id: code,
           uuid: code,
           displayName: STATION_NAME_MAP[code] ?? displayName ?? code,
-          coordinates: null,
+          coordinates: coordsById[id] ?? null,
           unit: 'cfs',
           tributary: 'DWRi',
           latestTime,
