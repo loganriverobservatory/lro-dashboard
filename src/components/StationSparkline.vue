@@ -72,6 +72,10 @@ const props = defineProps({
     type: Object as () => StaObservation | null,
     default: null,
   },
+  preloadedHistory: {
+    type: Array as () => [string, number][] | undefined,
+    default: undefined,
+  },
 })
 
 const emit = defineEmits<{
@@ -184,9 +188,14 @@ async function fetchRecentHistory(id: string) {
 }
 
 watch(
-  () => props.stationId,
-  (newId) => {
-    if (newId) fetchRecentHistory(newId)
+  [() => props.stationId, () => props.preloadedHistory],
+  ([newId, preloaded]) => {
+    if (preloaded !== undefined) {
+      sparklineObservations.value = preloaded
+      loading.value = false
+    } else if (newId) {
+      fetchRecentHistory(newId)
+    }
   },
   { immediate: true },
 )

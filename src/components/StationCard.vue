@@ -181,7 +181,11 @@ const isAwaitingTelemetry = computed(() => props.site.observation === null && !p
 
         <div v-if="!compact && !mapMode && site.id" class="sparkline-sidebar-wrapper">
           <div class="sparkline-title">Recent 48-Hour Trend</div>
-          <StationSparkline :station-id="site.id" :latest-observation="site.observation" />
+          <StationSparkline
+            :station-id="site.id"
+            :latest-observation="site.observation"
+            :preloaded-history="site.isDWRi ? site.history : undefined"
+          />
         </div>
       </div>
     </div>

@@ -46,6 +46,7 @@ export interface Station {
   isUSGS?: boolean
   isDWRi?: boolean
   siteLink?: string
+  history?: [string, number][]
 }
 
 export const WATERWAY_COLORS: Record<string, string> = {
@@ -56,6 +57,16 @@ export const WATERWAY_COLORS: Record<string, string> = {
 }
 
 export const WATERWAY_LIST = Object.keys(WATERWAY_COLORS)
+
+// Schematic-only accent colors for DWRi sub-groups. Kept separate from
+// WATERWAY_COLORS/WATERWAY_LIST since those drive the sidebar's waterway
+// filter checkboxes (keyed on Station.tributary, which is 'DWRi' for all of
+// these) — adding these keys there would create checkboxes that never match
+// any station's tributary value.
+export const SCHEMATIC_ACCENT_COLORS: Record<string, string> = {
+  'Utah DWRi: Logan Diversions': '#c98a3c',
+  'Utah DWRi: Little Bear River': '#4f8fb0',
+}
 
 export const WATER_VARIBALES = [
   { id: 'Discharge', label: 'Discharge (cfs)', longLabel: 'Discharge in cfs (cubic feet per second)' },
@@ -298,6 +309,14 @@ export async function getDWRiStations(variable: string = 'Discharge'): Promise<S
         const displayName = parts[2]?.trim()
         const latestCfs = parts[3]?.trim() ? parseFloat(parts[3]) : null
         const latestTime = parts[4]?.trim() || new Date().toISOString()
+        const historyRaw = parts[5]?.trim()
+        const history: [string, number][] = historyRaw
+          ? historyRaw.split(';').flatMap(pair => {
+              const [time, val] = pair.split('=')
+              const num = val !== undefined ? parseFloat(val) : NaN
+              return time && !isNaN(num) ? [[time, num] as [string, number]] : []
+            })
+          : []
 
         if (!code || STATIONS_NOT_DISPLAYED.includes(code)) return []
 
@@ -311,6 +330,7 @@ export async function getDWRiStations(variable: string = 'Discharge'): Promise<S
           latestTime,
           isPrivate: false,
           isDWRi: true,
+          history,
           siteLink: `https://waterrights.utah.gov/cgi-bin/dvrtview.exe?Modinfo=StationView&STATION_ID=${id}&RECORD_YEAR=${year}&QuitKey=Close`,
           observation: {
             '@iot.id': code,

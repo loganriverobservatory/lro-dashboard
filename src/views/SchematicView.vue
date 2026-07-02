@@ -4,7 +4,7 @@ SchematicView.vue - Displays a schematic of the river system with station cards 
 */
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { Droplets, Maximize2, Minimize2 } from 'lucide-vue-next'
-import { type Station, WATERWAY_COLORS } from '../hydroService'
+import { type Station, WATERWAY_COLORS, SCHEMATIC_ACCENT_COLORS } from '../hydroService'
 import StationCard from '../components/StationCard.vue'
 
 const props = defineProps<{
@@ -14,7 +14,9 @@ const props = defineProps<{
   schematicConfig?: {
     mainStem: { id: string; name: string; row: number; type: string }[]
     leftTributaries: { id: string; name: string; row: number; juncId: string; col: 'left' | 'right' }[]
+    diversions?: { id: string; name: string; row: number; juncId: string; col: 'left' | 'right'; tributary?: string }[]
     blacksmithFork: { id: string; name: string; row: number }[]
+    littleBear?: { id: string; name: string; row: number; type?: string; tributary?: string }[]
     cutlerInflows: { id: string; name: string; row: number; tributary: string }[]
   } | null
 }>()
@@ -33,15 +35,31 @@ function findLiveStation(schematicName: string): Station | undefined {
 
 const loganMainStem = computed(() => props.schematicConfig?.mainStem ?? [])
 const leftTributaries = computed(() => props.schematicConfig?.leftTributaries ?? [])
+const diversions = computed(() => props.schematicConfig?.diversions ?? [])
 const blacksmithSystem = computed(() => props.schematicConfig?.blacksmithFork ?? [])
+const littleBear = computed(() => props.schematicConfig?.littleBear ?? [])
 const cutlerInflows = computed(() => props.schematicConfig?.cutlerInflows ?? [])
 
+type LateralNode = {
+  id: string
+  name: string
+  row: number
+  juncId: string
+  col: 'left' | 'right'
+  tributary?: string
+  flowDirection: 'in' | 'out'
+}
+const lateralBranches = computed<LateralNode[]>(() => [
+  ...leftTributaries.value.map((n) => ({ ...n, flowDirection: 'in' as const })),
+  ...diversions.value.map((n) => ({ ...n, flowDirection: 'out' as const })),
+])
+
 const gridContainerRef = ref<HTMLElement | null>(null)
-const paths = ref({ logan: '', blacksmith: '', cutlerLittleBear: '', cutlerSpringCreek: '' })
+const paths = ref({ logan: '', blacksmith: '', littleBear: '', cutlerSpringCreek: '' })
 const leftTribPaths = ref<Record<string, string>>({})
 const linesReady = ref(false)
 
-const NATURAL_WIDTH = 950
+const NATURAL_WIDTH = 1450
 const isCompact = ref(false)
 const schematicScale = ref(1)
 const wrapperHeight = ref<number | null>(null)
@@ -84,49 +102,69 @@ const updateLineCoordinates = async () => {
   const terminusEl = containerEl.querySelector('[data-marker="terminus_card"]')
   let reservoirTopY = containerRect.height / currentScale
   let reservoirBlueX = 0
-  let reservoirOrangeX1 = 0
 
   if (terminusEl) {
     const tRect = terminusEl.getBoundingClientRect()
     reservoirTopY = (tRect.top - containerRect.top) / currentScale - 30
     const blueNodePt = getMarkerCenter('before_cutler')
     reservoirBlueX = blueNodePt.x
-    reservoirOrangeX1 = blueNodePt.x + 200
   }
 
-  let loganPathStr = ''
-  loganMainStem.value.forEach((node, idx) => {
-    const pt = getMarkerCenter(node.id)
-    if (idx === 0) loganPathStr += `M ${pt.x},${pt.y}`
-    else loganPathStr += ` L ${pt.x},${pt.y}`
-  })
+  const buildChainPath = (nodes: { id: string }[]) => {
+    let str = ''
+    nodes.forEach((node, idx) => {
+      const pt = getMarkerCenter(node.id)
+      str += idx === 0 ? `M ${pt.x},${pt.y}` : ` L ${pt.x},${pt.y}`
+    })
+    return str
+  }
+
+  let loganPathStr = buildChainPath(loganMainStem.value)
 
   if (terminusEl) {
     loganPathStr += ` L ${reservoirBlueX},${reservoirTopY}`
   }
   paths.value.logan = loganPathStr
 
-  leftTributaries.value.forEach((trib) => {
-    const startPt = getMarkerCenter(trib.id)
-    const juncPt = getMarkerCenter(trib.juncId)
+  lateralBranches.value.forEach((node) => {
+    const startPt = getMarkerCenter(node.id)
+    const juncPt = getMarkerCenter(node.juncId)
 
     if (startPt.x > 0 && juncPt.x > 0) {
       const curveRadius = 30
-      const cardBottomY = startPt.y + 32
+      const bendRight = node.id !== 'temple' && node.id !== 'right_hand'
+      const curveX = startPt.x + (bendRight ? curveRadius : -curveRadius)
+      const juncEndX = juncPt.x + (bendRight ? -40 : 40)
 
-      if (trib.id === 'temple' || trib.id === 'right_hand') {
-        leftTribPaths.value[trib.id] =
-          `M ${startPt.x},${cardBottomY} ` +
-          `V ${juncPt.y - curveRadius} ` +
-          `Q ${startPt.x},${juncPt.y} ${startPt.x - curveRadius},${juncPt.y} ` +
-          `L ${juncPt.x + 40},${juncPt.y}`
+      // The junction isn't always below the card (unlike the original hand-
+      // tuned tributaries, diversion rows don't all sit exactly one row above
+      // their target junction) — work out which direction we're actually
+      // travelling instead of assuming "down".
+      const goingDown = juncPt.y >= startPt.y
+      const clearance = node.flowDirection === 'out' ? 10 : 0
+      const cardEdgeY = startPt.y + (goingDown ? 32 + clearance : -32 - clearance)
+      const vTurnY = goingDown ? juncPt.y - curveRadius : juncPt.y + curveRadius
+      let d: string
+
+      if (node.flowDirection === 'out') {
+        // Same curve as the inflow case below, traced in reverse (junction ->
+        // card) so a plain marker-end lands the arrowhead pointing away from
+        // the main stem, toward the canal card — avoids the reversed
+        // orientation quirks of marker-start/auto-start-reverse.
+        d =
+          `M ${juncEndX},${juncPt.y} ` +
+          `L ${curveX},${juncPt.y} ` +
+          `Q ${startPt.x},${juncPt.y} ${startPt.x},${vTurnY} ` +
+          `V ${cardEdgeY}`
       } else {
-        leftTribPaths.value[trib.id] =
-          `M ${startPt.x},${cardBottomY} ` +
-          `V ${juncPt.y - curveRadius} ` +
-          `Q ${startPt.x},${juncPt.y} ${startPt.x + curveRadius},${juncPt.y} ` +
-          `L ${juncPt.x - 40},${juncPt.y}`
+        d =
+          `M ${startPt.x},${cardEdgeY} ` +
+          `V ${vTurnY} ` +
+          `Q ${startPt.x},${juncPt.y} ${curveX},${juncPt.y} ` +
+          `L ${juncEndX},${juncPt.y}`
       }
+
+      leftTribPaths.value[node.id] = d
     }
   })
 
@@ -145,16 +183,12 @@ const updateLineCoordinates = async () => {
     `Q ${bsf3.x},${turnY} ${bsf3.x - curveRadius},${turnY} ` +
     `L ${confCenter.x + 35},${turnY}`
 
-  const tightCurve = 10
-
-  const lbElement = getMarkerCenter('little_bear')
-  const lbTurnX = reservoirOrangeX1
-  const lbTurnY = lbElement.y
-  paths.value.cutlerLittleBear =
-    `M ${lbElement.left},${lbTurnY} ` +
-    `L ${lbTurnX + tightCurve},${lbTurnY} ` +
-    `Q ${lbTurnX},${lbTurnY} ${lbTurnX},${lbTurnY + tightCurve} ` +
-    `L ${lbTurnX},${reservoirTopY}`
+  let littleBearPathStr = buildChainPath(littleBear.value)
+  if (littleBear.value.length && terminusEl) {
+    const lastLbPt = getMarkerCenter(littleBear.value[littleBear.value.length - 1]!.id)
+    littleBearPathStr += ` L ${lastLbPt.x},${reservoirTopY}`
+  }
+  paths.value.littleBear = littleBearPathStr
 
   const availableWidth = gridContainerRef.value.clientWidth
 
@@ -355,6 +389,34 @@ function waterwayBg(color: string | undefined): string {
                 style="shape-rendering: geometricPrecision"
               />
             </marker>
+            <marker
+              id="flow-arrow-black"
+              markerWidth="5"
+              markerHeight="5"
+              refX="2.5"
+              refY="2.5"
+              orient="auto"
+            >
+              <path
+                d="M 0 0.5 L 4.5 2.5 L 0 4.5 z"
+                fill="#1e293b"
+                style="shape-rendering: geometricPrecision"
+              />
+            </marker>
+            <marker
+              id="flow-arrow-light"
+              markerWidth="5"
+              markerHeight="5"
+              refX="2.5"
+              refY="2.5"
+              orient="auto"
+            >
+              <path
+                d="M 0 0.5 L 4.5 2.5 L 0 4.5 z"
+                fill="#94a3b8"
+                style="shape-rendering: geometricPrecision"
+              />
+            </marker>
           </defs>
 
           <path
@@ -364,6 +426,7 @@ function waterwayBg(color: string | undefined): string {
             stroke-width="4"
             stroke-linejoin="round"
             stroke-linecap="round"
+            marker-mid="url(#flow-arrow-black)"
             marker-end="url(#black-arrow)"
           />
 
@@ -389,12 +452,13 @@ function waterwayBg(color: string | undefined): string {
           />
 
           <path
-            :d="paths.cutlerLittleBear"
+            :d="paths.littleBear"
             fill="none"
             stroke="#94a3b8"
             stroke-width="4"
             stroke-linejoin="round"
             stroke-linecap="round"
+            marker-mid="url(#flow-arrow-light)"
             marker-end="url(#light-gray-arrow)"
           />
 
@@ -411,7 +475,7 @@ function waterwayBg(color: string | undefined): string {
 
         <div class="schematic-grid">
           <div
-            v-for="node in leftTributaries"
+            v-for="node in lateralBranches"
             :key="node.id"
             :class="[
               'grid-cell',
@@ -419,7 +483,7 @@ function waterwayBg(color: string | undefined): string {
             ]"
             :style="{
               gridRow: node.row,
-              backgroundColor: waterwayBg(WATERWAY_COLORS[node.name]),
+              backgroundColor: waterwayBg(WATERWAY_COLORS[node.name] ?? (node.tributary ? SCHEMATIC_ACCENT_COLORS[node.tributary] : undefined)),
             }"
             :data-marker="node.id"
           >
@@ -469,7 +533,7 @@ function waterwayBg(color: string | undefined): string {
           <div
             v-for="node in blacksmithSystem"
             :key="node.id"
-            class="grid-cell col-3"
+            class="grid-cell col-4"
             :style="{
               gridRow: node.row,
               backgroundColor: waterwayBg(WATERWAY_COLORS['Blacksmith Fork River']),
@@ -485,6 +549,38 @@ function waterwayBg(color: string | undefined): string {
             <div v-else class="node-card bsf-card">
               <span class="node-title">{{ node.name }}</span>
             </div>
+          </div>
+
+          <div
+            v-for="node in littleBear"
+            :key="node.id"
+            class="grid-cell col-5"
+            :style="{
+              gridRow: node.row,
+              backgroundColor: waterwayBg(node.tributary ? SCHEMATIC_ACCENT_COLORS[node.tributary] : undefined),
+            }"
+            :data-marker="node.id"
+          >
+            <StationCard
+              v-if="findLiveStation(node.name)"
+              :site="findLiveStation(node.name)!"
+              compact
+              @click="openStation(findLiveStation(node.name))"
+            />
+            <template v-else>
+              <div
+                v-if="node.type === 'line-junction'"
+                :data-marker="node.id"
+                class="junction-spacer"
+              ></div>
+              <div v-else class="node-card little-bear-card">
+                <span class="node-title">{{ node.name }}</span>
+              </div>
+            </template>
+          </div>
+
+          <div class="grid-cell col-5 little-bear-outlet" style="grid-row: 17">
+            <div class="routing-label">&darr; To Cutler Reservoir</div>
           </div>
 
           <div
@@ -511,7 +607,7 @@ function waterwayBg(color: string | undefined): string {
 
           <div
             class="terminus-grid-cell"
-            style="grid-row: 18; grid-column: 1 / span 3"
+            style="grid-row: 18; grid-column: 1 / span 5"
             data-marker="terminus_card"
           >
             <div class="terminus-card">
@@ -571,7 +667,7 @@ function waterwayBg(color: string | undefined): string {
 .schematic-stage {
   position: relative;
   width: 100%;
-  min-width: 950px;
+  min-width: 1450px;
   margin: 0 auto;
   opacity: 0;
   transition: opacity 0.3s ease;
@@ -583,14 +679,14 @@ function waterwayBg(color: string | undefined): string {
 
 .schematic-grid {
   display: grid;
-  grid-template-columns: 1.1fr 1.3fr 1.1fr;
+  grid-template-columns: 1.1fr 1.3fr 1.1fr 1fr 1fr;
   grid-template-rows: repeat(17, auto) auto;
-  row-gap: 32px;
-  column-gap: 60px;
+  row-gap: 24px;
+  column-gap: 44px;
   align-items: center;
   position: relative;
   z-index: 2;
-  min-width: 950px;
+  min-width: 1450px;
 }
 
 .global-routing-svg {
@@ -602,7 +698,7 @@ function waterwayBg(color: string | undefined): string {
   pointer-events: none;
   z-index: 1;
   shape-rendering: geometricPrecision;
-  min-width: 950px;
+  min-width: 1450px;
   opacity: 0;
   transition: opacity 0.25s ease;
 }
@@ -676,6 +772,14 @@ h2 {
   grid-column: 3;
 }
 
+.col-4 {
+  grid-column: 4;
+}
+
+.col-5 {
+  grid-column: 5;
+}
+
 .grid-cell {
   display: flex;
   flex-direction: column;
@@ -734,12 +838,29 @@ h2 {
   border-left: 4px solid #1a15125b;
 }
 
+.little-bear-card {
+  border-left: 4px solid #4f8fb025;
+}
+
 .routing-label {
   font-size: 0.72rem;
   font-weight: 800;
   color: #222222 !important;
   text-transform: uppercase;
   margin-top: 4px;
+}
+
+.little-bear-outlet {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none !important;
+  padding: 0 !important;
+}
+
+.little-bear-outlet .routing-label {
+  color: #4f8fb0 !important;
+  margin-top: 0;
 }
 
 .terminus-grid-cell {
@@ -805,6 +926,20 @@ h2 {
 }
 
 .grid-cell.col-3 {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 10px;
+  box-sizing: border-box;
+}
+
+.grid-cell.col-4 {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 10px;
+  box-sizing: border-box;
+}
+
+.grid-cell.col-5 {
   border: 1px solid #e2e8f0;
   border-radius: 12px;
   padding: 10px;
