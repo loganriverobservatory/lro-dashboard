@@ -361,3 +361,62 @@ export function getFreshnessStatus(observation: StaObservation | null): Freshnes
   if (ageHours < 24) return 'stale'
   return 'outdated'
 }
+
+export interface SchematicConfig {
+  mainStem: { id: string; name: string; row: number; type: string }[]
+  leftTributaries: { id: string; name: string; row: number; juncId: string; col: 'left' | 'right' }[]
+  diversions?: { id: string; name: string; row: number; juncId: string; col: 'left' | 'right'; tributary?: string }[]
+  blacksmithFork: { id: string; name: string; row: number }[]
+  littleBear?: { id: string; name: string; row: number; type?: string; tributary?: string }[]
+  cutlerInflows: { id: string; name: string; row: number; tributary: string }[]
+}
+
+// Same top-of-watershed-to-bottom order as SchematicView: main stem by row, with
+// tributaries/diversions inserted at the row of the junction they attach to, Blacksmith
+// Fork grouped in at its confluence row, then Little Bear River and Cutler Inflows (both
+// separate waterways that join Cutler Reservoir directly rather than via a Logan River
+// junction, so they have no natural insertion row and are appended as their own groups).
+export function getSchematicOrder(config: SchematicConfig | null | undefined): string[] {
+  if (!config) return []
+
+  const mainStemById = new Map(config.mainStem.map((n) => [n.id, n]))
+  const bsfConfluence = mainStemById.get('bsf_confluence')
+
+  const entries: { name: string; row: number; category: number; tertiary: number }[] = []
+
+  config.mainStem.forEach((n) => entries.push({ name: n.name, row: n.row, category: 0, tertiary: 0 }))
+  ;(config.leftTributaries ?? []).forEach((n) => {
+    const junc = mainStemById.get(n.juncId)
+    entries.push({ name: n.name, row: junc?.row ?? n.row, category: 1, tertiary: 0 })
+  })
+  ;(config.diversions ?? []).forEach((n) => {
+    const junc = mainStemById.get(n.juncId)
+    entries.push({ name: n.name, row: junc?.row ?? n.row, category: 2, tertiary: 0 })
+  })
+  config.blacksmithFork.forEach((n) => {
+    entries.push({ name: n.name, row: bsfConfluence?.row ?? n.row, category: 3, tertiary: n.row })
+  })
+  ;(config.littleBear ?? []).forEach((n) => entries.push({ name: n.name, row: 1000, category: 0, tertiary: n.row }))
+  config.cutlerInflows.forEach((n) => entries.push({ name: n.name, row: 2000, category: 0, tertiary: n.row }))
+
+  entries.sort((a, b) => a.row - b.row || a.category - b.category || a.tertiary - b.tertiary)
+  return entries.map((e) => e.name)
+}
+
+// Matches SchematicView's findLiveStation fuzzy substring match, so list order stays
+// consistent with how the schematic resolves config entries to live stations.
+export function sortStationsBySchematic(stations: Station[], order: string[]): Station[] {
+  const orderIndex = (station: Station): number => {
+    const liveName = station.displayName.toLowerCase()
+    const idx = order.findIndex((name) => {
+      const targetName = name.toLowerCase()
+      return liveName.includes(targetName) || targetName.includes(liveName)
+    })
+    return idx === -1 ? Infinity : idx
+  }
+
+  return stations
+    .map((station, i) => ({ station, i, key: orderIndex(station) }))
+    .sort((a, b) => a.key - b.key || a.i - b.i)
+    .map((entry) => entry.station)
+}

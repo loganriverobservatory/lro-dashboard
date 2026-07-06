@@ -4,21 +4,14 @@ SchematicView.vue - Displays a schematic of the river system with station cards 
 */
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { Droplets, Maximize2, Minimize2 } from 'lucide-vue-next'
-import { type Station, WATERWAY_COLORS, SCHEMATIC_ACCENT_COLORS } from '../hydroService'
+import { type Station, type SchematicConfig, WATERWAY_COLORS, SCHEMATIC_ACCENT_COLORS } from '../hydroService'
 import StationCard from '../components/StationCard.vue'
 
 const props = defineProps<{
   sites: Station[]
   loading: boolean
   activeWaterways?: string[]
-  schematicConfig?: {
-    mainStem: { id: string; name: string; row: number; type: string }[]
-    leftTributaries: { id: string; name: string; row: number; juncId: string; col: 'left' | 'right' }[]
-    diversions?: { id: string; name: string; row: number; juncId: string; col: 'left' | 'right'; tributary?: string }[]
-    blacksmithFork: { id: string; name: string; row: number }[]
-    littleBear?: { id: string; name: string; row: number; type?: string; tributary?: string }[]
-    cutlerInflows: { id: string; name: string; row: number; tributary: string }[]
-  } | null
+  schematicConfig?: SchematicConfig | null
 }>()
 
 function findLiveStation(schematicName: string): Station | undefined {

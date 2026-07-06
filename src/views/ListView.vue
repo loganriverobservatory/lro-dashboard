@@ -4,13 +4,20 @@ ListView.vue - Displays a list of station cards with variable values and freshne
 */
 import { computed } from 'vue'
 import StationCard from '../components/StationCard.vue'
-import { type Station, WATER_VARIBALES } from '../hydroService'
+import {
+  type Station,
+  type SchematicConfig,
+  WATER_VARIBALES,
+  getSchematicOrder,
+  sortStationsBySchematic,
+} from '../hydroService'
 
 const props = defineProps<{
   sites: Station[]
   loading: boolean
   selectedVariable?: string
   activeWaterways?: string[]
+  schematicConfig?: SchematicConfig | null
 }>()
 
 const variableLabel = computed(() => {
@@ -23,9 +30,13 @@ const variableLongLabel = computed(() => {
   return match?.longLabel ?? variableLabel.value
 })
 
+const schematicOrder = computed(() => getSchematicOrder(props.schematicConfig))
+
 const filteredSites = computed(() => {
-  if (!props.activeWaterways) return props.sites
-  return props.sites.filter((s) => props.activeWaterways!.includes(s.tributary ?? ''))
+  const filtered = props.activeWaterways
+    ? props.sites.filter((s) => props.activeWaterways!.includes(s.tributary ?? ''))
+    : props.sites
+  return sortStationsBySchematic(filtered, schematicOrder.value)
 })
 </script>
 

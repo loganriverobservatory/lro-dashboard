@@ -136,6 +136,7 @@ onMounted(async () => {
         :loading="loading"
         :selected-variable="selectedVariable"
         :active-waterways="activeWaterways"
+        :schematic-config="schematicConfig"
       />
       <MapView
         v-if="currentView === 'map'"
