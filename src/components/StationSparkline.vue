@@ -72,6 +72,10 @@ const props = defineProps({
     type: Object as () => StaObservation | null,
     default: null,
   },
+  preloadedHistory: {
+    type: Array as () => [string, number][] | undefined,
+    default: undefined,
+  },
 })
 
 const emit = defineEmits<{
@@ -154,16 +158,27 @@ const canShowSparkline = computed(() => sparklineObservations.value.length > 1)
 async function fetchRecentHistory(id: string) {
   try {
     loading.value = true
-    // $orderby is ignored by this API; filter by 48-hour window and sort client-side
-    const since = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString()
-    const url = `https://lro.hydroserver.org/api/sensorthings/v1.1/Datastreams('${id}')/Observations?$filter=phenomenonTime ge ${since}&$top=300&$select=result,phenomenonTime`
-    const res = await fetch(url)
-    const data = await res.json()
 
-    if (data.value) {
-      sparklineObservations.value = data.value
-        .filter((o: any) => o.result !== null && o.phenomenonTime)
-        .map((o: any) => [o.phenomenonTime, Number(o.result)])
+    if (id.startsWith('USGS-')) {
+      const siteNum = id.replace('USGS-', '')
+      const url = `https://waterservices.usgs.gov/nwis/iv/?sites=${siteNum}&parameterCd=00060&period=P2D&format=json`
+      const res = await fetch(url)
+      const data = await res.json()
+      const values: any[] = data?.value?.timeSeries?.[0]?.values?.[0]?.value ?? []
+      sparklineObservations.value = values
+        .filter((v: any) => v.value !== '-999999' && v.value !== null && v.dateTime)
+        .map((v: any) => [v.dateTime, Number(v.value)])
+    } else {
+      // $orderby is ignored by this API; filter by 48-hour window and sort client-side
+      const since = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString()
+      const url = `https://lro.hydroserver.org/api/sensorthings/v1.1/Datastreams('${id}')/Observations?$filter=phenomenonTime ge ${since}&$top=300&$select=result,phenomenonTime`
+      const res = await fetch(url)
+      const data = await res.json()
+      if (data.value) {
+        sparklineObservations.value = data.value
+          .filter((o: any) => o.result !== null && o.phenomenonTime)
+          .map((o: any) => [o.phenomenonTime, Number(o.result)])
+      }
     }
   } catch (err) {
     console.error('Sparkline fetch failure:', err)
@@ -173,9 +188,14 @@ async function fetchRecentHistory(id: string) {
 }
 
 watch(
-  () => props.stationId,
-  (newId) => {
-    if (newId) fetchRecentHistory(newId)
+  [() => props.stationId, () => props.preloadedHistory],
+  ([newId, preloaded]) => {
+    if (preloaded !== undefined) {
+      sparklineObservations.value = preloaded
+      loading.value = false
+    } else if (newId) {
+      fetchRecentHistory(newId)
+    }
   },
   { immediate: true },
 )
