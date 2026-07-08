@@ -12,22 +12,6 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-<<<<<<< HEAD
-      - name: Fetch Sheet and Convert to JSON
-        run: |
-          CSV_URL="https://docs.google.com/spreadsheets/d/e/2PACX-1vQU93G1K9-DsGkw6mOWTITY_p8eRDQHsS25tsG5wlUwOrzmRw2_hrbuDJhILXqC-NUVwhDckBCGWd-4/pub?output=csv"
-
-          python3 -c "
-          import csv, json, urllib.request
-          url = '$CSV_URL'
-          response = urllib.request.urlopen(url)
-          lines = [line.decode('utf-8') for line in response.readlines()]
-          reader = csv.DictReader(lines)
-          data = list(reader)
-          with open('src/assets/config.json', 'w') as f:
-              json.dump(data, f, indent=2)
-          "
-=======
       - name: Fetch Sheets and Build config.json
         run: |
           python3 << 'PYEOF'
@@ -85,15 +69,9 @@ jobs:
           total_nodes = sum(len(v) for v in schematic.values())
           print(f"Done: {len(station_names)} station names, {total_nodes} schematic nodes across {len(schematic)} sections")
           PYEOF
->>>>>>> Brooke-branch
 
       - name: Commit and Push Changes
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-<<<<<<< HEAD
-          commit_message: 'chore: manual configuration update from Google Sheets'
-          file_pattern: 'src/assets/config.json'
-=======
           commit_message: 'chore: sync config from Google Sheets'
           file_pattern: 'public/config.json'
->>>>>>> Brooke-branch
