@@ -2,6 +2,8 @@ name: Update Utah DWRi Cache
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: '*/15 * * * *'
 
 jobs:
   update-cache:
@@ -14,8 +16,15 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Fetch Utah DWRi data
-        run: node .github/scripts/fetch-utah-dwr.js > /tmp/utah-dwr-cache.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install -r .github/scripts/requirements.txt
+
+      - name: Fetch DWRi data and build station-config.json
+        run: python .github/scripts/fetch_dwri.py > /tmp/station-config.json
 
       - name: Commit to data-cache branch
         env:
@@ -32,7 +41,7 @@ jobs:
           fi
 
           git remote set-url origin "https://x-access-token:${GITHUB_TOKEN}@github.com/loganriverobservatory/lro-dashboard.git"
-          cp /tmp/utah-dwr-cache.json utah-dwr-cache.json
-          git add utah-dwr-cache.json
-          git diff --staged --quiet || git commit -m "chore: update DWRi cache $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          cp /tmp/station-config.json station-config.json
+          git add station-config.json
+          git diff --staged --quiet || git commit -m "chore: update station config cache $(date -u +%Y-%m-%dT%H:%M:%SZ)"
           git push origin data-cache

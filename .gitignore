@@ -37,3 +37,7 @@ __screenshots__/
 
 # Vite
 *.timestamp-*-*.mjs
+
+# Python (fetch_dwri.py local runs)
+__pycache__/
+*.pyc

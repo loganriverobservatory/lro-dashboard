@@ -49,23 +49,31 @@ export interface Station {
   history?: [string, number][]
 }
 
-export const WATERWAY_COLORS: Record<string, string> = {
-  'Logan River: Main Stem': '#7d98c6',
-  'HydroServer: Logan River Observatory': '#7d98c6',
+// Canonical waterway group names. These must exactly match the "name" values
+// under waterway_groups in config/station_config.yaml.
+const MAIN_STEM_GROUP = 'Logan River Observatory: Logan River Main Stem'
+const HYDROSERVER_GROUP = 'Logan River Observatory'
+
+// Populated by loadStationConfig(). Small hardcoded fallbacks so the app still
+// has reasonable colors to render with if that fetch hasn't completed yet or fails.
+export let WATERWAY_COLORS: Record<string, string> = {
+  [MAIN_STEM_GROUP]: '#7d98c6',
+  [HYDROSERVER_GROUP]: '#7d98c6',
   'USGS': '#d09559',
   'DWRi': '#6fa26b',
 }
 
-export const WATERWAY_LIST = Object.keys(WATERWAY_COLORS)
+export let WATERWAY_LIST = Object.keys(WATERWAY_COLORS)
 
-// Schematic-only accent colors for DWRi sub-groups. Kept separate from
-// WATERWAY_COLORS/WATERWAY_LIST since those drive the sidebar's waterway
-// filter checkboxes (keyed on Station.tributary, which is 'DWRi' for all of
-// these) — adding these keys there would create checkboxes that never match
-// any station's tributary value.
-export const SCHEMATIC_ACCENT_COLORS: Record<string, string> = {
-  'Utah DWRi: Logan Diversions': '#c98a3c',
-  'Utah DWRi: Little Bear River': '#4f8fb0',
+// Schematic-only accent colors for DWRi sub-groups, keyed by SchematicConfig
+// node "schematicGroup" values — kept separate from WATERWAY_COLORS/WATERWAY_LIST
+// since those drive the sidebar's waterway filter checkboxes (keyed on
+// Station.tributary, which is 'DWRi' for all of these) — adding these keys
+// there would create checkboxes that never match any station's tributary value.
+export let SCHEMATIC_ACCENT_COLORS: Record<string, string> = {
+  'Logan River': '#c98a3c',
+  'Little Bear River': '#4f8fb0',
+  'Blacksmith Fork River': '#8a6fa2',
 }
 
 export const WATER_VARIBALES = [
@@ -76,61 +84,83 @@ export const WATER_VARIBALES = [
   { id: 'Oxygen, dissolved', label: 'Dissolved Oxygen (mg/L)', longLabel: 'Dissolved Oxygen in mg/L (milligrams per liter)' },
 ]
 
-let STATIONS_NOT_DISPLAYED: string[] = [
-  'TF_SAWM_A',
-  'SPC_CONF_A',
-  'SLB_600W_CNL',
-  'NWF_1600N_CNL',
-  'LR_RH_SD',
-  'LR_SC_SD',
-  'LR_DSC_A',
-]
-
-let STATION_NAME_MAP: Record<string, string> = {
-  BC_CONF_A: 'Beaver Creek: Before Confluence with the Logan River',
-  BSF_1700S_A: 'Blacksmith Fork River: 1700 South Footbridge',
-  BSF_CONF_BA: 'Blacksmith Fork River: Before Confluence with Logan River',
-  BSF_Darwin_A: 'Blacksmith Fork River: Hollow Road',
-  DS_CONF_A: 'Dewitt Springs: Before Confluence with Logan River',
-  LBR_MR_A: 'Little Bear River: Mendon Road',
-  LR_1000W_A: 'Logan River: 1000 West',
-  LR_Cutler_A: 'Logan River: Before Confluence with Cutler Reservoir',
-  LR_FB_BA: 'Logan River: Franklin Basin',
-  LR_GCB_A: 'Logan River: Guinavah Campground',
-  LR_MainStreet_BA: 'Logan River: Main Street',
-  LR_Mendon_AA: 'Logan River: Mendon Road',
-  LR_TG_BA: 'Logan River: Tony Grove',
-  LR_WaterLab_AA: 'Logan River: Utah Water Research Laboratory',
-  LR_WC_A: 'Logan River: Above Wood Camp',
-  LR_WCB_A: 'Logan River: Wood Camp Bridge',
-  RHF_CONF_A: 'Right Hand Fork: Before Confluence with Logan River',
-  RS_CONF_A: 'Ricks Spring: Before Confluence with Logan River',
-  SC_CONF_A: 'Spring Creek: Before Confluence with Logan River',
-  SC_MR_A: 'Spring Creek: Mendon Road',
-  TF_CONF_A: 'Temple Fork: Before Confluence with Logan River',
-  LR_DSC_A: 'Logan River: Dewitt Springs Campground',
-  'USGS-10108400': 'USGS: Cache Highline Canal Near Logan, UT',
-  'USGS-10109000': 'USGS: Logan River Above First Dam',
+export interface SchematicConfig {
+  mainStem: { id: string; name: string; row: number; type: string }[]
+  leftTributaries: { id: string; name: string; row: number; juncId: string; col: 'left' | 'right' }[]
+  diversions?: { id: string; name: string; row: number; juncId: string; col: 'left' | 'right'; schematicGroup?: string }[]
+  blacksmithFork: { id: string; name: string; row: number }[]
+  littleBear?: { id: string; name: string; row: number; type?: string; schematicGroup?: string }[]
+  cutlerInflows: { id: string; name: string; row: number; tributary: string }[]
 }
 
-export interface DWRiStationDef {
+interface UsgsStationEntry {
+  id: string
+  displayName: string
+  siteLink?: string
+  active?: boolean
+}
+
+interface DwriStationEntry {
   id: number
   displayName: string
-  tributary?: string
-  lat?: number
-  lng?: number
+  group: string
+  schematicGroup: string
+  lat: number
+  lng: number
+  latestCfs: number | null
+  latestTime: string | null
+  history: { time: string; value: number }[]
 }
 
-let DWRI_STATIONS: DWRiStationDef[] = []
+// Everything below is populated by loadStationConfig() from the generated
+// config/station_config.yaml output (see .github/scripts/fetch_dwri.py),
+// published on the data-cache branch. Starts empty — until that fetch
+// completes, HydroServer stations show their raw codes as names and nothing
+// is hidden; USGS/DWRi station lists are empty until loaded.
+let HIDDEN_STATIONS: string[] = []
+let DISPLAY_NAMES: Record<string, string> = {}
+let USGS_STATIONS_CONFIG: UsgsStationEntry[] = []
+let DWRI_STATIONS_DATA: DwriStationEntry[] = []
 
-export function setStationConfig(
-  notDisplayed: string[],
-  nameMap: Record<string, string>,
-  dwriStations?: DWRiStationDef[]
-) {
-  STATIONS_NOT_DISPLAYED = notDisplayed
-  STATION_NAME_MAP = { ...STATION_NAME_MAP, ...nameMap }
-  if (dwriStations?.length) DWRI_STATIONS = dwriStations
+const STATION_CONFIG_URL =
+  'https://raw.githubusercontent.com/loganriverobservatory/lro-dashboard/data-cache/station-config.json'
+
+// Fetches the generated station config (station lists, display names, colors,
+// schematic layout) and populates the module state every other function here
+// reads from. Call this once before getVariableStations/getUSGSStations/
+// getDWRiStations so they have data to work with. Returns the schematic
+// layout on success so the caller can store it, or null if the fetch failed —
+// in which case the app keeps running with whatever was previously loaded
+// (or the small hardcoded color fallbacks above, on first load).
+export async function loadStationConfig(): Promise<SchematicConfig | null> {
+  try {
+    const res = await fetch(STATION_CONFIG_URL, { cache: 'no-cache' })
+    if (!res.ok) return null
+    const data = await res.json()
+
+    HIDDEN_STATIONS = data.hiddenStations ?? []
+    DISPLAY_NAMES = data.displayNames ?? {}
+    USGS_STATIONS_CONFIG = (data.usgsStations ?? []).filter((s: UsgsStationEntry) => s.active !== false)
+    DWRI_STATIONS_DATA = data.dwriStations ?? []
+
+    if (Array.isArray(data.waterwayGroups) && data.waterwayGroups.length) {
+      const colors: Record<string, string> = {}
+      for (const g of data.waterwayGroups) colors[g.name] = g.color
+      WATERWAY_COLORS = colors
+      WATERWAY_LIST = Object.keys(colors)
+    }
+
+    if (Array.isArray(data.schematicGroups) && data.schematicGroups.length) {
+      const colors: Record<string, string> = {}
+      for (const g of data.schematicGroups) colors[g.name] = g.color
+      SCHEMATIC_ACCENT_COLORS = colors
+    }
+
+    return (data.schematicLayout as SchematicConfig) ?? null
+  } catch (e) {
+    console.error('Error loading station config:', e)
+    return null
+  }
 }
 
 export async function getVariableStations(variable: string = 'Discharge'): Promise<Station[]> {
@@ -160,7 +190,7 @@ export async function getVariableStations(variable: string = 'Discharge'): Promi
     .filter((ds: StaDatastream) => {
       if (!ds.name) return false
       const code = ds.name.split(' ')[0]
-      if (code && STATIONS_NOT_DISPLAYED.includes(code)) return false
+      if (code && HIDDEN_STATIONS.includes(code)) return false
       const isDecommissioned =
         ds.description?.includes('Decommissioned') || ds.name.includes('Decommissioned')
       const isTesting = ds.name.includes('Testing')
@@ -170,12 +200,12 @@ export async function getVariableStations(variable: string = 'Discharge'): Promi
       const stationCode = ds.name.split(' ')[0] || 'UNKNOWN'
       const thingInfo = thingsByCode[stationCode] ?? { uuid: '', coords: null }
 
-      const displayNameText: string = STATION_NAME_MAP[stationCode] || stationCode
+      const displayNameText: string = DISPLAY_NAMES[stationCode] || stationCode
       const tributaryBase = displayNameText.includes(':')
         ? displayNameText.split(':')?.[0]?.trim()
         : 'Unknown Tributary'
 
-      const tributary = tributaryBase === 'Logan River' ? 'Logan River: Main Stem' : 'HydroServer: Logan River Observatory'
+      const tributary = tributaryBase === 'Logan River' ? MAIN_STEM_GROUP : HYDROSERVER_GROUP
 
       // phenomenonTime is "start/end" interval — extract end as latest observation time
       const ptParts = ds.phenomenonTime?.split('/') ?? []
@@ -225,17 +255,15 @@ export async function getLatestObservation(
   }
 }
 
-const USGS_SITE_CODES = ['10108400', '10109000']
-
-const USGS_SITE_LINKS: Record<string, string> = {
-  'USGS-10108400': 'https://waterdata.usgs.gov/monitoring-location/USGS-10108400/#dataTypeId=continuous-00060-0&period=P7D&showMedian=true&showFieldMeasurements=true',
-  'USGS-10109000': 'https://waterdata.usgs.gov/monitoring-location/USGS-10109000/#dataTypeId=continuous-00060-0&period=P7D&showMedian=true&showFieldMeasurements=true',
-}
-
+// Live USGS readings are fetched directly here (not via the cached config
+// pipeline) — USGS's NWIS API already sends proper CORS headers, so there's
+// no need to route it through the batch-fetched cache. The station identity
+// list (which sites, their names/links) comes from loadStationConfig().
 export async function getUSGSStations(variable: string = 'Discharge'): Promise<Station[]> {
   if (variable.toLowerCase() !== 'discharge') return []
+  if (USGS_STATIONS_CONFIG.length === 0) return []
 
-  const url = `https://waterservices.usgs.gov/nwis/iv/?sites=${USGS_SITE_CODES.join(',')}&parameterCd=00060&format=json`
+  const url = `https://waterservices.usgs.gov/nwis/iv/?sites=${USGS_STATIONS_CONFIG.map((s) => s.id).join(',')}&parameterCd=00060&format=json`
 
   try {
     const res = await fetch(url)
@@ -246,9 +274,10 @@ export async function getUSGSStations(variable: string = 'Discharge'): Promise<S
     return timeSeries.map((ts: any) => {
       const siteCode = ts.sourceInfo?.siteCode?.[0]?.value ?? ''
       const stationCode = `USGS-${siteCode}`
-      const displayName = STATION_NAME_MAP[stationCode] ?? stationCode
-      const tributaryBase = displayName.includes(':') ? displayName.split(':')[0].trim() : 'USGS'
-      const tributary = tributaryBase === 'Logan River' ? 'Logan River: Main Stem' : tributaryBase
+      const configEntry = USGS_STATIONS_CONFIG.find((s) => s.id === siteCode)
+      const displayName = configEntry?.displayName ?? stationCode
+      const tributaryBase = displayName.includes(':') ? (displayName.split(':')[0]?.trim() ?? 'USGS') : 'USGS'
+      const tributary = tributaryBase === 'Logan River' ? MAIN_STEM_GROUP : tributaryBase
 
       const geo = ts.sourceInfo?.geoLocation?.geogLocation
       const coordinates: [number, number] | null =
@@ -269,7 +298,7 @@ export async function getUSGSStations(variable: string = 'Discharge'): Promise<S
         latestTime: phenomenonTime,
         isPrivate: false,
         isUSGS: true,
-        siteLink: USGS_SITE_LINKS[stationCode],
+        siteLink: configEntry?.siteLink,
         observation: phenomenonTime
           ? { '@iot.id': stationCode, result, phenomenonTime }
           : null,
@@ -280,68 +309,36 @@ export async function getUSGSStations(variable: string = 'Discharge'): Promise<S
   }
 }
 
-const DWRI_CACHE_URL =
-  'https://docs.google.com/spreadsheets/d/e/2PACX-1vQU93G1K9-DsGkw6mOWTITY_p8eRDQHsS25tsG5wlUwOrzmRw2_hrbuDJhILXqC-NUVwhDckBCGWd-4/pub?gid=1466502877&single=true&output=csv'
-
+// DWRi live readings are already fetched and attached by the time
+// loadStationConfig() resolves (the GitHub Action calls DVRT server-side,
+// sidestepping DVRT's missing CORS header) — this just reshapes the already-
+// loaded data into Station objects, no network call here.
 export async function getDWRiStations(variable: string = 'Discharge'): Promise<Station[]> {
   if (variable.toLowerCase() !== 'discharge') return []
 
-  try {
-    const res = await fetch(DWRI_CACHE_URL)
-    if (!res.ok) return []
-    const text = await res.text()
-    const year = new Date().getFullYear()
+  const year = new Date().getFullYear()
 
-    const coordsById: Record<number, [number, number]> = {}
-    for (const s of DWRI_STATIONS) {
-      if (s.lat != null && s.lng != null) coordsById[s.id] = [s.lat, s.lng]
+  return DWRI_STATIONS_DATA.map((station) => {
+    const code = `DWRi-${station.id}`
+    return {
+      id: code,
+      uuid: code,
+      displayName: station.displayName,
+      coordinates: station.lat != null && station.lng != null ? [station.lat, station.lng] : null,
+      unit: 'cfs',
+      tributary: station.group,
+      latestTime: station.latestTime ?? new Date().toISOString(),
+      isPrivate: false,
+      isDWRi: true,
+      history: (station.history ?? []).map((h) => [h.time, h.value] as [string, number]),
+      siteLink: `https://waterrights.utah.gov/cgi-bin/dvrtview.exe?Modinfo=StationView&STATION_ID=${station.id}&RECORD_YEAR=${year}&QuitKey=Close`,
+      observation: {
+        '@iot.id': code,
+        result: station.latestCfs,
+        phenomenonTime: station.latestTime,
+      },
     }
-
-    return text
-      .trim()
-      .split('\n')
-      .slice(1)
-      .filter(line => line.trim())
-      .flatMap(line => {
-        const parts = line.split(',')
-        const id = parseInt(parts[0])
-        const code = parts[1]?.trim()
-        const displayName = parts[2]?.trim()
-        const latestCfs = parts[3]?.trim() ? parseFloat(parts[3]) : null
-        const latestTime = parts[4]?.trim() || new Date().toISOString()
-        const historyRaw = parts[5]?.trim()
-        const history: [string, number][] = historyRaw
-          ? historyRaw.split(';').flatMap(pair => {
-              const [time, val] = pair.split('=')
-              const num = val !== undefined ? parseFloat(val) : NaN
-              return time && !isNaN(num) ? [[time, num] as [string, number]] : []
-            })
-          : []
-
-        if (!code || STATIONS_NOT_DISPLAYED.includes(code)) return []
-
-        return [{
-          id: code,
-          uuid: code,
-          displayName: STATION_NAME_MAP[code] ?? displayName ?? code,
-          coordinates: coordsById[id] ?? null,
-          unit: 'cfs',
-          tributary: 'DWRi',
-          latestTime,
-          isPrivate: false,
-          isDWRi: true,
-          history,
-          siteLink: `https://waterrights.utah.gov/cgi-bin/dvrtview.exe?Modinfo=StationView&STATION_ID=${id}&RECORD_YEAR=${year}&QuitKey=Close`,
-          observation: {
-            '@iot.id': code,
-            result: latestCfs !== null && !isNaN(latestCfs) ? latestCfs : null,
-            phenomenonTime: latestTime,
-          },
-        }]
-      })
-  } catch {
-    return []
-  }
+  })
 }
 
 export type FreshnessStatus = 'current' | 'stale' | 'outdated' | 'unknown'
@@ -360,15 +357,6 @@ export function getFreshnessStatus(observation: StaObservation | null): Freshnes
   if (ageHours < 2) return 'current'
   if (ageHours < 24) return 'stale'
   return 'outdated'
-}
-
-export interface SchematicConfig {
-  mainStem: { id: string; name: string; row: number; type: string }[]
-  leftTributaries: { id: string; name: string; row: number; juncId: string; col: 'left' | 'right' }[]
-  diversions?: { id: string; name: string; row: number; juncId: string; col: 'left' | 'right'; tributary?: string }[]
-  blacksmithFork: { id: string; name: string; row: number }[]
-  littleBear?: { id: string; name: string; row: number; type?: string; tributary?: string }[]
-  cutlerInflows: { id: string; name: string; row: number; tributary: string }[]
 }
 
 // Same top-of-watershed-to-bottom order as SchematicView: main stem by row, with
