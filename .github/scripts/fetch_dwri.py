@@ -95,12 +95,17 @@ def validate_config(config):
 
 
 def fetch_station_history(station_id):
-    """Ask DVRT for the last couple days of readings for one station."""
+    """Ask DVRT for the last couple days of readings for one station.
+
+    DVRT's end_date is inclusive only through midnight (00:00) of that date,
+    not through the end of it — so today's actual readings never come back
+    unless end_date is set to tomorrow.
+    """
     params = {
         "station_id": station_id,
         "f": "json",
         "begin_date": (date.today() - timedelta(days=HISTORY_DAYS)).isoformat(),
-        "end_date": date.today().isoformat(),
+        "end_date": (date.today() + timedelta(days=1)).isoformat(),
     }
     response = requests.get(DVRT_URL, params=params, headers=HEADERS, timeout=10)
     response.raise_for_status()
