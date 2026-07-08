@@ -9,7 +9,7 @@ import {
   getUSGSStations,
   getDWRiStations,
   setApiToken,
-  setStationConfig,
+  loadStationConfig,
   type Station,
   WATERWAY_LIST,
 } from './hydroService'
@@ -28,7 +28,7 @@ const sidebarOpen = ref(false)
 const currentView = ref('home')
 const selectedId = ref<string | null>(null)
 const selectedVariable = ref('Discharge')
-const activeWaterways = ref<string[]>([...WATERWAY_LIST])
+const activeWaterways = ref<string[]>([])
 const schematicConfig = ref<any>(null)
 
 let refreshTimer: ReturnType<typeof setInterval> | null = null
@@ -52,14 +52,13 @@ async function loadConfig() {
     if (res.ok) {
       const config = await res.json()
       if (config.apiToken) setApiToken(config.apiToken)
-      if (config.stationsNotDisplayed || config.stationNames || config.dwriStations) {
-        setStationConfig(config.stationsNotDisplayed ?? [], config.stationNames ?? {}, config.dwriStations)
-      }
-      if (config.schematic) schematicConfig.value = config.schematic
     }
   } catch {
     // proceed without config
   }
+
+  schematicConfig.value = await loadStationConfig()
+  if (activeWaterways.value.length === 0) activeWaterways.value = [...WATERWAY_LIST]
 }
 
 async function loadStations(variable: string) {

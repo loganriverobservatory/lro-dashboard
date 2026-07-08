@@ -39,7 +39,7 @@ type LateralNode = {
   row: number
   juncId: string
   col: 'left' | 'right'
-  tributary?: string
+  schematicGroup?: string
   flowDirection: 'in' | 'out'
 }
 const lateralBranches = computed<LateralNode[]>(() => [
@@ -476,7 +476,7 @@ function waterwayBg(color: string | undefined): string {
             ]"
             :style="{
               gridRow: node.row,
-              backgroundColor: waterwayBg(WATERWAY_COLORS[node.name] ?? (node.tributary ? SCHEMATIC_ACCENT_COLORS[node.tributary] : undefined)),
+              backgroundColor: waterwayBg(WATERWAY_COLORS[node.name] ?? (node.schematicGroup ? SCHEMATIC_ACCENT_COLORS[node.schematicGroup] : undefined)),
             }"
             :data-marker="node.id"
           >
@@ -499,7 +499,7 @@ function waterwayBg(color: string | undefined): string {
             class="grid-cell col-2"
             :style="{
               gridRow: node.row,
-              backgroundColor: waterwayBg(WATERWAY_COLORS['Logan River: Main Stem']),
+              backgroundColor: waterwayBg(WATERWAY_COLORS['Logan River Observatory: Logan River Main Stem']),
             }"
             :data-marker="node.id"
           >
@@ -529,7 +529,7 @@ function waterwayBg(color: string | undefined): string {
             class="grid-cell col-4"
             :style="{
               gridRow: node.row,
-              backgroundColor: waterwayBg(WATERWAY_COLORS['Blacksmith Fork River']),
+              backgroundColor: waterwayBg(SCHEMATIC_ACCENT_COLORS['Blacksmith Fork River']),
             }"
             :data-marker="node.id"
           >
@@ -550,7 +550,7 @@ function waterwayBg(color: string | undefined): string {
             class="grid-cell col-5"
             :style="{
               gridRow: node.row,
-              backgroundColor: waterwayBg(node.tributary ? SCHEMATIC_ACCENT_COLORS[node.tributary] : undefined),
+              backgroundColor: waterwayBg(node.schematicGroup ? SCHEMATIC_ACCENT_COLORS[node.schematicGroup] : undefined),
             }"
             :data-marker="node.id"
           >
