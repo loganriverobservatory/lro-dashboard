@@ -1,18 +1,70 @@
 <script setup lang="ts">
 /*
-SchematicView.vue - Displays a schematic of the river system with station cards embedded in their relative positions
+SchematicView.vue - Renders one schematic page (Upper Logan Canyon / Lower Logan River /
+Blacksmith Fork River, selected by the `slug` route param) as a Vue Flow node/edge diagram,
+driven entirely by the page's public/schematics/{slug}.json config. Replaces the previous
+hand-rolled CSS grid + getBoundingClientRect()-measured SVG path drawing: Vue Flow owns node
+positioning, edge routing, and pan/zoom/touch natively.
 */
-import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
-import { Droplets, Maximize2, Minimize2 } from 'lucide-vue-next'
-import { type Station, type SchematicConfig, WATERWAY_COLORS, SCHEMATIC_ACCENT_COLORS } from '../hydroService'
+import { ref, computed, onMounted, watch, markRaw } from 'vue'
+import { useRouter } from 'vue-router'
+import {
+  VueFlow,
+  MarkerType,
+  useVueFlow,
+  type Node as VFNode,
+  type Edge as VFEdge,
+} from '@vue-flow/core'
+import { Controls } from '@vue-flow/controls'
+import { Droplets } from 'lucide-vue-next'
+import '@vue-flow/core/dist/style.css'
+import '@vue-flow/controls/dist/style.css'
+import {
+  type Station,
+  type SchematicSlug,
+  type SchematicPageConfig,
+  type SchematicNode as SchematicNodeData,
+} from '../hydroService'
+import SchematicNode from '../components/SchematicNode.vue'
 import StationCard from '../components/StationCard.vue'
 
 const props = defineProps<{
+  slug: SchematicSlug
   sites: Station[]
   loading: boolean
   activeWaterways?: string[]
-  schematicConfig?: SchematicConfig | null
 }>()
+
+const router = useRouter()
+const { fitView, onNodesInitialized } = useVueFlow()
+
+const nodeTypes = { schematic: markRaw(SchematicNode) }
+
+const page = ref<SchematicPageConfig | null>(null)
+const pageLoadFailed = ref(false)
+const selectedStation = ref<Station | null>(null)
+const isCompact = ref(false)
+
+// Must stay comfortably wider than the fixed node width set in SchematicNode.vue, so
+// adjacent columns never overlap.
+const COL_WIDTH = 420
+const ROW_HEIGHT = 190
+
+// Keep in sync with SchematicNode.vue's .schematic-node / .node-type-junction widths.
+const NODE_WIDTH = 300
+const JUNCTION_WIDTH = 30
+
+async function loadPage() {
+  page.value = null
+  pageLoadFailed.value = false
+  try {
+    const res = await fetch(`/schematics/${props.slug}.json`, { cache: 'no-cache' })
+    page.value = res.ok ? ((await res.json()) as SchematicPageConfig) : null
+  } catch {
+    page.value = null
+  }
+  pageLoadFailed.value = page.value === null
+}
 
 function findLiveStation(schematicName: string): Station | undefined {
   const match = props.sites.find((site) => {
@@ -26,593 +78,200 @@ function findLiveStation(schematicName: string): Station | undefined {
   return match
 }
 
-const loganMainStem = computed(() => props.schematicConfig?.mainStem ?? [])
-const leftTributaries = computed(() => props.schematicConfig?.leftTributaries ?? [])
-const diversions = computed(() => props.schematicConfig?.diversions ?? [])
-const blacksmithSystem = computed(() => props.schematicConfig?.blacksmithFork ?? [])
-const littleBear = computed(() => props.schematicConfig?.littleBear ?? [])
-const cutlerInflows = computed(() => props.schematicConfig?.cutlerInflows ?? [])
+// A lateral node's own row doesn't always match the row of the junction it connects to,
+// which draws a bent connector with an awkward gap. Snap it onto that row instead when the
+// slot is free in its column, so it lines up flush; if two laterals would land on the same
+// slot, leave both at their configured rows rather than stacking them. Only 'branch' edges
+// (a single tributary/diversion attaching to one junction) qualify — 'thin' edges often
+// converge multiple independent nodes onto one shared terminus, where forcing one of them
+// to align would silently reorder them relative to each other.
+function computeRowOverrides(page: SchematicPageConfig): Map<string, number> {
+  const nodesById = new Map(page.nodes.map((n) => [n.id, n]))
+  const attachTarget = new Map<string, string>()
+  page.edges.forEach((edge) => {
+    if (edge.style !== 'branch') return
+    attachTarget.set(edge.from, edge.to)
+  })
 
-type LateralNode = {
-  id: string
-  name: string
-  row: number
-  juncId: string
-  col: 'left' | 'right'
-  schematicGroup?: string
-  flowDirection: 'in' | 'out'
+  const occupied = new Set(page.nodes.map((n) => `${n.col}:${n.row}`))
+  const rowOverrides = new Map<string, number>()
+
+  page.nodes.forEach((node) => {
+    const targetId = attachTarget.get(node.id)
+    const target = targetId ? nodesById.get(targetId) : undefined
+    if (!target || target.row === node.row) return
+
+    const slot = `${node.col}:${target.row}`
+    if (occupied.has(slot)) return
+
+    occupied.delete(`${node.col}:${node.row}`)
+    occupied.add(slot)
+    rowOverrides.set(node.id, target.row)
+  })
+
+  return rowOverrides
 }
-const lateralBranches = computed<LateralNode[]>(() => [
-  ...leftTributaries.value.map((n) => ({ ...n, flowDirection: 'in' as const })),
-  ...diversions.value.map((n) => ({ ...n, flowDirection: 'out' as const })),
-])
 
-const gridContainerRef = ref<HTMLElement | null>(null)
-const paths = ref({ logan: '', blacksmith: '', littleBear: '', cutlerSpringCreek: '' })
-const leftTribPaths = ref<Record<string, string>>({})
-const linesReady = ref(false)
+const vfNodes = computed<VFNode[]>(() => {
+  if (!page.value) return []
+  const rowOverrides = computeRowOverrides(page.value)
+  return page.value.nodes.map((node: SchematicNodeData): VFNode => {
+    const xOffset = node.type === 'junction' ? (NODE_WIDTH - JUNCTION_WIDTH) / 2 : 0
+    const row = rowOverrides.get(node.id) ?? node.row
+    return {
+      id: node.id,
+      type: 'schematic',
+      position: { x: node.col * COL_WIDTH + xOffset, y: row * ROW_HEIGHT },
+      data: {
+        nodeType: node.type,
+        name: node.name,
+        label: node.label,
+        description: node.description,
+        targetSchematic: node.targetSchematic,
+        colorGroup: node.colorGroup,
+        liveStation: node.type === 'station' ? findLiveStation(node.name) : undefined,
+      },
+    }
+  })
+})
 
-const NATURAL_WIDTH = 1450
-const isCompact = ref(false)
-const schematicScale = ref(1)
-const wrapperHeight = ref<number | null>(null)
-const selectedStation = ref<Station | null>(null)
-// Mobile-only: when true the diagram renders at natural size and the user pans
-// around it (for anyone who can't read the shrunk-to-fit version).
-const zoomed = ref(false)
+const STYLE_PRESETS = {
+  main: { stroke: '#1e293b', strokeWidth: 4 },
+  branch: { stroke: '#475569', strokeWidth: 3 },
+  thin: { stroke: '#94a3b8', strokeWidth: 3 },
+} as const
 
-function openStation(site: Station | undefined) {
-  if (!isCompact.value || !site) return
-  selectedStation.value = site
+const vfEdges = computed<VFEdge[]>(() => {
+  if (!page.value) return []
+  const colById = new Map(page.value.nodes.map((n) => [n.id, n.col]))
+
+  return page.value.edges.map((edge) => {
+    // 'out' edges (diversions/canals) flow away from the junction, so the arrowhead
+    // needs to land on the diversion, not the junction — swap source/target rather
+    // than juggling markerStart vs markerEnd, so every edge can just use markerEnd.
+    const reversed = edge.direction === 'out'
+    const source = reversed ? edge.to : edge.from
+    const target = reversed ? edge.from : edge.to
+    const preset = STYLE_PRESETS[edge.style]
+
+    // Pick vertical (top/bottom) handles when both ends share a column — this is what
+    // keeps the main channel a single straight line — or horizontal (left/right) handles
+    // when a lateral tributary/diversion sits in a different column, so it branches
+    // cleanly out to the side instead of routing through a boxy up/down S-curve.
+    const sourceCol = colById.get(source) ?? 0
+    const targetCol = colById.get(target) ?? 0
+    let sourceHandle = 's-bottom'
+    let targetHandle = 't-top'
+    let edgeShape: 'straight' | 'smoothstep' = 'straight'
+    if (sourceCol < targetCol) {
+      sourceHandle = 's-right'
+      targetHandle = 't-left'
+      edgeShape = 'smoothstep'
+    } else if (sourceCol > targetCol) {
+      sourceHandle = 's-left'
+      targetHandle = 't-right'
+      edgeShape = 'smoothstep'
+    }
+
+    return {
+      id: edge.id,
+      source,
+      target,
+      sourceHandle,
+      targetHandle,
+      type: edge.edgeType ?? edgeShape,
+      style: { stroke: preset.stroke, strokeWidth: preset.strokeWidth },
+      markerEnd: { type: MarkerType.ArrowClosed, color: preset.stroke, width: 16, height: 16 },
+    }
+  })
+})
+
+function onNodeClick({ node }: { node: VFNode }) {
+  const data = node.data as VFNode['data'] & {
+    nodeType: string
+    targetSchematic?: SchematicSlug
+    liveStation?: Station
+  }
+  if (data.nodeType === 'extension' && data.targetSchematic) {
+    router.push(`/schematic/${data.targetSchematic}`)
+    return
+  }
+  if (data.nodeType === 'station' && isCompact.value && data.liveStation) {
+    selectedStation.value = data.liveStation
+  }
 }
 
 function closeStation() {
   selectedStation.value = null
 }
 
-const updateLineCoordinates = async () => {
-  await nextTick()
-  if (!gridContainerRef.value) return
-
-  const containerEl = gridContainerRef.value.querySelector('.schematic-stage') as HTMLElement
-  if (!containerEl) return
-
-  const containerRect = containerEl.getBoundingClientRect()
-  const currentScale = schematicScale.value || 1
-
-  const getMarkerCenter = (id: string) => {
-    const el = containerEl.querySelector(`[data-marker="${id}"]`)
-    if (!el) return { x: 0, y: 0, left: 0, right: 0 }
-    const rect = el.getBoundingClientRect()
-    return {
-      x: (rect.left + rect.width / 2 - containerRect.left) / currentScale,
-      y: (rect.top + rect.height / 2 - containerRect.top) / currentScale,
-      left: (rect.left - containerRect.left) / currentScale,
-      right: (rect.right - containerRect.left) / currentScale,
-    }
-  }
-
-  const terminusEl = containerEl.querySelector('[data-marker="terminus_card"]')
-  let reservoirTopY = containerRect.height / currentScale
-  let reservoirBlueX = 0
-
-  if (terminusEl) {
-    const tRect = terminusEl.getBoundingClientRect()
-    reservoirTopY = (tRect.top - containerRect.top) / currentScale - 30
-    const blueNodePt = getMarkerCenter('before_cutler')
-    reservoirBlueX = blueNodePt.x
-  }
-
-  const buildChainPath = (nodes: { id: string }[]) => {
-    let str = ''
-    nodes.forEach((node, idx) => {
-      const pt = getMarkerCenter(node.id)
-      str += idx === 0 ? `M ${pt.x},${pt.y}` : ` L ${pt.x},${pt.y}`
-    })
-    return str
-  }
-
-  let loganPathStr = buildChainPath(loganMainStem.value)
-
-  if (terminusEl) {
-    loganPathStr += ` L ${reservoirBlueX},${reservoirTopY}`
-  }
-  paths.value.logan = loganPathStr
-
-  lateralBranches.value.forEach((node) => {
-    const startPt = getMarkerCenter(node.id)
-    const juncPt = getMarkerCenter(node.juncId)
-
-    if (startPt.x > 0 && juncPt.x > 0) {
-      const curveRadius = 30
-      const bendRight = node.id !== 'temple' && node.id !== 'right_hand'
-      const curveX = startPt.x + (bendRight ? curveRadius : -curveRadius)
-      const juncEndX = juncPt.x + (bendRight ? -40 : 40)
-
-      // The junction isn't always below the card (unlike the original hand-
-      // tuned tributaries, diversion rows don't all sit exactly one row above
-      // their target junction) — work out which direction we're actually
-      // travelling instead of assuming "down".
-      const goingDown = juncPt.y >= startPt.y
-      const clearance = node.flowDirection === 'out' ? 10 : 0
-      const cardEdgeY = startPt.y + (goingDown ? 32 + clearance : -32 - clearance)
-      const vTurnY = goingDown ? juncPt.y - curveRadius : juncPt.y + curveRadius
-      let d: string
-
-      if (node.flowDirection === 'out') {
-        // Same curve as the inflow case below, traced in reverse (junction ->
-        // card) so a plain marker-end lands the arrowhead pointing away from
-        // the main stem, toward the canal card — avoids the reversed
-        // orientation quirks of marker-start/auto-start-reverse.
-        d =
-          `M ${juncEndX},${juncPt.y} ` +
-          `L ${curveX},${juncPt.y} ` +
-          `Q ${startPt.x},${juncPt.y} ${startPt.x},${vTurnY} ` +
-          `V ${cardEdgeY}`
-      } else {
-        d =
-          `M ${startPt.x},${cardEdgeY} ` +
-          `V ${vTurnY} ` +
-          `Q ${startPt.x},${juncPt.y} ${curveX},${juncPt.y} ` +
-          `L ${juncEndX},${juncPt.y}`
-      }
-
-      leftTribPaths.value[node.id] = d
-    }
-  })
-
-  const bsf1 = getMarkerCenter('hollow_rd')
-  const bsf2 = getMarkerCenter('seventeen_s')
-  const bsf3 = getMarkerCenter('bsf_before_conf')
-  const confCenter = getMarkerCenter('bsf_confluence')
-  const curveRadius = 30
-  const turnY = confCenter.y
-
-  paths.value.blacksmith =
-    `M ${bsf1.x},${bsf1.y} ` +
-    `L ${bsf2.x},${bsf2.y} ` +
-    `L ${bsf3.x},${bsf3.y} ` +
-    `V ${turnY - curveRadius} ` +
-    `Q ${bsf3.x},${turnY} ${bsf3.x - curveRadius},${turnY} ` +
-    `L ${confCenter.x + 35},${turnY}`
-
-  let littleBearPathStr = buildChainPath(littleBear.value)
-  if (littleBear.value.length && terminusEl) {
-    const lastLbPt = getMarkerCenter(littleBear.value[littleBear.value.length - 1]!.id)
-    littleBearPathStr += ` L ${lastLbPt.x},${reservoirTopY}`
-  }
-  paths.value.littleBear = littleBearPathStr
-
-  const availableWidth = gridContainerRef.value.clientWidth
-
-  // Spring Creek: Mendon Road drops straight down into the Cutler terminus at
-  // every screen size (it previously curved out to the right on desktop).
-  const scmElement = getMarkerCenter('spring_creek_mendon')
-  const dropX = scmElement.x
-  paths.value.cutlerSpringCreek = `M ${dropX},${scmElement.y + 32} ` + `L ${dropX},${reservoirTopY}`
-
-  const fitScale = Math.min(1, availableWidth / NATURAL_WIDTH)
-  const naturalHeight = containerRect.height / currentScale
-  isCompact.value = fitScale < 1
-  if (!isCompact.value) {
-    zoomed.value = false
-    selectedStation.value = null
-  }
-  // Zoom mode (mobile): render at natural size (scale 1) and let the wrapper
-  // pan. Otherwise scale to fit the available width.
-  schematicScale.value = isCompact.value && zoomed.value ? 1 : fitScale
-  wrapperHeight.value = isCompact.value ? naturalHeight * fitScale : null
-
-  attachObserver()
-  linesReady.value = true
+function updateIsCompact() {
+  isCompact.value = window.innerWidth <= 768
 }
 
-let resizeObserver: ResizeObserver | null = null
-let rafId = 0
-let fontsReady = false
-
-const ensureFontsReady = async () => {
-  if (fontsReady) return
-  try {
-    await (document as { fonts?: { ready?: Promise<unknown> } }).fonts?.ready
-  } catch {
-    // Fail-safe
-  }
-  fontsReady = true
-}
-
-const scheduleRedraw = () => {
-  cancelAnimationFrame(rafId)
-  const run = () => {
-    rafId = requestAnimationFrame(() => {
-      rafId = requestAnimationFrame(() => updateLineCoordinates())
-    })
-  }
-  if (fontsReady) run()
-  else ensureFontsReady().then(run)
-}
-
-const attachObserver = () => {
-  if (resizeObserver || !gridContainerRef.value) return
-  resizeObserver = new ResizeObserver(() => scheduleRedraw())
-  resizeObserver.observe(gridContainerRef.value)
-}
-
-const estimateScaleFromViewport = () => {
-  const approxAvailable = window.innerWidth - 64
-  const est = Math.min(1, approxAvailable / NATURAL_WIDTH)
-  schematicScale.value = est
-  isCompact.value = est < 1
-}
+onNodesInitialized(() => {
+  fitView({ padding: 0.15 })
+})
 
 onMounted(() => {
-  estimateScaleFromViewport()
-  scheduleRedraw()
-  window.addEventListener('resize', scheduleRedraw)
-})
-
-onUnmounted(() => {
-  cancelAnimationFrame(rafId)
-  if (resizeObserver) resizeObserver.disconnect()
-  resizeObserver = null
-  window.removeEventListener('resize', scheduleRedraw)
+  updateIsCompact()
+  window.addEventListener('resize', updateIsCompact)
+  loadPage()
 })
 
 watch(
-  () => props.loading,
-  (isLoading) => {
-    if (isLoading) {
-      linesReady.value = false
-    } else {
-      scheduleRedraw()
-    }
+  () => props.slug,
+  () => {
+    selectedStation.value = null
+    loadPage()
   },
 )
-
-watch(
-  () => props.sites,
-  () => scheduleRedraw(),
-  { deep: true },
-)
-
-// Re-measure and re-apply scale when the user toggles zoom.
-watch(zoomed, () => scheduleRedraw())
-
-function waterwayBg(color: string | undefined): string {
-  if (!color) return '#94a3b818'
-  return color + '18'
-}
 </script>
 
 <template>
   <div class="schematic-container">
-    <div class="header-block">
-      <Droplets :size="28" class="title-icon" />
-      <h2>Logan River System Schematic</h2>
-    </div>
-
-    <p class="subtitle">
-      Tracking how tributary sub-basins flow together and connect into the lower watershed.
-    </p>
-
-    <button
-      v-if="isCompact && !loading"
-      type="button"
-      class="zoom-toggle"
-      :aria-pressed="zoomed"
-      @click="zoomed = !zoomed"
-    >
-      <Maximize2 v-if="!zoomed" :size="16" />
-      <Minimize2 v-else :size="16" />
-      {{ zoomed ? 'Fit to screen' : 'Enlarge diagram' }}
-    </button>
-
-    <p v-if="isCompact && !loading && !zoomed" class="mobile-hint">
-      <span class="hint-dot"></span>
-      Tap any station to enlarge its readings.
-    </p>
-
-    <p v-if="isCompact && !loading && zoomed" class="mobile-hint">
-      <span class="hint-dot"></span>
-      Drag to pan around the diagram.
-    </p>
-
-    <div v-if="loading" class="loading-state">
-      <div class="spinner"></div>
-      <p>Aligning network telemetry lines...</p>
-    </div>
-
-    <div
-      v-else
-      class="schematic-grid-wrapper"
-      :class="{ 'is-compact': isCompact, 'is-zoomed': isCompact && zoomed }"
-      ref="gridContainerRef"
-      :style="!zoomed && wrapperHeight ? { height: wrapperHeight + 'px' } : {}"
-    >
-      <div
-        class="schematic-stage"
-        :class="{ 'is-ready': linesReady }"
-        :style="{
-          transform: `scale(${schematicScale})`,
-          transformOrigin: 'top left',
-          width: NATURAL_WIDTH + 'px',
-        }"
-      >
-        <svg class="global-routing-svg" :class="{ 'lines-ready': linesReady }">
-          <defs>
-            <marker
-              id="black-arrow"
-              markerWidth="8"
-              markerHeight="8"
-              refX="0"
-              refY="4"
-              orient="auto-start-reverse"
-            >
-              <path
-                d="M 0 1 L 7 4 L 0 7 z"
-                fill="#1e293b"
-                style="shape-rendering: geometricPrecision"
-              />
-            </marker>
-            <marker
-              id="dark-gray-arrow"
-              markerWidth="8"
-              markerHeight="8"
-              refX="0"
-              refY="4"
-              orient="auto-start-reverse"
-            >
-              <path
-                d="M 0 1 L 7 4 L 0 7 z"
-                fill="#475569"
-                style="shape-rendering: geometricPrecision"
-              />
-            </marker>
-            <marker
-              id="light-gray-arrow"
-              markerWidth="8"
-              markerHeight="8"
-              refX="0"
-              refY="4"
-              orient="auto-start-reverse"
-            >
-              <path
-                d="M 0 1 L 7 4 L 0 7 z"
-                fill="#94a3b8"
-                style="shape-rendering: geometricPrecision"
-              />
-            </marker>
-            <marker
-              id="flow-arrow-black"
-              markerWidth="5"
-              markerHeight="5"
-              refX="2.5"
-              refY="2.5"
-              orient="auto"
-            >
-              <path
-                d="M 0 0.5 L 4.5 2.5 L 0 4.5 z"
-                fill="#1e293b"
-                style="shape-rendering: geometricPrecision"
-              />
-            </marker>
-            <marker
-              id="flow-arrow-light"
-              markerWidth="5"
-              markerHeight="5"
-              refX="2.5"
-              refY="2.5"
-              orient="auto"
-            >
-              <path
-                d="M 0 0.5 L 4.5 2.5 L 0 4.5 z"
-                fill="#94a3b8"
-                style="shape-rendering: geometricPrecision"
-              />
-            </marker>
-          </defs>
-
-          <path
-            :d="paths.logan"
-            fill="none"
-            stroke="#1e293b"
-            stroke-width="4"
-            stroke-linejoin="round"
-            stroke-linecap="round"
-            marker-mid="url(#flow-arrow-black)"
-            marker-end="url(#black-arrow)"
-          />
-
-          <path
-            v-for="(pathD, id) in leftTribPaths"
-            :key="id"
-            :d="pathD"
-            fill="none"
-            stroke="#475569"
-            stroke-width="4"
-            stroke-linejoin="round"
-            marker-end="url(#dark-gray-arrow)"
-          />
-
-          <path
-            :d="paths.blacksmith"
-            fill="none"
-            stroke="#475569"
-            stroke-width="4"
-            stroke-linejoin="round"
-            stroke-linecap="butt"
-            marker-end="url(#dark-gray-arrow)"
-          />
-
-          <path
-            :d="paths.littleBear"
-            fill="none"
-            stroke="#94a3b8"
-            stroke-width="4"
-            stroke-linejoin="round"
-            stroke-linecap="round"
-            marker-mid="url(#flow-arrow-light)"
-            marker-end="url(#light-gray-arrow)"
-          />
-
-          <path
-            :d="paths.cutlerSpringCreek"
-            fill="none"
-            stroke="#94a3b8"
-            stroke-width="4"
-            stroke-linejoin="round"
-            stroke-linecap="round"
-            marker-end="url(#light-gray-arrow)"
-          />
-        </svg>
-
-        <div class="schematic-grid">
-          <div
-            v-for="node in lateralBranches"
-            :key="node.id"
-            :class="[
-              'grid-cell',
-              node.col === 'right' ? 'col-3' : 'col-1',
-            ]"
-            :style="{
-              gridRow: node.row,
-              backgroundColor: waterwayBg(WATERWAY_COLORS[node.name] ?? (node.schematicGroup ? SCHEMATIC_ACCENT_COLORS[node.schematicGroup] : undefined)),
-            }"
-            :data-marker="node.id"
-          >
-            <StationCard
-              v-if="findLiveStation(node.name)"
-              :site="findLiveStation(node.name)!"
-              compact
-              @click="openStation(findLiveStation(node.name))"
-            />
-            <div v-else class="node-card inflow-card-left">
-              <div class="inflow-content-wrapper">
-                <span class="node-title">{{ node.name }}</span>
-              </div>
-            </div>
-          </div>
-
-          <div
-            v-for="node in loganMainStem"
-            :key="node.id"
-            class="grid-cell col-2"
-            :style="{
-              gridRow: node.row,
-              backgroundColor: waterwayBg(WATERWAY_COLORS['Logan River Observatory: Logan River Main Stem']),
-            }"
-            :data-marker="node.id"
-          >
-            <template v-if="findLiveStation(node.name)">
-              <StationCard
-                :site="findLiveStation(node.name)!"
-                compact
-                @click="openStation(findLiveStation(node.name))"
-              />
-            </template>
-            <template v-else>
-              <div
-                v-if="node.type === 'line-junction'"
-                :data-marker="node.id"
-                class="junction-spacer"
-              ></div>
-              <div v-else class="node-card main-stem-card">
-                <span class="node-title">{{ node.name }}</span>
-                <div class="routing-label"></div>
-              </div>
-            </template>
-          </div>
-
-          <div
-            v-for="node in blacksmithSystem"
-            :key="node.id"
-            class="grid-cell col-4"
-            :style="{
-              gridRow: node.row,
-              backgroundColor: waterwayBg(SCHEMATIC_ACCENT_COLORS['Blacksmith Fork River']),
-            }"
-            :data-marker="node.id"
-          >
-            <StationCard
-              v-if="findLiveStation(node.name)"
-              :site="findLiveStation(node.name)!"
-              compact
-              @click="openStation(findLiveStation(node.name))"
-            />
-            <div v-else class="node-card bsf-card">
-              <span class="node-title">{{ node.name }}</span>
-            </div>
-          </div>
-
-          <div
-            v-for="node in littleBear"
-            :key="node.id"
-            class="grid-cell col-5"
-            :style="{
-              gridRow: node.row,
-              backgroundColor: waterwayBg(node.schematicGroup ? SCHEMATIC_ACCENT_COLORS[node.schematicGroup] : undefined),
-            }"
-            :data-marker="node.id"
-          >
-            <StationCard
-              v-if="findLiveStation(node.name)"
-              :site="findLiveStation(node.name)!"
-              compact
-              @click="openStation(findLiveStation(node.name))"
-            />
-            <template v-else>
-              <div
-                v-if="node.type === 'line-junction'"
-                :data-marker="node.id"
-                class="junction-spacer"
-              ></div>
-              <div v-else class="node-card little-bear-card">
-                <span class="node-title">{{ node.name }}</span>
-              </div>
-            </template>
-          </div>
-
-          <div class="grid-cell col-5 little-bear-outlet" style="grid-row: 17">
-            <div class="routing-label">&darr; To Cutler Reservoir</div>
-          </div>
-
-          <div
-            v-for="node in cutlerInflows"
-            :key="node.id"
-            class="grid-cell col-3"
-            :style="{
-              gridRow: node.row,
-              backgroundColor: waterwayBg(WATERWAY_COLORS[node.tributary]),
-            }"
-            :data-marker="node.id"
-          >
-            <StationCard
-              v-if="findLiveStation(node.name)"
-              :site="findLiveStation(node.name)!"
-              compact
-              @click="openStation(findLiveStation(node.name))"
-            />
-            <div v-else class="node-card independent-card">
-              <span class="node-title">{{ node.name }}</span>
-              <div class="routing-label">Direct to Cutler Terminus</div>
-            </div>
-          </div>
-
-          <div
-            class="terminus-grid-cell"
-            style="grid-row: 18; grid-column: 1 / span 5"
-            data-marker="terminus_card"
-          >
-            <div class="terminus-card">
-              <Droplets :size="26" class="terminus-icon" />
-              <div class="terminus-details">
-                <h3>SYSTEM TERMINUS: Cutler Reservoir</h3>
-                <p>Ultimate drainage collection basin for all main channels and lateral streams.</p>
-              </div>
-            </div>
-          </div>
-        </div>
+    <div class="header-row">
+      <div class="header-block">
+        <Droplets :size="22" class="title-icon" />
+        <h2>{{ page?.title ?? 'Logan River System Schematic' }}</h2>
+        <span v-if="page?.subtitle" class="subtitle-inline">{{ page.subtitle }}</span>
       </div>
+
+      <p v-if="isCompact && !loading && page" class="mobile-hint">
+        <span class="hint-dot"></span>
+        Pinch or drag to pan and zoom. Tap a station for details.
+      </p>
+    </div>
+
+    <div v-if="loading || !page" class="loading-state">
+      <template v-if="pageLoadFailed">
+        <p>Couldn't load this schematic page. Try refreshing.</p>
+      </template>
+      <template v-else>
+        <div class="spinner"></div>
+        <p>Loading schematic…</p>
+      </template>
+    </div>
+
+    <div v-else class="vueflow-wrapper">
+      <VueFlow
+        :nodes="vfNodes"
+        :edges="vfEdges"
+        :node-types="nodeTypes"
+        :nodes-draggable="false"
+        :nodes-connectable="false"
+        :elements-selectable="false"
+        :pan-on-drag="true"
+        :zoom-on-pinch="true"
+        :zoom-on-double-click="false"
+        :prevent-scrolling="true"
+        :min-zoom="0.3"
+        :max-zoom="1.5"
+        :fit-view-on-init="true"
+        @node-click="onNodeClick"
+      >
+        <Controls :show-interactive="false" />
+      </VueFlow>
     </div>
 
     <div v-if="selectedStation" class="station-sheet-backdrop" @click="closeStation">
@@ -628,98 +287,54 @@ function waterwayBg(color: string | undefined): string {
 
 <style scoped>
 .schematic-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
   font-size: 1rem;
   font-weight: 600;
   color: #073763;
   letter-spacing: -0.01em;
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 2.5rem 2rem;
+  padding: 0.85rem 1.25rem;
   box-sizing: border-box;
 }
 
-.schematic-grid-wrapper {
-  position: relative;
-  width: 100%;
-  overflow-x: auto;
-  padding-bottom: 1rem;
+@media screen and (max-width: 640px) {
+  .schematic-container {
+    padding: 0.6rem 0.6rem;
+  }
 }
 
-.schematic-grid-wrapper.is-compact {
-  overflow: hidden;
-  padding-bottom: 0;
-}
-
-/* Zoom mode: let the enlarged diagram be panned in both directions. */
-.schematic-grid-wrapper.is-compact.is-zoomed {
-  overflow: auto;
-  -webkit-overflow-scrolling: touch;
-}
-
-.schematic-stage {
-  position: relative;
-  width: 100%;
-  min-width: 1450px;
-  margin: 0 auto;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.schematic-stage.is-ready {
-  opacity: 1;
-}
-
-.schematic-grid {
-  display: grid;
-  grid-template-columns: 1.1fr 1.3fr 1.1fr 1fr 1fr;
-  grid-template-rows: repeat(17, auto) auto;
-  row-gap: 24px;
-  column-gap: 44px;
+.header-row {
+  display: flex;
   align-items: center;
-  position: relative;
-  z-index: 2;
-  min-width: 1450px;
-}
-
-.global-routing-svg {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 1;
-  shape-rendering: geometricPrecision;
-  min-width: 1450px;
-  opacity: 0;
-  transition: opacity 0.25s ease;
-}
-
-.global-routing-svg.lines-ready {
-  opacity: 1;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 0.6rem;
 }
 
 .header-block {
   display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 0.5rem;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .title-icon {
   color: #01377d;
+  align-self: center;
 }
 
 h2 {
-  font-size: 1.8rem;
+  font-size: 1.35rem;
   font-weight: 1000;
   color: #073763;
   letter-spacing: -0.01em;
   margin: 0;
 }
 
-.subtitle {
+.subtitle-inline {
   color: #475569;
   font-family:
     system-ui,
@@ -728,14 +343,42 @@ h2 {
     'Segoe UI',
     Roboto,
     sans-serif;
-  font-size: 1.05rem;
+  font-size: 0.9rem;
   font-weight: 400;
-  line-height: 1.5;
-  margin: 0 0 2.5rem 0;
+}
+
+.mobile-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 6px 12px;
+  border-radius: 9999px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.hint-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #1d4ed8;
+  flex-shrink: 0;
 }
 
 .loading-state {
   display: flex;
+  flex: 1;
   flex-direction: column;
   align-items: center;
   justify-content: center;
@@ -753,148 +396,6 @@ h2 {
   animation: spin 1s linear infinite;
 }
 
-.col-1 {
-  grid-column: 1;
-}
-
-.col-2 {
-  grid-column: 2;
-}
-
-.col-3 {
-  grid-column: 3;
-}
-
-.col-4 {
-  grid-column: 4;
-}
-
-.col-5 {
-  grid-column: 5;
-}
-
-.grid-cell {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  position: relative;
-}
-
-.junction-spacer {
-  min-height: 64px;
-}
-
-.node-card {
-  background: #ffffff;
-  border: 1px solid #cbd5e1;
-  border-radius: 8px;
-  padding: 12px;
-  min-height: 64px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
-  box-sizing: border-box;
-}
-
-.main-stem-card {
-  border: 2px solid #01377d;
-  background: #f8fafc;
-}
-
-.node-title {
-  font-size: 0.88rem;
-  font-weight: 700;
-  color: #334155;
-}
-
-.inflow-content-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  justify-content: center;
-}
-
-.inflow-card-left {
-  border-right: 4px solid #3b3b3b2a;
-  background: #fffefe;
-}
-
-.bsf-card {
-  border-left: 4px solid #132b1b25;
-}
-
-.independent-card {
-  border-left: 4px solid #1a15125b;
-}
-
-.little-bear-card {
-  border-left: 4px solid #4f8fb025;
-}
-
-.routing-label {
-  font-size: 0.72rem;
-  font-weight: 800;
-  color: #222222 !important;
-  text-transform: uppercase;
-  margin-top: 4px;
-}
-
-.little-bear-outlet {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: none !important;
-  padding: 0 !important;
-}
-
-.little-bear-outlet .routing-label {
-  color: #4f8fb0 !important;
-  margin-top: 0;
-}
-
-.terminus-grid-cell {
-  display: flex;
-  justify-content: center;
-  width: 100%;
-  margin-top: 2rem;
-  position: relative;
-  z-index: 5;
-}
-
-.terminus-card {
-  width: 100%;
-  max-width: 720px;
-  background: #fff7ed;
-  border: 2px solid #ea580c;
-  border-radius: 12px;
-  padding: 1.5rem;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  box-shadow: 0 4px 12px rgba(234, 88, 12, 0.08);
-}
-
-.terminus-icon {
-  color: #ea580c;
-}
-
-.terminus-details h3 {
-  margin: 0;
-  font-size: 1.2rem;
-  font-weight: 800;
-  color: #7c2d12;
-}
-
-.terminus-details p {
-  margin: 4px 0 0 0;
-  font-size: 0.85rem;
-  color: #9a3412;
-}
-
 @keyframes spin {
   0% {
     transform: rotate(0deg);
@@ -904,115 +405,16 @@ h2 {
   }
 }
 
-.grid-cell.col-1 {
+.vueflow-wrapper {
+  position: relative;
+  width: 100%;
+  flex: 1;
+  min-height: 320px;
+  border-radius: 12px;
   border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 10px;
-  box-sizing: border-box;
-}
-
-.grid-cell.col-2 {
-  border: 1px solid #d4d4d4;
-  border-radius: 12px;
-  padding: 10px;
-  box-sizing: border-box;
-}
-
-.grid-cell.col-3 {
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 10px;
-  box-sizing: border-box;
-}
-
-.grid-cell.col-4 {
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 10px;
-  box-sizing: border-box;
-}
-
-.grid-cell.col-5 {
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 10px;
-  box-sizing: border-box;
-}
-
-.grid-cell[data-marker='temple'],
-.grid-cell[data-marker='right_hand'] {
-  border-color: #e2e8f0 !important;
-}
-
-.grid-cell[data-marker='beaver_junc'],
-.grid-cell[data-marker='ricks_junc'],
-.grid-cell[data-marker='temple_junc'],
-.grid-cell[data-marker='right_hand_junc'],
-.grid-cell[data-marker='dewitt_junc'],
-.grid-cell[data-marker='spring_creek_junc'],
-.grid-cell[data-marker='bsf_confluence'] {
-  background-color: transparent !important;
-  border-color: transparent !important;
-  box-shadow: none !important;
-  padding: 0 !important;
-}
-
-/* Mobile zoom toggle */
-.zoom-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 44px;
-  margin: 0 0 1rem 0;
-  padding: 0 18px;
-  border: 1px solid #bfdbfe;
-  border-radius: 9999px;
-  background: #eff6ff;
-  color: #1d4ed8;
-  font-family:
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    Roboto,
-    sans-serif;
-  font-size: 0.95rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: background 0.18s ease;
-}
-
-.zoom-toggle:hover {
-  background: #dbeafe;
-}
-
-.mobile-hint {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0 0 1.5rem 0;
-  padding: 6px 12px;
-  border-radius: 9999px;
-  background: #ffefef;
-  border: 1px solid #febfbf;
-  color: #c73535;
-  font-family:
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    Roboto,
-    sans-serif;
-  font-size: 0.85rem;
-  font-weight: 600;
-}
-
-.hint-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #630e0e;
-  flex-shrink: 0;
+  background: #f8fafc;
+  touch-action: none;
+  overflow: hidden;
 }
 
 .station-sheet-backdrop {
@@ -1064,6 +466,7 @@ h2 {
 .sheet-close:hover {
   color: #1e293b;
 }
+
 .station-sheet :deep(.card-flex-layout) {
   flex-direction: column;
   align-items: stretch;

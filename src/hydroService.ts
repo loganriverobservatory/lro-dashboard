@@ -65,8 +65,8 @@ export let WATERWAY_COLORS: Record<string, string> = {
 
 export let WATERWAY_LIST = Object.keys(WATERWAY_COLORS)
 
-// Schematic-only accent colors for DWRi sub-groups, keyed by SchematicConfig
-// node "schematicGroup" values — kept separate from WATERWAY_COLORS/WATERWAY_LIST
+// Schematic-only accent colors for DWRi sub-groups, keyed by SchematicNode
+// "colorGroup" values — kept separate from WATERWAY_COLORS/WATERWAY_LIST
 // since those drive the sidebar's waterway filter checkboxes (keyed on
 // Station.tributary, which is 'DWRi' for all of these) — adding these keys
 // there would create checkboxes that never match any station's tributary value.
@@ -84,13 +84,65 @@ export const WATER_VARIBALES = [
   { id: 'Oxygen, dissolved', label: 'Dissolved Oxygen (mg/L)', longLabel: 'Dissolved Oxygen in mg/L (milligrams per liter)' },
 ]
 
-export interface SchematicConfig {
-  mainStem: { id: string; name: string; row: number; type: string }[]
-  leftTributaries: { id: string; name: string; row: number; juncId: string; col: 'left' | 'right' }[]
-  diversions?: { id: string; name: string; row: number; juncId: string; col: 'left' | 'right'; schematicGroup?: string }[]
-  blacksmithFork: { id: string; name: string; row: number }[]
-  littleBear?: { id: string; name: string; row: number; type?: string; schematicGroup?: string }[]
-  cutlerInflows: { id: string; name: string; row: number; tributary: string }[]
+export type SchematicNodeType = 'station' | 'junction' | 'terminus' | 'extension'
+export type SchematicSlug = 'upper-logan' | 'lower-logan' | 'blacksmith-fork'
+
+export interface SchematicNode {
+  id: string
+  // station: fuzzy-matched against a live Station.displayName (see findLiveStation in SchematicView).
+  // junction/terminus/extension: label text only, never matched against live data.
+  name: string
+  row: number
+  col: number // integer, local to each page's own layout
+  type: SchematicNodeType
+  colorGroup?: string // key into WATERWAY_COLORS or SCHEMATIC_ACCENT_COLORS
+  description?: string // terminus subtitle text
+  targetSchematic?: SchematicSlug // extension nodes only
+  label?: string // extension nodes only; button text override (defaults to name)
+}
+
+export interface SchematicEdge {
+  id: string
+  from: string
+  to: string
+  style: 'main' | 'branch' | 'thin'
+  direction?: 'in' | 'out' // default 'in'; 'out' = diversion/canal flowing away from a junction
+  edgeType?: 'bezier' | 'smoothstep' | 'straight' // default 'smoothstep'
+}
+
+export interface SchematicPageConfig {
+  _instructions?: string[] // ignored by the renderer; plain-English edit notes for non-developers
+  id: SchematicSlug
+  title: string
+  subtitle?: string
+  nodes: SchematicNode[]
+  edges: SchematicEdge[]
+}
+
+const SCHEMATIC_SLUGS: SchematicSlug[] = ['upper-logan', 'lower-logan', 'blacksmith-fork']
+
+export type SchematicPages = Record<SchematicSlug, SchematicPageConfig | null>
+
+// Fetches the three static per-page schematic layout files (edited directly in the
+// repo under public/schematics/ — no live-fetch/publishing pipeline involved, unlike
+// loadStationConfig()). Used both by SchematicView (to render whichever page is
+// active) and by App.vue (to derive ListView's upstream->downstream station order).
+export async function loadSchematicPages(): Promise<SchematicPages> {
+  const results = await Promise.all(
+    SCHEMATIC_SLUGS.map(async (slug): Promise<SchematicPageConfig | null> => {
+      try {
+        const res = await fetch(`/schematics/${slug}.json`, { cache: 'no-cache' })
+        return res.ok ? ((await res.json()) as SchematicPageConfig) : null
+      } catch {
+        return null
+      }
+    }),
+  )
+  return {
+    'upper-logan': results[0] ?? null,
+    'lower-logan': results[1] ?? null,
+    'blacksmith-fork': results[2] ?? null,
+  }
 }
 
 interface UsgsStationEntry {
@@ -125,17 +177,15 @@ let DWRI_STATIONS_DATA: DwriStationEntry[] = []
 const STATION_CONFIG_URL =
   'https://raw.githubusercontent.com/loganriverobservatory/lro-dashboard/data-cache/station-config.json'
 
-// Fetches the generated station config (station lists, display names, colors,
-// schematic layout) and populates the module state every other function here
-// reads from. Call this once before getVariableStations/getUSGSStations/
-// getDWRiStations so they have data to work with. Returns the schematic
-// layout on success so the caller can store it, or null if the fetch failed —
-// in which case the app keeps running with whatever was previously loaded
-// (or the small hardcoded color fallbacks above, on first load).
-export async function loadStationConfig(): Promise<SchematicConfig | null> {
+// Fetches the generated station config (station lists, display names, colors)
+// and populates the module state every other function here reads from. Call
+// this once before getVariableStations/getUSGSStations/getDWRiStations so
+// they have data to work with. Schematic page layout is NOT part of this —
+// see loadSchematicPages() for the separate, statically-fetched per-page files.
+export async function loadStationConfig(): Promise<void> {
   try {
     const res = await fetch(STATION_CONFIG_URL, { cache: 'no-cache' })
-    if (!res.ok) return null
+    if (!res.ok) return
     const data = await res.json()
 
     HIDDEN_STATIONS = data.hiddenStations ?? []
@@ -155,11 +205,8 @@ export async function loadStationConfig(): Promise<SchematicConfig | null> {
       for (const g of data.schematicGroups) colors[g.name] = g.color
       SCHEMATIC_ACCENT_COLORS = colors
     }
-
-    return (data.schematicLayout as SchematicConfig) ?? null
   } catch (e) {
     console.error('Error loading station config:', e)
-    return null
   }
 }
 
@@ -359,35 +406,42 @@ export function getFreshnessStatus(observation: StaObservation | null): Freshnes
   return 'outdated'
 }
 
-// Same top-of-watershed-to-bottom order as SchematicView: main stem by row, with
-// tributaries/diversions inserted at the row of the junction they attach to, Blacksmith
-// Fork grouped in at its confluence row, then Little Bear River and Cutler Inflows (both
-// separate waterways that join Cutler Reservoir directly rather than via a Logan River
-// junction, so they have no natural insertion row and are appended as their own groups).
-export function getSchematicOrder(config: SchematicConfig | null | undefined): string[] {
-  if (!config) return []
+// Top-of-watershed-to-bottom order across all three schematic pages, in a fixed
+// page sequence (upper-logan -> lower-logan -> blacksmith-fork). Within a page,
+// station nodes sort by their own row, except 'branch'-style edges (a tributary or
+// diversion attaching to a junction) which sort the branch node by the row of the
+// junction it connects to instead of its own — mirrors the old juncId-based insertion
+// behavior. 'main' and 'thin' edges represent a sequential chain (main channel, or an
+// independent flow like Little Bear River), so those nodes keep their own row.
+// junction/terminus/extension nodes never matched a live station, so they're excluded
+// here too; extension nodes especially must be excluded, since e.g. a node named
+// "Blacksmith Fork River" is a substring of every real BSF station name and would
+// otherwise hijack sortStationsBySchematic's fuzzy match.
+export function getSchematicOrder(pages: SchematicPages | null | undefined): string[] {
+  if (!pages) return []
 
-  const mainStemById = new Map(config.mainStem.map((n) => [n.id, n]))
-  const bsfConfluence = mainStemById.get('bsf_confluence')
+  const entries: { name: string; page: number; row: number }[] = []
 
-  const entries: { name: string; row: number; category: number; tertiary: number }[] = []
+  SCHEMATIC_SLUGS.forEach((slug, pageIndex) => {
+    const page = pages[slug]
+    if (!page) return
 
-  config.mainStem.forEach((n) => entries.push({ name: n.name, row: n.row, category: 0, tertiary: 0 }))
-  ;(config.leftTributaries ?? []).forEach((n) => {
-    const junc = mainStemById.get(n.juncId)
-    entries.push({ name: n.name, row: junc?.row ?? n.row, category: 1, tertiary: 0 })
+    const nodesById = new Map(page.nodes.map((n) => [n.id, n]))
+    const juncRowByBranchId = new Map<string, number>()
+    page.edges.forEach((edge) => {
+      if (edge.style !== 'branch') return
+      const junction = nodesById.get(edge.to)
+      if (junction) juncRowByBranchId.set(edge.from, junction.row)
+    })
+
+    page.nodes.forEach((node) => {
+      if (node.type !== 'station') return
+      const row = juncRowByBranchId.get(node.id) ?? node.row
+      entries.push({ name: node.name, page: pageIndex, row })
+    })
   })
-  ;(config.diversions ?? []).forEach((n) => {
-    const junc = mainStemById.get(n.juncId)
-    entries.push({ name: n.name, row: junc?.row ?? n.row, category: 2, tertiary: 0 })
-  })
-  config.blacksmithFork.forEach((n) => {
-    entries.push({ name: n.name, row: bsfConfluence?.row ?? n.row, category: 3, tertiary: n.row })
-  })
-  ;(config.littleBear ?? []).forEach((n) => entries.push({ name: n.name, row: 1000, category: 0, tertiary: n.row }))
-  config.cutlerInflows.forEach((n) => entries.push({ name: n.name, row: 2000, category: 0, tertiary: n.row }))
 
-  entries.sort((a, b) => a.row - b.row || a.category - b.category || a.tertiary - b.tertiary)
+  entries.sort((a, b) => a.page - b.page || a.row - b.row)
   return entries.map((e) => e.name)
 }
 

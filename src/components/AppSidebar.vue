@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import {
   X,
   List,
@@ -9,13 +10,23 @@ import {
   ChevronDown,
   ChevronRight,
 } from 'lucide-vue-next'
-import { WATERWAY_COLORS, WATERWAY_LIST } from '../hydroService'
+import { WATERWAY_COLORS, WATERWAY_LIST, type SchematicSlug } from '../hydroService'
 
 const props = defineProps<{
   isOpen: boolean
   currentView: string
   activeWaterways: string[]
 }>()
+
+const route = useRoute()
+const router = useRouter()
+const isSchematicActive = computed(() => route.path.startsWith('/schematic/'))
+const schematicOpen = ref(true)
+const schematicPages: { slug: SchematicSlug; label: string }[] = [
+  { slug: 'upper-logan', label: 'Upper Logan Canyon' },
+  { slug: 'lower-logan', label: 'Lower Logan River' },
+  { slug: 'blacksmith-fork', label: 'Blacksmith Fork River' },
+]
 
 const variables = [
   { id: 'Discharge', label: 'Discharge' },
@@ -61,7 +72,7 @@ const emit = defineEmits([
   'waterway-filter-changed',
 ])
 
-const showLegend = () => ['map', 'list', 'schematic'].includes(props.currentView)
+const showLegend = () => ['map', 'list'].includes(props.currentView) || isSchematicActive.value
 
 const handleVariableChange = () => {
   emit('variable-changed', selectedVariable.value)
@@ -123,12 +134,29 @@ function toggleAll() {
         <MapIcon :size="18" /> <span>MAP VIEW</span>
       </li>
       <li
-        class="sidebar-list-item"
-        :class="{ 'active-item': currentView === 'schematic' }"
-        @click="emit('change-view', 'schematic')"
+        class="sidebar-list-item schematic-parent-item"
+        :class="{ 'active-item': isSchematicActive }"
+        @click="router.push('/schematic/lower-logan')"
       >
         <MapPin :size="18" /> <span>SCHEMATIC VIEW</span>
+        <component
+          :is="schematicOpen ? ChevronDown : ChevronRight"
+          :size="14"
+          class="submenu-chevron"
+          @click.stop="schematicOpen = !schematicOpen"
+        />
       </li>
+      <ul v-if="schematicOpen" class="schematic-submenu">
+        <li
+          v-for="p in schematicPages"
+          :key="p.slug"
+          class="schematic-submenu-item"
+          :class="{ 'active-item': route.path === `/schematic/${p.slug}` }"
+          @click="router.push(`/schematic/${p.slug}`)"
+        >
+          {{ p.label }}
+        </li>
+      </ul>
     </ul>
 
     <div v-if="showLegend()" class="legend-section">
@@ -304,6 +332,44 @@ function toggleAll() {
   background-color: rgba(255, 255, 255, 0.15) !important;
   color: #ffffff !important;
   box-shadow: inset 4px 0 0 #ffffff;
+}
+
+.schematic-parent-item {
+  justify-content: space-between;
+}
+
+.submenu-chevron {
+  margin-left: auto;
+  opacity: 0.75;
+  flex-shrink: 0;
+}
+
+.submenu-chevron:hover {
+  opacity: 1;
+}
+
+.schematic-submenu {
+  list-style-type: none;
+  margin: 0 0 6px 0;
+  padding: 0 12px 0 34px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.schematic-submenu-item {
+  padding: 8px 12px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.75);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.schematic-submenu-item:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
 }
 
 .legend-section {

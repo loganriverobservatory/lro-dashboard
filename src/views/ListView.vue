@@ -6,7 +6,7 @@ import { computed } from 'vue'
 import StationCard from '../components/StationCard.vue'
 import {
   type Station,
-  type SchematicConfig,
+  type SchematicPages,
   WATER_VARIBALES,
   getSchematicOrder,
   sortStationsBySchematic,
@@ -17,7 +17,7 @@ const props = defineProps<{
   loading: boolean
   selectedVariable?: string
   activeWaterways?: string[]
-  schematicConfig?: SchematicConfig | null
+  schematicPages?: SchematicPages | null
 }>()
 
 const variableLabel = computed(() => {
@@ -30,7 +30,7 @@ const variableLongLabel = computed(() => {
   return match?.longLabel ?? variableLabel.value
 })
 
-const schematicOrder = computed(() => getSchematicOrder(props.schematicConfig))
+const schematicOrder = computed(() => getSchematicOrder(props.schematicPages))
 
 const filteredSites = computed(() => {
   const filtered = props.activeWaterways

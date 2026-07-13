@@ -2,7 +2,8 @@
 /*
 App.vue - root orchestrator
 */
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import {
   getVariableStations,
   getLatestObservation,
@@ -10,7 +11,9 @@ import {
   getDWRiStations,
   setApiToken,
   loadStationConfig,
+  loadSchematicPages,
   type Station,
+  type SchematicPages,
   WATERWAY_LIST,
 } from './hydroService'
 import hsLogo from './assets/hydroserver-icon.png'
@@ -20,7 +23,10 @@ import HomeView from './views/HomeView.vue'
 import HelpView from './views/HelpView.vue'
 import ListView from './views/ListView.vue'
 import MapView from './views/MapView.vue'
-import SchematicView from './views/SchematicView.vue'
+
+const route = useRoute()
+const router = useRouter()
+const isSchematicRoute = computed(() => route.path.startsWith('/schematic/'))
 
 const sites = ref<Station[]>([])
 const loading = ref(true)
@@ -29,7 +35,7 @@ const currentView = ref('home')
 const selectedId = ref<string | null>(null)
 const selectedVariable = ref('Discharge')
 const activeWaterways = ref<string[]>([])
-const schematicConfig = ref<any>(null)
+const schematicPages = ref<SchematicPages | null>(null)
 
 let refreshTimer: ReturnType<typeof setInterval> | null = null
 
@@ -57,7 +63,8 @@ async function loadConfig() {
     // proceed without config
   }
 
-  schematicConfig.value = await loadStationConfig()
+  await loadStationConfig()
+  schematicPages.value = await loadSchematicPages()
   if (activeWaterways.value.length === 0) activeWaterways.value = [...WATERWAY_LIST]
 }
 
@@ -103,6 +110,14 @@ function handleWaterwayFilter(updated: string[]) {
   activeWaterways.value = updated
 }
 
+// Home/List/Map/Help nav clicks route through here so leaving a /schematic/*
+// route resets the URL back to '/' — otherwise the address bar would stay on
+// a schematic sub-route while a non-schematic view is showing.
+function changeView(view: string) {
+  currentView.value = view
+  if (isSchematicRoute.value) router.push('/')
+}
+
 onMounted(async () => {
   await loadConfig()
   loadStations(selectedVariable.value)
@@ -112,7 +127,7 @@ onMounted(async () => {
 
 <template>
   <div class="grid-container">
-    <AppHeader @toggle-sidebar="sidebarOpen = true" @change-view="(view) => (currentView = view)" />
+    <AppHeader @toggle-sidebar="sidebarOpen = true" @change-view="changeView" />
 
     <div v-if="sidebarOpen" class="sidebar-backdrop" @click="sidebarOpen = false" />
 
@@ -121,39 +136,39 @@ onMounted(async () => {
       :current-view="currentView"
       :active-waterways="activeWaterways"
       @close-sidebar="sidebarOpen = false"
-      @change-view="(view) => (currentView = view)"
+      @change-view="changeView"
       @variable-changed="handleVariableChange"
       @waterway-filter-changed="handleWaterwayFilter"
     />
 
     <main class="main-container">
-      <HomeView v-if="currentView === 'home'" @change-view="(view) => (currentView = view)" />
-      <HelpView v-if="currentView === 'help'" />
-      <ListView
-        v-if="currentView === 'list'"
-        :sites="sites"
-        :loading="loading"
-        :selected-variable="selectedVariable"
-        :active-waterways="activeWaterways"
-        :schematic-config="schematicConfig"
-      />
-      <MapView
-        v-if="currentView === 'map'"
-        :sites="sites"
-        :loading="loading"
-        :selected-id="selectedId"
-        :selected-variable="selectedVariable"
-        :active-waterways="activeWaterways"
-        @select="handleSelect"
-        @resetWaterways="(allWaterWays) => (activeWaterways = allWaterWays)"
-      />
-      <SchematicView
-        v-if="currentView === 'schematic'"
-        :sites="sites"
-        :loading="loading"
-        :active-waterways="activeWaterways"
-        :schematic-config="schematicConfig"
-      />
+      <template v-if="isSchematicRoute">
+        <router-view v-slot="{ Component }">
+          <component :is="Component" :sites="sites" :loading="loading" :active-waterways="activeWaterways" />
+        </router-view>
+      </template>
+      <template v-else>
+        <HomeView v-if="currentView === 'home'" @change-view="changeView" />
+        <HelpView v-if="currentView === 'help'" />
+        <ListView
+          v-if="currentView === 'list'"
+          :sites="sites"
+          :loading="loading"
+          :selected-variable="selectedVariable"
+          :active-waterways="activeWaterways"
+          :schematic-pages="schematicPages"
+        />
+        <MapView
+          v-if="currentView === 'map'"
+          :sites="sites"
+          :loading="loading"
+          :selected-id="selectedId"
+          :selected-variable="selectedVariable"
+          :active-waterways="activeWaterways"
+          @select="handleSelect"
+          @resetWaterways="(allWaterWays) => (activeWaterways = allWaterWays)"
+        />
+      </template>
     </main>
   </div>
 

@@ -9,6 +9,20 @@ const router = createRouter({
       name: 'home',
       component: HomeView,
     },
+    {
+      path: '/schematic',
+      redirect: '/schematic/lower-logan',
+    },
+    {
+      path: '/schematic/:slug(upper-logan|lower-logan|blacksmith-fork)',
+      name: 'schematic',
+      component: () => import('../views/SchematicView.vue'),
+      props: true,
+    },
+    {
+      path: '/:pathMatch(.*)*',
+      redirect: '/',
+    },
   ],
 })
 
