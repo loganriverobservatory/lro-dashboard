@@ -6,7 +6,9 @@ import type { DatastreamExtended } from '@hydroserver/client'
 const BASE_URL = 'https://lro.hydroserver.org/api/sensorthings/v1.1'
 
 let apiToken: string | undefined
-export function setApiToken(token: string) { apiToken = token }
+export function setApiToken(token: string) {
+  apiToken = token
+}
 function authHeaders(): HeadersInit {
   return apiToken ? { Authorization: `Token ${apiToken}` } : {}
 }
@@ -59,8 +61,8 @@ const HYDROSERVER_GROUP = 'Logan River Observatory'
 export let WATERWAY_COLORS: Record<string, string> = {
   [MAIN_STEM_GROUP]: '#7d98c6',
   [HYDROSERVER_GROUP]: '#7d98c6',
-  'USGS': '#d09559',
-  'DWRi': '#6fa26b',
+  USGS: '#d09559',
+  DWRi: '#6fa26b',
 }
 
 export let WATERWAY_LIST = Object.keys(WATERWAY_COLORS)
@@ -77,17 +79,46 @@ export let SCHEMATIC_ACCENT_COLORS: Record<string, string> = {
 }
 
 export const WATER_VARIBALES = [
-  { id: 'Discharge', label: 'Discharge (cfs)', longLabel: 'Discharge in cfs (cubic feet per second)' },
-  { id: 'Water Temperature', label: 'Temperature (°C)', longLabel: 'Water Temperature in °C (degrees Celsius)' },
-  { id: 'Specific Conductance', label: 'SPC (µS/cm)', longLabel: 'Specific Conductance in µS/cm (microsiemens per centimeter)' },
+  {
+    id: 'Discharge',
+    label: 'Discharge (cfs)',
+    longLabel: 'Discharge in cfs (cubic feet per second)',
+  },
+  {
+    id: 'Water Temperature',
+    label: 'Temperature (°C)',
+    longLabel: 'Water Temperature in °C (degrees Celsius)',
+  },
+  {
+    id: 'Specific Conductance',
+    label: 'SPC (µS/cm)',
+    longLabel: 'Specific Conductance in µS/cm (microsiemens per centimeter)',
+  },
   { id: 'pH', label: 'pH', longLabel: 'pH (potential of hydrogen)' },
-  { id: 'Oxygen, dissolved', label: 'Dissolved Oxygen (mg/L)', longLabel: 'Dissolved Oxygen in mg/L (milligrams per liter)' },
+  {
+    id: 'Oxygen, dissolved',
+    label: 'Dissolved Oxygen (mg/L)',
+    longLabel: 'Dissolved Oxygen in mg/L (milligrams per liter)',
+  },
 ]
 
 export interface SchematicConfig {
   mainStem: { id: string; name: string; row: number; type: string }[]
-  leftTributaries: { id: string; name: string; row: number; juncId: string; col: 'left' | 'right' }[]
-  diversions?: { id: string; name: string; row: number; juncId: string; col: 'left' | 'right'; schematicGroup?: string }[]
+  leftTributaries: {
+    id: string
+    name: string
+    row: number
+    juncId: string
+    col: 'left' | 'right'
+  }[]
+  diversions?: {
+    id: string
+    name: string
+    row: number
+    juncId: string
+    col: 'left' | 'right'
+    schematicGroup?: string
+  }[]
   blacksmithFork: { id: string; name: string; row: number }[]
   littleBear?: { id: string; name: string; row: number; type?: string; schematicGroup?: string }[]
   cutlerInflows: { id: string; name: string; row: number; tributary: string }[]
@@ -140,7 +171,9 @@ export async function loadStationConfig(): Promise<SchematicConfig | null> {
 
     HIDDEN_STATIONS = data.hiddenStations ?? []
     DISPLAY_NAMES = data.displayNames ?? {}
-    USGS_STATIONS_CONFIG = (data.usgsStations ?? []).filter((s: UsgsStationEntry) => s.active !== false)
+    USGS_STATIONS_CONFIG = (data.usgsStations ?? []).filter(
+      (s: UsgsStationEntry) => s.active !== false,
+    )
     DWRI_STATIONS_DATA = data.dwriStations ?? []
 
     if (Array.isArray(data.waterwayGroups) && data.waterwayGroups.length) {
@@ -174,7 +207,10 @@ export async function getVariableStations(variable: string = 'Discharge'): Promi
 
   const thingsUrl = `${BASE_URL}/Things?$top=200&$expand=Locations`
 
-  const [dsRes, thingsRes] = await Promise.all([fetch(listUrl, { headers: authHeaders() }), fetch(thingsUrl, { headers: authHeaders() })])
+  const [dsRes, thingsRes] = await Promise.all([
+    fetch(listUrl, { headers: authHeaders() }),
+    fetch(thingsUrl, { headers: authHeaders() }),
+  ])
   const [data, thingsData] = await Promise.all([dsRes.json(), thingsRes.json()])
 
   const thingsByCode: Record<string, { uuid: string; coords: [number, number] | null }> = {}
@@ -276,12 +312,15 @@ export async function getUSGSStations(variable: string = 'Discharge'): Promise<S
       const stationCode = `USGS-${siteCode}`
       const configEntry = USGS_STATIONS_CONFIG.find((s) => s.id === siteCode)
       const displayName = configEntry?.displayName ?? stationCode
-      const tributaryBase = displayName.includes(':') ? (displayName.split(':')[0]?.trim() ?? 'USGS') : 'USGS'
+      const tributaryBase = displayName.includes(':')
+        ? (displayName.split(':')[0]?.trim() ?? 'USGS')
+        : 'USGS'
       const tributary = tributaryBase === 'Logan River' ? MAIN_STEM_GROUP : tributaryBase
 
       const geo = ts.sourceInfo?.geoLocation?.geogLocation
-      const coordinates: [number, number] | null =
-        geo ? [Number(geo.latitude), Number(geo.longitude)] : null
+      const coordinates: [number, number] | null = geo
+        ? [Number(geo.latitude), Number(geo.longitude)]
+        : null
 
       const latestVal = ts.values?.[0]?.value?.[0]
       const rawResult = latestVal?.value
@@ -299,9 +338,7 @@ export async function getUSGSStations(variable: string = 'Discharge'): Promise<S
         isPrivate: false,
         isUSGS: true,
         siteLink: configEntry?.siteLink,
-        observation: phenomenonTime
-          ? { '@iot.id': stationCode, result, phenomenonTime }
-          : null,
+        observation: phenomenonTime ? { '@iot.id': stationCode, result, phenomenonTime } : null,
       }
     })
   } catch {
@@ -372,7 +409,9 @@ export function getSchematicOrder(config: SchematicConfig | null | undefined): s
 
   const entries: { name: string; row: number; category: number; tertiary: number }[] = []
 
-  config.mainStem.forEach((n) => entries.push({ name: n.name, row: n.row, category: 0, tertiary: 0 }))
+  config.mainStem.forEach((n) =>
+    entries.push({ name: n.name, row: n.row, category: 0, tertiary: 0 }),
+  )
   ;(config.leftTributaries ?? []).forEach((n) => {
     const junc = mainStemById.get(n.juncId)
     entries.push({ name: n.name, row: junc?.row ?? n.row, category: 1, tertiary: 0 })
@@ -384,8 +423,12 @@ export function getSchematicOrder(config: SchematicConfig | null | undefined): s
   config.blacksmithFork.forEach((n) => {
     entries.push({ name: n.name, row: bsfConfluence?.row ?? n.row, category: 3, tertiary: n.row })
   })
-  ;(config.littleBear ?? []).forEach((n) => entries.push({ name: n.name, row: 1000, category: 0, tertiary: n.row }))
-  config.cutlerInflows.forEach((n) => entries.push({ name: n.name, row: 2000, category: 0, tertiary: n.row }))
+  ;(config.littleBear ?? []).forEach((n) =>
+    entries.push({ name: n.name, row: 1000, category: 0, tertiary: n.row }),
+  )
+  config.cutlerInflows.forEach((n) =>
+    entries.push({ name: n.name, row: 2000, category: 0, tertiary: n.row }),
+  )
 
   entries.sort((a, b) => a.row - b.row || a.category - b.category || a.tertiary - b.tertiary)
   return entries.map((e) => e.name)
@@ -407,4 +450,64 @@ export function sortStationsBySchematic(stations: Station[], order: string[]): S
     .map((station, i) => ({ station, i, key: orderIndex(station) }))
     .sort((a, b) => a.key - b.key || a.i - b.i)
     .map((entry) => entry.station)
+}
+
+/**
+ * Bundles live data from all active sources (HydroServer, USGS, DWRi)
+ * and sends it to the Python topology engine to compute the schematic.
+ */
+export async function fetchComputedTopology(variable: string = 'Discharge'): Promise<any> {
+  try {
+    // 1. Fetch live data from all three of your existing service pipelines concurrently
+    const [hydroStations, usgsStations, dwriStations] = await Promise.all([
+      getVariableStations(variable),
+      getUSGSStations(variable),
+      getDWRiStations(variable),
+    ])
+
+    // 2. Combine them into a single comprehensive array
+    const allStations = [...hydroStations, ...usgsStations, ...dwriStations]
+
+    // 3. Package into the simplified payload structure your Python NetworkX engine expects
+    const payload = {
+      timestamp: new Date().toISOString(),
+      variable: variable,
+      measurements: allStations.map((station) => {
+        // Look up individual measurements safely depending on how the pipeline populated them
+        let value: number | null = null
+        if (station.isDWRi) {
+          value = station.observation?.result ?? null
+        } else if (station.isUSGS) {
+          value = station.observation?.result ?? null
+        } else {
+          // HydroServer observations might need an explicit fetch,
+          // or you can pull the current observation result if populated in your component state.
+          value = station.observation?.result ?? null
+        }
+
+        return {
+          id: station.id,
+          display_name: station.displayName,
+          flow_cfs: value,
+          status: getFreshnessStatus(station.observation),
+        }
+      }),
+    }
+
+    // 4. POST the combined payload over to your Python Microservice repo running locally
+    const pythonApiUrl = 'http://127.0.0.1:8000/api/compute-topology'
+    const response = await fetch(pythonApiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+
+    if (!response.ok) throw new Error(`Python server returned status ${response.status}`)
+
+    // This returns the clean, processed NetworkX structural JSON ({nodes: [], links: []})
+    return await response.json()
+  } catch (error) {
+    console.error('Error connecting with Python Topology Engine:', error)
+    return null
+  }
 }
