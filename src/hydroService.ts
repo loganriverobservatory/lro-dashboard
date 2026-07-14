@@ -84,30 +84,33 @@ export const WATER_VARIBALES = [
   { id: 'Oxygen, dissolved', label: 'Dissolved Oxygen (mg/L)', longLabel: 'Dissolved Oxygen in mg/L (milligrams per liter)' },
 ]
 
-export type SchematicNodeType = 'station' | 'junction' | 'terminus' | 'extension'
-export type SchematicSlug = 'upper-logan' | 'lower-logan' | 'blacksmith-fork'
+// mainstem/junction form the trunk, in file order (no row numbers). tributary (flows in) and
+// diversion (flows out) attach to a trunk node via connectsTo, or chain onto another
+// tributary/diversion. Position and every connector line are derived from kind + connectsTo +
+// list order — there's no separate edges array.
+//
+// link is a pure "go to another page" card with no real station behind it (e.g. lower-logan's
+// "Blacksmith Fork River" card). It's excluded from findLiveStation/getSchematicOrder because
+// its label is generic enough to fuzzy-match every real station in that system. A real station
+// that also sits at a page boundary (e.g. water_lab) stays 'mainstem' and just carries linkTo.
+export type NodeKind = 'mainstem' | 'junction' | 'tributary' | 'diversion' | 'link'
+export type SchematicSlug = 'upper-logan' | 'lower-logan' | 'blacksmith-fork' | 'little-bear'
 
 export interface SchematicNode {
   id: string
-  // station: fuzzy-matched against a live Station.displayName (see findLiveStation in SchematicView).
-  // junction/terminus/extension: label text only, never matched against live data.
-  name: string
-  row: number
-  col: number // integer, local to each page's own layout
-  type: SchematicNodeType
+  name: string // fuzzy-matched to a live station, except for junction/link nodes
+  kind: NodeKind
   colorGroup?: string // key into WATERWAY_COLORS or SCHEMATIC_ACCENT_COLORS
+  connectsTo?: string // tributary/diversion/link only: id of the node this attaches to
+  side?: 'left' | 'right' // tributary/diversion/link only: which side of the trunk
+  linkTo?: SchematicSlug // page to navigate to; required for 'link', optional elsewhere
+  label?: string // linkTo button text override (defaults to name)
+  terminus?: boolean // marks this mainstem node as the system's final endpoint
   description?: string // terminus subtitle text
-  targetSchematic?: SchematicSlug // extension nodes only
-  label?: string // extension nodes only; button text override (defaults to name)
-}
-
-export interface SchematicEdge {
-  id: string
-  from: string
-  to: string
-  style: 'main' | 'branch' | 'thin'
-  direction?: 'in' | 'out' // default 'in'; 'out' = diversion/canal flowing away from a junction
-  edgeType?: 'bezier' | 'smoothstep' | 'straight' // default 'smoothstep'
+  // tributary/diversion only: if this is the last node in a chain and the water rejoins
+  // the trunk here (e.g. a canal that loops out and back in downstream), the id of the
+  // junction it rejoins at. Draws a second connector back into the trunk.
+  returnsTo?: string
 }
 
 export interface SchematicPageConfig {
@@ -116,17 +119,16 @@ export interface SchematicPageConfig {
   title: string
   subtitle?: string
   nodes: SchematicNode[]
-  edges: SchematicEdge[]
 }
 
-const SCHEMATIC_SLUGS: SchematicSlug[] = ['upper-logan', 'lower-logan', 'blacksmith-fork']
+const SCHEMATIC_SLUGS: SchematicSlug[] = ['upper-logan', 'lower-logan', 'blacksmith-fork', 'little-bear']
 
 export type SchematicPages = Record<SchematicSlug, SchematicPageConfig | null>
 
-// Fetches the three static per-page schematic layout files (edited directly in the
-// repo under public/schematics/ — no live-fetch/publishing pipeline involved, unlike
-// loadStationConfig()). Used both by SchematicView (to render whichever page is
-// active) and by App.vue (to derive ListView's upstream->downstream station order).
+// Fetches the static per-page schematic layout files (edited directly in the repo under
+// public/schematics/ — no live-fetch/publishing pipeline involved, unlike
+// loadStationConfig()). Used both by SchematicView (to render whichever page is active) and
+// by App.vue (to derive ListView's upstream->downstream station order).
 export async function loadSchematicPages(): Promise<SchematicPages> {
   const results = await Promise.all(
     SCHEMATIC_SLUGS.map(async (slug): Promise<SchematicPageConfig | null> => {
@@ -138,11 +140,11 @@ export async function loadSchematicPages(): Promise<SchematicPages> {
       }
     }),
   )
-  return {
-    'upper-logan': results[0] ?? null,
-    'lower-logan': results[1] ?? null,
-    'blacksmith-fork': results[2] ?? null,
-  }
+  const pages = {} as SchematicPages
+  SCHEMATIC_SLUGS.forEach((slug, i) => {
+    pages[slug] = results[i] ?? null
+  })
+  return pages
 }
 
 interface UsgsStationEntry {
@@ -406,17 +408,14 @@ export function getFreshnessStatus(observation: StaObservation | null): Freshnes
   return 'outdated'
 }
 
-// Top-of-watershed-to-bottom order across all three schematic pages, in a fixed
-// page sequence (upper-logan -> lower-logan -> blacksmith-fork). Within a page,
-// station nodes sort by their own row, except 'branch'-style edges (a tributary or
-// diversion attaching to a junction) which sort the branch node by the row of the
-// junction it connects to instead of its own — mirrors the old juncId-based insertion
-// behavior. 'main' and 'thin' edges represent a sequential chain (main channel, or an
-// independent flow like Little Bear River), so those nodes keep their own row.
-// junction/terminus/extension nodes never matched a live station, so they're excluded
-// here too; extension nodes especially must be excluded, since e.g. a node named
-// "Blacksmith Fork River" is a substring of every real BSF station name and would
-// otherwise hijack sortStationsBySchematic's fuzzy match.
+// Top-of-watershed-to-bottom order across all three schematic pages, in a fixed page
+// sequence (upper-logan -> lower-logan -> blacksmith-fork). A node's row is its position
+// among the trunk (mainstem/junction) nodes, in file order. A tributary/diversion sorts by
+// the row of the trunk node it (eventually) attaches to — found by walking its connectsTo
+// chain until it reaches a mainstem/junction node. junction and link nodes never match a
+// real station, so they're excluded from the final list (link nodes especially, since their
+// generic label would otherwise hijack the fuzzy match for every real station in that
+// system — see NodeKind). Array.sort is stable, so ties keep their file order.
 export function getSchematicOrder(pages: SchematicPages | null | undefined): string[] {
   if (!pages) return []
 
@@ -427,17 +426,26 @@ export function getSchematicOrder(pages: SchematicPages | null | undefined): str
     if (!page) return
 
     const nodesById = new Map(page.nodes.map((n) => [n.id, n]))
-    const juncRowByBranchId = new Map<string, number>()
-    page.edges.forEach((edge) => {
-      if (edge.style !== 'branch') return
-      const junction = nodesById.get(edge.to)
-      if (junction) juncRowByBranchId.set(edge.from, junction.row)
+    const trunkRowById = new Map<string, number>()
+    page.nodes.forEach((n) => {
+      if (n.kind === 'mainstem' || n.kind === 'junction') trunkRowById.set(n.id, trunkRowById.size)
     })
 
+    function trunkRowOf(node: SchematicNode): number {
+      let current: SchematicNode | undefined = node
+      const seen = new Set<string>()
+      while (current && !seen.has(current.id)) {
+        seen.add(current.id)
+        const row = trunkRowById.get(current.id)
+        if (row !== undefined) return row
+        current = current.connectsTo ? nodesById.get(current.connectsTo) : undefined
+      }
+      return Infinity
+    }
+
     page.nodes.forEach((node) => {
-      if (node.type !== 'station') return
-      const row = juncRowByBranchId.get(node.id) ?? node.row
-      entries.push({ name: node.name, page: pageIndex, row })
+      if (node.kind === 'junction' || node.kind === 'link') return
+      entries.push({ name: node.name, page: pageIndex, row: trunkRowOf(node) })
     })
   })
 

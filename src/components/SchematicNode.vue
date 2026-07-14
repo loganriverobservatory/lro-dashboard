@@ -1,30 +1,41 @@
 <script setup lang="ts">
 /*
 SchematicNode.vue - the single custom Vue Flow node component used by every card on a
-schematic page (SchematicView.vue). Branches on data.nodeType instead of registering a
-separate Vue Flow node type per kind, since all four kinds share the same handle setup.
+schematic page (SchematicView.vue). Branches on data.kind instead of registering a separate
+Vue Flow node type per kind, since every kind shares the same handle setup.
 */
-import { computed } from 'vue'
+import { computed, inject } from 'vue'
 import { Position, Handle, type NodeProps } from '@vue-flow/core'
 import { Droplets, ChevronRight } from 'lucide-vue-next'
 import {
   type Station,
-  type SchematicNodeType,
+  type NodeKind,
+  type SchematicSlug,
   WATERWAY_COLORS,
   SCHEMATIC_ACCENT_COLORS,
 } from '../hydroService'
 import StationCard from './StationCard.vue'
 
 interface SchematicNodeData {
-  nodeType: SchematicNodeType
+  kind: NodeKind
   name: string
   label?: string
   description?: string
   colorGroup?: string
+  terminus?: boolean
+  linkTo?: SchematicSlug
   liveStation?: Station
 }
 
 const props = defineProps<NodeProps<SchematicNodeData>>()
+
+// Vue Flow controls what props a custom node type receives, so there's no normal prop
+// channel from SchematicView down to here - it provide()s this instead.
+const navigateToSystem = inject<(slug: SchematicSlug) => void>('navigateToSystem')
+
+function onLinkClick() {
+  if (props.data.linkTo) navigateToSystem?.(props.data.linkTo)
+}
 
 const bgColor = computed(() => {
   const group = props.data.colorGroup
@@ -35,41 +46,90 @@ const bgColor = computed(() => {
 </script>
 
 <template>
-  <div class="schematic-node" :class="`node-type-${data.nodeType}`">
+  <div class="schematic-node" :class="`kind-${data.kind}`">
     <!-- Every node gets handles on all four sides: the vertical pair (top/bottom) carries
     the main channel straight through, the horizontal pair (left/right) is what lets a
     lateral tributary/diversion branch cleanly out to the side instead of routing through
     an up/down S-curve. SchematicView picks which pair a given edge uses based on whether
     the two nodes it connects share a column (vertical) or not (horizontal). -->
-    <Handle id="t-top" type="target" :position="Position.Top" :connectable="false" class="schematic-handle" />
-    <Handle id="t-left" type="target" :position="Position.Left" :connectable="false" class="schematic-handle" />
-    <Handle id="t-right" type="target" :position="Position.Right" :connectable="false" class="schematic-handle" />
+    <Handle
+      id="t-top"
+      type="target"
+      :position="Position.Top"
+      :connectable="false"
+      class="schematic-handle"
+    />
+    <Handle
+      id="t-left"
+      type="target"
+      :position="Position.Left"
+      :connectable="false"
+      class="schematic-handle"
+    />
+    <Handle
+      id="t-right"
+      type="target"
+      :position="Position.Right"
+      :connectable="false"
+      class="schematic-handle"
+    />
 
-    <div v-if="data.nodeType === 'station'" class="station-wrapper" :style="{ backgroundColor: bgColor }">
-      <StationCard v-if="data.liveStation" :site="data.liveStation" compact />
-      <div v-else class="node-card placeholder-card">
-        <span class="node-title">{{ data.name }}</span>
-      </div>
-    </div>
+    <div v-if="data.kind === 'junction'" class="junction-dot" />
 
-    <div v-else-if="data.nodeType === 'junction'" class="junction-dot" />
-
-    <div v-else-if="data.nodeType === 'terminus'" class="terminus-card">
-      <Droplets :size="22" class="terminus-icon" />
-      <div class="terminus-details">
-        <h3>SYSTEM TERMINUS: {{ data.name }}</h3>
-        <p v-if="data.description">{{ data.description }}</p>
-      </div>
-    </div>
-
-    <button v-else-if="data.nodeType === 'extension'" type="button" class="extension-card">
+    <!-- A pure navigation card (no live data of its own) - the whole card is the click
+    target, handled by SchematicView's onNodeClick rather than inject, same as every other
+    node-click case. -->
+    <button v-else-if="data.kind === 'link'" type="button" class="link-card">
       <span class="node-title">{{ data.label ?? data.name }}</span>
-      <ChevronRight :size="16" />
     </button>
 
-    <Handle id="s-bottom" type="source" :position="Position.Bottom" :connectable="false" class="schematic-handle" />
-    <Handle id="s-left" type="source" :position="Position.Left" :connectable="false" class="schematic-handle" />
-    <Handle id="s-right" type="source" :position="Position.Right" :connectable="false" class="schematic-handle" />
+    <template v-else>
+      <div v-if="data.terminus" class="terminus-card">
+        <Droplets :size="22" class="terminus-icon" />
+        <div class="terminus-details">
+          <h3>SYSTEM TERMINUS: {{ data.name }}</h3>
+          <p v-if="data.description">{{ data.description }}</p>
+        </div>
+      </div>
+
+      <div v-else class="station-wrapper" :style="{ backgroundColor: bgColor }">
+        <StationCard v-if="data.liveStation" :site="data.liveStation" compact />
+        <div v-else class="node-card placeholder-card">
+          <span class="node-title">{{ data.name }}</span>
+        </div>
+      </div>
+
+      <!-- A real station that also happens to sit at a page boundary (e.g. Water Lab
+      linking into Lower Logan) gets this extra button instead of being its own 'link'
+      card. @click.stop keeps it from also triggering onNodeClick's mobile station-sheet
+      tap handling on the same click. -->
+      <button v-if="data.linkTo" type="button" class="node-link-btn" @click.stop="onLinkClick">
+        <span>{{ data.label ?? 'View full system' }}</span>
+        <ChevronRight :size="14" />
+      </button>
+    </template>
+
+    <Handle
+      id="s-bottom"
+      type="source"
+      :position="Position.Bottom"
+      :connectable="false"
+      class="schematic-handle"
+    />
+    <Handle
+      id="s-left"
+      type="source"
+      :position="Position.Left"
+      :connectable="false"
+      class="schematic-handle"
+    />
+    <Handle
+      id="s-right"
+      type="source"
+      :position="Position.Right"
+      :connectable="false"
+      class="schematic-handle"
+    />
   </div>
 </template>
 
@@ -79,7 +139,7 @@ const bgColor = computed(() => {
    off the main channel's straight vertical line and every branch's connection point. */
 .schematic-node {
   position: relative;
-  width: 300px;
+  width: 240px;
   box-sizing: border-box;
 }
 
@@ -123,30 +183,49 @@ const bgColor = computed(() => {
 
 .station-wrapper {
   border-radius: 14px;
-  padding: 8px;
+  padding: 0;
   width: 100%;
   box-sizing: border-box;
 }
 
-/* The compact StationCard is tuned for a dense sidebar list — bump its type scale
-   up for the schematic canvas, where each card has much more room to itself. */
+/* Sized to read the same as the .link-card/.node-title reference (2rem, bold) rather than
+   the shared component's dense-sidebar-list defaults - the card is free to grow taller to
+   fit that text since its width is fixed (see .schematic-node), so this is about matching
+   the link-card's readability, not squeezing into a fixed box. */
 .station-wrapper :deep(.station-card.is-compact) {
-  padding: 1.1rem 1.3rem;
+  padding: 0.35rem 0.5rem;
+}
+.station-wrapper :deep(.card-header) {
+  margin-bottom: 0.1rem;
+  margin-top: 0;
+}
+.station-wrapper :deep(.metric-row) {
+  margin-bottom: 0.05rem;
 }
 .station-wrapper :deep(.location-name) {
-  font-size: 1.2rem;
+  font-size: 1.9rem;
+  margin: 0;
 }
 .station-wrapper :deep(.value) {
-  font-size: 2.5rem;
+  font-size: 3.5rem;
 }
 .station-wrapper :deep(.unit) {
-  font-size: 1.05rem;
+  font-size: 1.4rem;
+}
+
+@media screen and (min-width: 769px) {
+  .station-wrapper :deep(.location-name) {
+    font-size: 2.1rem;
+  }
 }
 .station-wrapper :deep(.timestamp) {
-  font-size: 0.85rem;
+  display: none;
 }
 .station-wrapper :deep(.status-badge) {
-  font-size: 0.72rem;
+  display: none;
+}
+.station-wrapper :deep(.external-site-link) {
+  font-size: 0.8rem;
 }
 
 .node-card {
@@ -165,7 +244,7 @@ const bgColor = computed(() => {
 }
 
 .node-title {
-  font-size: 1rem;
+  font-size: 2rem;
   font-weight: 700;
   color: #334155;
 }
@@ -174,24 +253,23 @@ const bgColor = computed(() => {
    of sitting at the edges of an invisible 280px box. SchematicView.vue knows this width
    too and offsets the node's x position to keep its center aligned with everything else
    in its column. */
-.node-type-junction {
-  width: 30px;
+.kind-junction {
+  width: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-/* A confluence point on the main stem — deliberately solid and sized to read as "this is
-   where the tributary/diversion arrow actually meets the trunk line", not just an
-   invisible routing waypoint. */
+/* Confluence points are deliberately de-emphasized to near-invisible - just enough of a
+   mark that a branch's connector line has somewhere to visibly terminate, not a focal
+   point competing with the station cards. */
 .junction-dot {
-  width: 20px;
-  height: 20px;
+  width: 6px;
+  height: 6px;
   box-sizing: border-box;
   border-radius: 50%;
   background: #1e293b;
-  border: 3px solid #ffffff;
-  box-shadow: 0 0 0 1.5px #1e293b;
+  opacity: 0.35;
 }
 
 .terminus-card {
@@ -225,17 +303,17 @@ const bgColor = computed(() => {
   color: #9a3412;
 }
 
-.extension-card {
+.link-card {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
   background: #eff6ff;
   border: 1.5px dashed #93c5fd;
   border-radius: 8px;
-  padding: 16px 18px;
-  min-height: 76px;
+  padding: 8px 10px;
+  min-height: 40px;
   box-sizing: border-box;
   cursor: pointer;
   color: #1d4ed8;
@@ -243,11 +321,39 @@ const bgColor = computed(() => {
   transition: background 0.18s ease;
 }
 
-.extension-card:hover {
+.link-card:hover {
   background: #dbeafe;
 }
 
-.extension-card .node-title {
+.link-card .node-title {
+  font-size: 1.1rem;
   color: #1d4ed8;
+}
+
+/* The secondary "view full system" button that can appear below a normal station/terminus
+   card - smaller and less prominent than .link-card, since here it's a bonus action on a
+   card that already has its own primary content, not the entire point of the card. */
+.node-link-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  box-sizing: border-box;
+  cursor: pointer;
+  color: #1d4ed8;
+  font-size: 0.8rem;
+  font-weight: 700;
+  font-family: inherit;
+  transition: background 0.18s ease;
+}
+
+.node-link-btn:hover {
+  background: #dbeafe;
 }
 </style>

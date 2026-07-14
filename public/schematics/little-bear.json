@@ -1,0 +1,156 @@
+{
+  "_instructions": [
+    "This file draws the 'Little Bear River' schematic page (Porcupine Reservoir Outlet down to Cutler Terminus).",
+    "See public/schematics/README.md for the full field reference and a longer walkthrough - this is the quick version.",
+    "",
+    "This page ends at the same 'Cutler Reservoir' terminus as lower-logan.json (Little Bear River is one of the inflows",
+    "collected there, alongside the main Logan River channel and Blacksmith Fork River) - the terminus node here also carries",
+    "linkTo back to lower-logan so a reader can jump back to the main system. lower-logan.json's own 'little_bear' node is the",
+    "reciprocal link into this page.",
+    "",
+    "NODES: each node is a card on the diagram, listed in the order the water actually flows.",
+    "  id         - unique within this file. Tributaries/diversions/links reference another node's id via connectsTo.",
+    "  name       - for kind 'mainstem'/'tributary'/'diversion', must fuzzy-match a live station's display name from",
+    "               HydroServer/DWRi/USGS. For 'junction'/'link' nodes it is just label text.",
+    "  kind       - 'mainstem' (a real gauge station on the main channel), 'junction' (an invisible confluence point on the main",
+    "               channel, no card - where a tributary/diversion attaches), 'tributary' (water flowing IN), 'diversion' (water",
+    "               flowing OUT - every canal/irrigation company on this page is a diversion).",
+    "  connectsTo - diversion only here: the id of the junction this attaches to, or another diversion's id to chain onto (see",
+    "               the Highline Canal and Paradise Canal chains below - each is several DWRi stations along the same canal).",
+    "  side       - diversion only, when connectsTo is set: 'left' or 'right', which side of the main channel to draw the",
+    "               card on.",
+    "  colorGroup - optional; must match a name from waterway_groups or schematic_groups in config/station_config.yaml.",
+    "  terminus   - mainstem only: marks this node as the system's final endpoint (only 'cutler_reservoir' below sets this).",
+    "  linkTo     - the schematic page slug to navigate to; adds a 'view full system' button below the card it's on.",
+    "  description - terminus node only: subtitle text.",
+    "",
+    "There's no separate edges list - the main channel line, every diversion's connector, and flow direction are all derived",
+    "automatically from kind + connectsTo + the order nodes appear above.",
+    "",
+    "Every diversion gets its own junction dot, even when two sit right next to each other in real life - see hyrum_canal_junc",
+    "and hyrum_irr_junc, which are two separate junctions rather than one shared between both diversions."
+  ],
+  "id": "little-bear",
+  "title": "Little Bear River",
+  "subtitle": "Porcupine Reservoir Outlet down to Cutler Terminus",
+  "nodes": [
+    { "id": "porcupine", "name": "Little Bear River: Porcupine Reservoir Outlet", "kind": "mainstem", "colorGroup": "Little Bear River" },
+    { "id": "south_fork", "name": "Little Bear River: South Fork", "kind": "mainstem", "colorGroup": "Little Bear River" },
+    { "id": "east_fork", "name": "Little Bear River: East Fork", "kind": "mainstem", "colorGroup": "Little Bear River" },
+    { "id": "paradise", "name": "Little Bear River: Little Bear River at Paradise", "kind": "mainstem", "colorGroup": "Little Bear River" },
+
+    { "id": "hyrum_canal_junc", "name": "Hyrum Canal at Osmonds diversion point", "kind": "junction" },
+    {
+      "id": "hyrum_canal",
+      "name": "Little Bear River: Hyrum Canal at Osmonds",
+      "kind": "diversion",
+      "connectsTo": "hyrum_canal_junc",
+      "side": "right",
+      "colorGroup": "Little Bear River"
+    },
+    { "id": "hyrum_irr_junc", "name": "Hyrum Irrigating Company diversion point", "kind": "junction" },
+    {
+      "id": "hyrum_irr",
+      "name": "Little Bear River: Hyrum Irrigating Company",
+      "kind": "diversion",
+      "connectsTo": "hyrum_irr_junc",
+      "side": "left",
+      "colorGroup": "Little Bear River"
+    },
+
+    { "id": "highline_pond", "name": "Little Bear River: Highline Pond", "kind": "mainstem", "colorGroup": "Little Bear River" },
+
+    { "id": "highline_canal_junc", "name": "Highline Canal diversion point", "kind": "junction" },
+    {
+      "id": "highline_canal",
+      "name": "Little Bear River: Highline Canal",
+      "kind": "diversion",
+      "connectsTo": "highline_canal_junc",
+      "side": "right",
+      "colorGroup": "Little Bear River"
+    },
+    {
+      "id": "highline_atpond",
+      "name": "Little Bear River: Highline Canal at Pond",
+      "kind": "diversion",
+      "connectsTo": "highline_canal",
+      "side": "right",
+      "colorGroup": "Little Bear River"
+    },
+    {
+      "id": "highline_weeks",
+      "name": "Little Bear River: Highline Canal below Weeks Farm",
+      "kind": "diversion",
+      "connectsTo": "highline_atpond",
+      "side": "right",
+      "colorGroup": "Little Bear River"
+    },
+    {
+      "id": "paradise_city",
+      "name": "Little Bear River: Paradise City through Highline Canal",
+      "kind": "diversion",
+      "connectsTo": "highline_weeks",
+      "side": "right",
+      "colorGroup": "Little Bear River"
+    },
+
+    { "id": "paradise_canal_junc", "name": "Paradise Canal diversion point", "kind": "junction" },
+    {
+      "id": "paradise_canal",
+      "name": "Little Bear River: Paradise Canal",
+      "kind": "diversion",
+      "connectsTo": "paradise_canal_junc",
+      "side": "right",
+      "colorGroup": "Little Bear River"
+    },
+    {
+      "id": "paradise_blacktube",
+      "name": "Little Bear River: Paradise Canal below Black Tube",
+      "kind": "diversion",
+      "connectsTo": "paradise_canal",
+      "side": "right",
+      "colorGroup": "Little Bear River"
+    },
+
+    { "id": "littlefeeder_junc", "name": "Little Feeder diversion point", "kind": "junction" },
+    {
+      "id": "little_feeder",
+      "name": "Little Bear River: Little Feeder",
+      "kind": "diversion",
+      "connectsTo": "littlefeeder_junc",
+      "side": "left",
+      "colorGroup": "Little Bear River"
+    },
+
+    { "id": "wellsville_east_junc", "name": "Wellsville East Field diversion point", "kind": "junction" },
+    {
+      "id": "wellsville_east",
+      "name": "Little Bear River: Wellsville East Field",
+      "kind": "diversion",
+      "connectsTo": "wellsville_east_junc",
+      "side": "right",
+      "colorGroup": "Little Bear River"
+    },
+
+    { "id": "wellsville_mendon_junc", "name": "Wellsville Mendon Canal diversion point", "kind": "junction" },
+    {
+      "id": "wellsville_mendon",
+      "name": "Little Bear River: Wellsville Mendon Canal",
+      "kind": "diversion",
+      "connectsTo": "wellsville_mendon_junc",
+      "side": "left",
+      "colorGroup": "Little Bear River"
+    },
+
+    { "id": "lbr_mendon", "name": "Little Bear River: Mendon Road", "kind": "mainstem", "colorGroup": "Little Bear River" },
+    {
+      "id": "cutler_reservoir",
+      "name": "Cutler Reservoir",
+      "kind": "mainstem",
+      "terminus": true,
+      "description": "Ultimate drainage collection basin for all main channels and lateral streams.",
+      "linkTo": "lower-logan",
+      "label": "← Lower Logan River"
+    }
+  ]
+}

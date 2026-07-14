@@ -3,37 +3,58 @@
     "This file draws the 'Blacksmith Fork River' schematic page (the entire Blacksmith Fork system, its own standalone page).",
     "See public/schematics/README.md for the full field reference and a longer walkthrough - this is the quick version.",
     "",
-    "NODES: each node is a card on the diagram.",
-    "  id   - unique within this file, used by edges below to connect nodes.",
-    "  name - for type 'station', must fuzzy-match a live station's display name from HydroServer/DWRi/USGS.",
-    "  row  - vertical position, smaller = further upstream/higher on the page.",
-    "  col  - horizontal lane. This page is a simple single-channel chain, so everything uses col 2 today; add col 1/3",
-    "         if a tributary or diversion is added later, same convention as the other two pages.",
-    "  type - 'station' (shows live data), 'junction' (invisible connection point, no card), or 'extension' (a card that",
-    "         navigates to a different schematic page when clicked). This page has no 'terminus' node - it flows out",
-    "         via the 'to_lower_logan' extension node instead, since Blacksmith Fork joins the main Logan River channel",
-    "         rather than ending at Cutler Reservoir directly.",
+    "NODES: each node is a card on the diagram, listed in the order the water actually flows.",
+    "  id         - unique within this file. Tributaries/diversions/links reference another node's id via connectsTo.",
+    "  name       - for kind 'mainstem'/'tributary'/'diversion', must fuzzy-match a live station's display name from",
+    "               HydroServer/DWRi/USGS. For 'junction'/'link' nodes it is just label text.",
+    "  kind       - 'mainstem' (a real gauge station on the main channel), 'junction' (invisible connection point, no card),",
+    "               'tributary'/'diversion' (a side attachment - none on this page yet), or 'link' (a card with no live data",
+    "               of its own that just navigates to another schematic page). This page has no 'terminus' node - it flows",
+    "               out via the 'to_lower_logan' link node instead, since Blacksmith Fork joins the main Logan River channel",
+    "               rather than ending at Cutler Reservoir directly.",
+    "  connectsTo - tributary/diversion/link only: omit for a 'link' node that's just the next stop on the main channel (see",
+    "               to_lower_logan below).",
     "  colorGroup - optional; must match a name from waterway_groups or schematic_groups in config/station_config.yaml.",
+    "  linkTo     - optional on any node; the schematic page slug to navigate to on click. On a 'link' node it's the entire",
+    "               point of the card.",
+    "  label      - linkTo button text override (defaults to name).",
     "",
-    "EDGES: 'style' is 'main' (thick dark line) for this page's single chain; 'direction' defaults to 'in' and isn't",
-    "needed here since there are no diversions/canals yet.",
+    "There's no separate edges list - the main channel line is derived automatically from the order nodes appear above (this",
+    "page is a simple single chain today; if a tributary or diversion is added later, give it connectsTo + side the same way",
+    "as the other two pages).",
     "",
-    "To add a new station: add a node with type 'station', then add an edge connecting it into the chain at the right point.",
-    "The 'to_lower_logan' node at the bottom is the reciprocal of the 'bsf_ext' extension node on lower-logan.json - do not",
-    "delete one without the other."
+    "To add a new station: add a node with kind 'mainstem' at the right point in the list.",
+    "The 'to_lower_logan' node at the bottom is the reciprocal of the 'bsf_ext' link node on lower-logan.json - do not delete",
+    "one without the other."
   ],
   "id": "blacksmith-fork",
   "title": "Blacksmith Fork River",
   "subtitle": "The full Blacksmith Fork River system",
   "nodes": [
-    { "id": "hollow_rd", "name": "Blacksmith Fork River: Hollow Road", "row": 1, "col": 2, "type": "station", "colorGroup": "Blacksmith Fork River" },
-    { "id": "seventeen_s", "name": "Blacksmith Fork River: 1700 South Footbridge", "row": 2, "col": 2, "type": "station", "colorGroup": "Blacksmith Fork River" },
-    { "id": "bsf_before_conf", "name": "Blacksmith Fork River: Before Confluence with Logan River", "row": 3, "col": 2, "type": "station", "colorGroup": "Blacksmith Fork River" },
-    { "id": "to_lower_logan", "name": "Lower Logan River", "row": 4, "col": 2, "type": "extension", "targetSchematic": "lower-logan", "label": "Confluence with Logan River →" }
-  ],
-  "edges": [
-    { "id": "main-1", "from": "hollow_rd", "to": "seventeen_s", "style": "main" },
-    { "id": "main-2", "from": "seventeen_s", "to": "bsf_before_conf", "style": "main" },
-    { "id": "main-3", "from": "bsf_before_conf", "to": "to_lower_logan", "style": "main" }
+    {
+      "id": "hollow_rd",
+      "name": "Blacksmith Fork River: Hollow Road",
+      "kind": "mainstem",
+      "colorGroup": "Blacksmith Fork River"
+    },
+    {
+      "id": "seventeen_s",
+      "name": "Blacksmith Fork River: 1700 South Footbridge",
+      "kind": "mainstem",
+      "colorGroup": "Blacksmith Fork River"
+    },
+    {
+      "id": "bsf_before_conf",
+      "name": "Blacksmith Fork River: Before Confluence with Logan River",
+      "kind": "mainstem",
+      "colorGroup": "Blacksmith Fork River"
+    },
+    {
+      "id": "to_lower_logan",
+      "name": "Lower Logan River",
+      "kind": "link",
+      "linkTo": "lower-logan",
+      "label": "Confluence with Logan River →"
+    }
   ]
 }

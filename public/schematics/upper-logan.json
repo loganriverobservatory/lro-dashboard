@@ -3,22 +3,32 @@
     "This file draws the 'Upper Logan Canyon' schematic page (Franklin Basin down to the UWRL Water Lab).",
     "See public/schematics/README.md for the full field reference and a longer walkthrough - this is the quick version.",
     "",
-    "NODES: each node is a card on the diagram.",
-    "  id   - unique within this file, used by edges below to connect nodes. Never change an existing id casually - edges reference it.",
-    "  name - for type 'station', must fuzzy-match a live station's display name from HydroServer/DWRi/USGS (partial matches work, e.g. 'Beaver Creek' will match 'Beaver Creek: Above Diversion'). For 'junction'/'terminus'/'extension' nodes it is just label text.",
-    "  row  - vertical position, smaller = further upstream/higher on the page.",
-    "  col  - horizontal lane. In this file: 2 = main channel, 1 = left-bank tributaries/canals, 3 = right-bank tributaries/canals.",
-    "  type - 'station' (shows live data), 'junction' (an invisible connection point on the main channel, no card), 'terminus' (a labeled endpoint banner), or 'extension' (a card that links to a different schematic page when clicked).",
-    "  colorGroup - optional; must match a name from waterway_groups or schematic_groups in config/station_config.yaml, used to tint the card's background.",
+    "NODES: each node is a card on the diagram, listed in the order the water actually flows.",
+    "  id         - unique within this file. Tributaries/diversions/links reference another node's id via connectsTo.",
+    "  name       - for kind 'mainstem'/'tributary'/'diversion', must fuzzy-match a live station's display name from",
+    "               HydroServer/DWRi/USGS (partial matches work, e.g. 'Beaver Creek' will match 'Beaver Creek: Above Diversion').",
+    "               For 'junction'/'link' nodes it is just label text.",
+    "  kind       - 'mainstem' (a real gauge station on the main channel), 'junction' (an invisible confluence point on the main",
+    "               channel, no card - where a tributary/diversion attaches), 'tributary' (water flowing IN), 'diversion' (water",
+    "               flowing OUT), or 'link' (a card with no live data of its own that just navigates to another schematic page).",
+    "  connectsTo - tributary/diversion/link only: the id of the mainstem/junction node this attaches to, or another",
+    "               tributary/diversion/link's id to chain onto. Omit it for a 'link' node that's just the next stop on the",
+    "               main channel (see ext_to_lower below) rather than a side attachment.",
+    "  side       - tributary/diversion/link only, when connectsTo is set: 'left' or 'right', which side of the main channel",
+    "               to draw the card on.",
+    "  colorGroup - optional; must match a name from waterway_groups or schematic_groups in config/station_config.yaml, used",
+    "               to tint the card's background.",
+    "  linkTo     - optional on any node; the schematic page slug to navigate to on click. On a normal node this adds a",
+    "               'view full system' button below its card; on a 'link' node it's the entire point of the card.",
+    "  label      - linkTo button text override (defaults to name).",
     "",
-    "EDGES: each edge draws a connector line from one node id to another.",
-    "  style - 'main' (thick dark line along the main channel), 'branch' (thinner line for a tributary or diversion), 'thin' (light gray line, used for secondary/independent flows).",
-    "  direction - 'in' (water flowing into the main channel, e.g. a tributary) or 'out' (water flowing away, e.g. a diversion/canal). Defaults to 'in'.",
+    "There's no separate edges list - the main channel line, every tributary/diversion's connector, and flow direction (in",
+    "for tributary, out for diversion) are all derived automatically from kind + connectsTo + the order nodes appear above.",
     "",
-    "To add a new station: add a node with type 'station', then add an edge connecting it to whichever junction (or station) it flows into.",
-    "To add a new diversion/canal: same as above, but set edge direction to 'out'.",
-    "This page continues into 'Lower Logan River' via the 'ext_to_lower' extension node at the bottom - do not remove it without also updating lower-logan.json's matching recap section.",
-    "Canals/diversions (DWRi stations) are intentionally left off this page for now - only natural tributaries (Beaver Creek, Ricks Spring, Temple Fork, Right Hand Fork, Dewitt Springs) are shown."
+    "This page continues into 'Lower Logan River' via the 'ext_to_lower' link node at the bottom - do not remove it without",
+    "also updating lower-logan.json's matching recap section.",
+    "Canals/diversions (DWRi stations) are intentionally left off this page for now - only natural tributaries (Beaver Creek,",
+    "Ricks Spring, Temple Fork, Right Hand Fork, Dewitt Springs) are shown."
   ],
   "id": "upper-logan",
   "title": "Upper Logan River: Canyon",
@@ -27,137 +37,61 @@
     {
       "id": "franklin",
       "name": "Logan River: Franklin Basin",
-      "row": 1,
-      "col": 2,
-      "type": "station",
+      "kind": "mainstem",
       "colorGroup": "Logan River Observatory: Logan River Main Stem"
     },
-    {
-      "id": "beaver_junc",
-      "name": "Beaver Creek Junction",
-      "row": 2,
-      "col": 2,
-      "type": "junction"
-    },
+    { "id": "beaver_junc", "name": "Beaver Creek Junction", "kind": "junction" },
+    { "id": "beaver", "name": "Beaver Creek", "kind": "tributary", "connectsTo": "beaver_junc", "side": "left" },
     {
       "id": "tony_grove",
       "name": "Logan River: Tony Grove",
-      "row": 3,
-      "col": 2,
-      "type": "station",
+      "kind": "mainstem",
       "colorGroup": "Logan River Observatory: Logan River Main Stem"
     },
-    { "id": "ricks_junc", "name": "Ricks Spring Junction", "row": 4, "col": 2, "type": "junction" },
-    { "id": "temple_junc", "name": "Temple Fork Junction", "row": 5, "col": 2, "type": "junction" },
+    { "id": "ricks_junc", "name": "Ricks Spring Junction", "kind": "junction" },
+    { "id": "ricks", "name": "Ricks Spring", "kind": "tributary", "connectsTo": "ricks_junc", "side": "left" },
+    { "id": "temple_junc", "name": "Temple Fork Junction", "kind": "junction" },
+    { "id": "temple", "name": "Temple Fork", "kind": "tributary", "connectsTo": "temple_junc", "side": "right" },
     {
       "id": "above_wood",
       "name": "Logan River: Above Wood Camp",
-      "row": 6,
-      "col": 2,
-      "type": "station",
+      "kind": "mainstem",
       "colorGroup": "Logan River Observatory: Logan River Main Stem"
     },
     {
       "id": "wood_camp",
       "name": "Logan River: Wood Camp Bridge",
-      "row": 7,
-      "col": 2,
-      "type": "station",
+      "kind": "mainstem",
       "colorGroup": "Logan River Observatory: Logan River Main Stem"
     },
+    { "id": "right_hand_junc", "name": "Right Hand Fork Junction", "kind": "junction" },
     {
-      "id": "right_hand_junc",
-      "name": "Right Hand Fork Junction",
-      "row": 8,
-      "col": 2,
-      "type": "junction"
+      "id": "right_hand",
+      "name": "Right Hand Fork",
+      "kind": "tributary",
+      "connectsTo": "right_hand_junc",
+      "side": "right"
     },
     {
       "id": "guinivah",
       "name": "Logan River: Guinavah Campground",
-      "row": 9,
-      "col": 2,
-      "type": "station",
+      "kind": "mainstem",
       "colorGroup": "Logan River Observatory: Logan River Main Stem"
     },
-    {
-      "id": "dewitt_junc",
-      "name": "Dewitt Springs Junction",
-      "row": 10,
-      "col": 2,
-      "type": "junction"
-    },
+    { "id": "dewitt_junc", "name": "Dewitt Springs Junction", "kind": "junction" },
+    { "id": "dewitt", "name": "Dewitt Springs", "kind": "tributary", "connectsTo": "dewitt_junc", "side": "left" },
     {
       "id": "water_lab",
       "name": "Logan River: Utah Water Research Laboratory",
-      "row": 11,
-      "col": 2,
-      "type": "station",
+      "kind": "mainstem",
       "colorGroup": "Logan River Observatory: Logan River Main Stem"
     },
     {
       "id": "ext_to_lower",
       "name": "Lower Logan River",
-      "row": 12,
-      "col": 2,
-      "type": "extension",
-      "targetSchematic": "lower-logan",
+      "kind": "link",
+      "linkTo": "lower-logan",
       "label": "Continue to Lower Logan River →"
-    },
-
-    { "id": "beaver", "name": "Beaver Creek", "row": 1, "col": 1, "type": "station" },
-    { "id": "ricks", "name": "Ricks Spring", "row": 3, "col": 1, "type": "station" },
-    { "id": "temple", "name": "Temple Fork", "row": 4, "col": 3, "type": "station" },
-    { "id": "right_hand", "name": "Right Hand Fork", "row": 7, "col": 3, "type": "station" },
-    { "id": "dewitt", "name": "Dewitt Springs", "row": 9, "col": 1, "type": "station" }
-  ],
-  "edges": [
-    { "id": "main-1", "from": "franklin", "to": "beaver_junc", "style": "main" },
-    { "id": "main-2", "from": "beaver_junc", "to": "tony_grove", "style": "main" },
-    { "id": "main-3", "from": "tony_grove", "to": "ricks_junc", "style": "main" },
-    { "id": "main-4", "from": "ricks_junc", "to": "temple_junc", "style": "main" },
-    { "id": "main-5", "from": "temple_junc", "to": "above_wood", "style": "main" },
-    { "id": "main-6", "from": "above_wood", "to": "wood_camp", "style": "main" },
-    { "id": "main-7", "from": "wood_camp", "to": "right_hand_junc", "style": "main" },
-    { "id": "main-8", "from": "right_hand_junc", "to": "guinivah", "style": "main" },
-    { "id": "main-9", "from": "guinivah", "to": "dewitt_junc", "style": "main" },
-    { "id": "main-10", "from": "dewitt_junc", "to": "water_lab", "style": "main" },
-    { "id": "main-11", "from": "water_lab", "to": "ext_to_lower", "style": "main" },
-
-    {
-      "id": "beaver-edge",
-      "from": "beaver",
-      "to": "beaver_junc",
-      "style": "branch",
-      "direction": "in"
-    },
-    {
-      "id": "ricks-edge",
-      "from": "ricks",
-      "to": "ricks_junc",
-      "style": "branch",
-      "direction": "in"
-    },
-    {
-      "id": "temple-edge",
-      "from": "temple",
-      "to": "temple_junc",
-      "style": "branch",
-      "direction": "in"
-    },
-    {
-      "id": "right_hand-edge",
-      "from": "right_hand",
-      "to": "right_hand_junc",
-      "style": "branch",
-      "direction": "in"
-    },
-    {
-      "id": "dewitt-edge",
-      "from": "dewitt",
-      "to": "dewitt_junc",
-      "style": "branch",
-      "direction": "in"
     }
   ]
 }

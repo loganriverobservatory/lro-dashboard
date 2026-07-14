@@ -23,9 +23,10 @@ const router = useRouter()
 const isSchematicActive = computed(() => route.path.startsWith('/schematic/'))
 const schematicOpen = ref(true)
 const schematicPages: { slug: SchematicSlug; label: string }[] = [
-  { slug: 'upper-logan', label: 'Upper Logan Canyon' },
-  { slug: 'lower-logan', label: 'Lower Logan River' },
+  { slug: 'upper-logan', label: 'Upper Logan River: Canyon' },
+  { slug: 'lower-logan', label: 'Lower Logan River: Valley' },
   { slug: 'blacksmith-fork', label: 'Blacksmith Fork River' },
+  { slug: 'little-bear', label: 'Little Bear River' },
 ]
 
 const variables = [
@@ -162,7 +163,7 @@ function toggleAll() {
     <div v-if="showLegend()" class="legend-section">
       <button class="legend-toggle" @click="legendOpen = !legendOpen">
         <component :is="legendOpen ? ChevronDown : ChevronRight" :size="14" />
-        <span>REGIONAL WATERWAYS</span>
+        <span>DATA SOURCES</span>
       </button>
 
       <div v-if="legendOpen" class="legend-body">

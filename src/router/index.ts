@@ -14,7 +14,7 @@ const router = createRouter({
       redirect: '/schematic/lower-logan',
     },
     {
-      path: '/schematic/:slug(upper-logan|lower-logan|blacksmith-fork)',
+      path: '/schematic/:slug(upper-logan|lower-logan|blacksmith-fork|little-bear)',
       name: 'schematic',
       component: () => import('../views/SchematicView.vue'),
       props: true,

@@ -84,16 +84,21 @@ async function loadStations(variable: string) {
     sites.value = allStations
     loading.value = false
 
-    // Load observations for HydroServer stations; USGS stations come pre-filled
-    for (const [i, station] of allStations.entries()) {
-      if (station.isUSGS || station.isDWRi) continue
-      try {
-        const telemetry = await getLatestObservation(station.id, station.latestTime)
-        sites.value[i] = { ...station, observation: telemetry }
-      } catch {
-        // leave observation null
-      }
-    }
+    // Load observations for HydroServer stations; USGS stations come pre-filled.
+    // Fired in parallel (not awaited one at a time) since each request is independent —
+    // getLatestObservation already swallows its own errors, so one station failing never
+    // blocks or delays the rest.
+    await Promise.all(
+      allStations.map(async (station, i) => {
+        if (station.isUSGS || station.isDWRi) return
+        try {
+          const telemetry = await getLatestObservation(station.id, station.latestTime)
+          sites.value[i] = { ...station, observation: telemetry }
+        } catch {
+          // leave observation null
+        }
+      }),
+    )
   } catch (err) {
     console.error('Fatal dashboard orchestrator error:', err)
     loading.value = false

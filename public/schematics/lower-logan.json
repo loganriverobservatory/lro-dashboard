@@ -3,32 +3,42 @@
     "This file draws the 'Lower Logan River' schematic page (Dewitt Springs down to Cutler Terminus).",
     "See public/schematics/README.md for the full field reference and a longer walkthrough - this is the quick version.",
     "",
-    "This page intentionally RECAPS the Dewitt Springs Junction, the Dewitt Springs tributary, and the Water Lab station at its own top",
-    "(same node ids as in upper-logan.json) so the page reads as a complete, standalone diagram even though those same live stations",
-    "already appear at the bottom of the Upper Logan Canyon page. This duplication is deliberate, not a bug.",
+    "This page intentionally RECAPS the Dewitt Springs Junction, the Dewitt Springs tributary, and the Water Lab station at its",
+    "own top (same node ids as in upper-logan.json) so the page reads as a complete, standalone diagram even though those same",
+    "live stations already appear at the bottom of the Upper Logan Canyon page. This duplication is deliberate, not a bug.",
     "",
-    "NODES: each node is a card on the diagram.",
-    "  id   - unique within this file, used by edges below to connect nodes.",
-    "  name - for type 'station', must fuzzy-match a live station's display name from HydroServer/DWRi/USGS.",
-    "  row  - vertical position, smaller = further upstream/higher on the page.",
-    "  col  - horizontal lane. In this file: 2 = main channel, 1 = left-bank tributaries/canals, 3 = right-bank tributaries/canals,",
-    "         4 = the Blacksmith Fork River extension link.",
-    "  type - 'station' (shows live data), 'junction' (invisible connection point, no card), 'terminus' (labeled endpoint banner),",
-    "         or 'extension' (a card that navigates to a different schematic page when clicked).",
+    "NODES: each node is a card on the diagram, listed in the order the water actually flows.",
+    "  id         - unique within this file. Tributaries/diversions/links reference another node's id via connectsTo.",
+    "  name       - for kind 'mainstem'/'tributary'/'diversion', must fuzzy-match a live station's display name from",
+    "               HydroServer/DWRi/USGS. For 'junction'/'link' nodes it is just label text.",
+    "  kind       - 'mainstem' (a real gauge station on the main channel), 'junction' (an invisible confluence point on the main",
+    "               channel, no card - where a tributary/diversion attaches), 'tributary' (water flowing IN), 'diversion' (water",
+    "               flowing OUT), or 'link' (a card with no live data of its own that just navigates to another schematic page).",
+    "  connectsTo - tributary/diversion/link only: the id of the mainstem/junction node this attaches to, or another",
+    "               tributary/diversion/link's id to chain onto. A tributary/diversion can connect straight to a mainstem",
+    "               node (not just a junction) if that's where it actually attaches - see dwri_nwfield -> mainstreet, or",
+    "               little_bear/spring_creek_mendon -> terminus, below.",
+    "  side       - tributary/diversion/link only, when connectsTo is set: 'left' or 'right', which side of the main channel",
+    "               to draw the card on.",
     "  colorGroup - optional; must match a name from waterway_groups or schematic_groups in config/station_config.yaml.",
+    "  linkTo     - optional on any node; the schematic page slug to navigate to on click. On a normal node this adds a",
+    "               'view full system' button below its card; on a 'link' node it's the entire point of the card.",
+    "  label      - linkTo button text override (defaults to name).",
+    "  terminus   - mainstem only: marks this node as the system's final endpoint (only the 'terminus' node below should set",
+    "               this).",
+    "  description - terminus node only: subtitle text.",
     "",
-    "EDGES: 'style' is 'main' (thick dark main-channel line), 'branch' (tributary/diversion), or 'thin' (an independent flow that",
-    "connects straight to the terminus instead of a junction, e.g. Spring Creek: Mendon Road).",
-    "'direction' is 'in' (flowing into the main channel) or 'out' (flowing away, e.g. a diversion/canal). Defaults to 'in'.",
+    "There's no separate edges list - the main channel line, every tributary/diversion's connector, and flow direction (in",
+    "for tributary, out for diversion) are all derived automatically from kind + connectsTo + the order nodes appear above.",
     "",
-    "The 'bsf_ext' node is where Blacksmith Fork River used to be drawn directly on this page - it's now a link to its own page",
-    "(blacksmith-fork.json). Do not delete it without also removing the reciprocal 'to_lower_logan' extension node there.",
+    "The 'bsf_ext' node is where Blacksmith Fork River used to be drawn directly on this page - it's now a 'link' card that",
+    "navigates to its own page (blacksmith-fork.json), plus one real preview station ('bsf_1700s_preview') chained onto it so",
+    "readers see one real BSF card before clicking through. Do not delete bsf_ext without also removing the reciprocal",
+    "'to_lower_logan' link node on that page.",
     "",
-    "Little Bear River is represented by a single combined 'Little Bear River: Mendon Road' card (col 3, right before Spring",
-    "Creek: Mendon Road) rather than its full station-by-station breakdown - the detailed per-station chain is intentionally left",
-    "out for now. To add the detailed breakdown back instead: replace the 'little_bear' node with one node per station (type",
-    "'station', colorGroup 'Little Bear River') in its own column, chain them together with 'thin'-style edges in",
-    "upstream-to-downstream order, and connect the last one to the 'terminus' node with a 'thin' edge."
+    "Little Bear River works the same way: 'little_bear' is a 'link' card (right before Spring Creek: Mendon Road) that",
+    "navigates to its own page (little-bear.json), which has the full 17-station breakdown. Do not delete it without also",
+    "removing the reciprocal linkTo on that page's 'cutler_reservoir' terminus node."
   ],
   "id": "lower-logan",
   "title": "Lower Logan River: Valley",
@@ -37,249 +47,139 @@
     {
       "id": "ext_to_upper",
       "name": "Upper Logan Canyon",
-      "row": 1,
-      "col": 2,
-      "type": "extension",
-      "targetSchematic": "upper-logan",
+      "kind": "link",
+      "linkTo": "upper-logan",
       "label": "← Upper Logan Canyon"
     },
+    { "id": "dewitt_junc", "name": "Dewitt Springs Junction", "kind": "junction" },
+    { "id": "dewitt", "name": "Dewitt Springs", "kind": "tributary", "connectsTo": "dewitt_junc", "side": "left" },
     {
-      "id": "dewitt_junc",
-      "name": "Dewitt Springs Junction",
-      "row": 2,
-      "col": 2,
-      "type": "junction"
+      "id": "dwri_hydenorth",
+      "name": "Logan River: Hyde Park and Logan Northfield",
+      "kind": "diversion",
+      "connectsTo": "dewitt_junc",
+      "side": "left",
+      "colorGroup": "Logan River"
+    },
+    {
+      "id": "dwri_provpioneer",
+      "name": "Logan River: Providence Pioneer Canal",
+      "kind": "diversion",
+      "connectsTo": "dewitt_junc",
+      "side": "right",
+      "colorGroup": "Logan River"
     },
     {
       "id": "water_lab",
       "name": "Logan River: Utah Water Research Laboratory",
-      "row": 3,
-      "col": 2,
-      "type": "station",
+      "kind": "mainstem",
       "colorGroup": "Logan River Observatory: Logan River Main Stem"
     },
     {
       "id": "mainstreet",
       "name": "Logan River: Main Street",
-      "row": 4,
-      "col": 2,
-      "type": "station",
+      "kind": "mainstem",
       "colorGroup": "Logan River Observatory: Logan River Main Stem"
     },
     {
-      "id": "spring_creek_junc",
-      "name": "Spring Creek Junction",
-      "row": 5,
-      "col": 2,
-      "type": "junction"
+      "id": "dwri_nwfield",
+      "name": "Logan River: Northwest Field Canal",
+      "kind": "diversion",
+      "connectsTo": "mainstreet",
+      "side": "right",
+      "colorGroup": "Logan River"
+    },
+    { "id": "spring_creek_junc", "name": "Spring Creek Junction", "kind": "junction" },
+    {
+      "id": "spring_creek",
+      "name": "Spring Creek",
+      "kind": "tributary",
+      "connectsTo": "spring_creek_junc",
+      "side": "left"
     },
     {
-      "id": "bsf_confluence",
-      "name": "Blacksmith Fork Confluence",
-      "row": 6,
-      "col": 2,
-      "type": "junction"
+      "id": "dwri_hydepark",
+      "name": "Logan River: Hyde Park Canal",
+      "kind": "diversion",
+      "connectsTo": "spring_creek_junc",
+      "side": "left",
+      "colorGroup": "Logan River"
+    },
+    { "id": "bsf_confluence", "name": "Blacksmith Fork Confluence", "kind": "junction" },
+    {
+      "id": "dwri_swfield",
+      "name": "Logan River: Southwest Field Canal",
+      "kind": "diversion",
+      "connectsTo": "bsf_confluence",
+      "side": "right",
+      "colorGroup": "Logan River"
+    },
+    {
+      "id": "bsf_ext",
+      "name": "Blacksmith Fork River",
+      "kind": "link",
+      "connectsTo": "bsf_confluence",
+      "side": "right",
+      "linkTo": "blacksmith-fork",
+      "label": "Blacksmith Fork River →"
+    },
+    {
+      "id": "bsf_1700s_preview",
+      "name": "Blacksmith Fork River: 1700 South Footbridge",
+      "kind": "tributary",
+      "connectsTo": "bsf_ext",
+      "side": "right",
+      "colorGroup": "Blacksmith Fork River"
     },
     {
       "id": "thousand_w",
       "name": "Logan River: 1000 West",
-      "row": 7,
-      "col": 2,
-      "type": "station",
+      "kind": "mainstem",
       "colorGroup": "Logan River Observatory: Logan River Main Stem"
     },
     {
       "id": "mendon_rd",
       "name": "Logan River: Mendon Road",
-      "row": 8,
-      "col": 2,
-      "type": "station",
+      "kind": "mainstem",
       "colorGroup": "Logan River Observatory: Logan River Main Stem"
+    },
+    {
+      "id": "dwri_littlelogan",
+      "name": "Logan River: Little Logan Return to Bear",
+      "kind": "diversion",
+      "connectsTo": "mendon_rd",
+      "side": "right",
+      "colorGroup": "Logan River"
     },
     {
       "id": "before_cutler",
       "name": "Logan River: Before Confluence with Cutler Reservoir",
-      "row": 9,
-      "col": 2,
-      "type": "station",
+      "kind": "mainstem",
       "colorGroup": "Logan River Observatory: Logan River Main Stem"
     },
     {
       "id": "terminus",
       "name": "Cutler Reservoir",
-      "row": 10,
-      "col": 2,
-      "type": "terminus",
+      "kind": "mainstem",
+      "terminus": true,
       "description": "Ultimate drainage collection basin for all main channels and lateral streams."
-    },
-
-    { "id": "dewitt", "name": "Dewitt Springs", "row": 2, "col": 1, "type": "station" },
-    {
-      "id": "dwri_hydenorth",
-      "name": "Logan River: Hyde Park and Logan Northfield",
-      "row": 3,
-      "col": 1,
-      "type": "station",
-      "colorGroup": "Logan River"
-    },
-    { "id": "spring_creek", "name": "Spring Creek", "row": 5, "col": 1, "type": "station" },
-    {
-      "id": "dwri_hydepark",
-      "name": "Logan River: Hyde Park Canal",
-      "row": 6,
-      "col": 1,
-      "type": "station",
-      "colorGroup": "Logan River"
-    },
-
-    {
-      "id": "dwri_provpioneer",
-      "name": "Logan River: Providence Pioneer Canal",
-      "row": 2,
-      "col": 3,
-      "type": "station",
-      "colorGroup": "Logan River"
-    },
-    {
-      "id": "dwri_nwfield",
-      "name": "Logan River: Northwest Field Canal",
-      "row": 4,
-      "col": 3,
-      "type": "station",
-      "colorGroup": "Logan River"
-    },
-    {
-      "id": "dwri_swfield",
-      "name": "Logan River: Southwest Field Canal",
-      "row": 6,
-      "col": 3,
-      "type": "station",
-      "colorGroup": "Logan River"
-    },
-    {
-      "id": "dwri_littlelogan",
-      "name": "Logan River: Little Logan Return to Bear",
-      "row": 7,
-      "col": 3,
-      "type": "station",
-      "colorGroup": "Logan River"
     },
     {
       "id": "little_bear",
-      "name": "Little Bear River: Mendon Road",
-      "row": 8,
-      "col": 3,
-      "type": "station",
-      "colorGroup": "Logan River Observatory"
+      "name": "Little Bear River",
+      "kind": "link",
+      "connectsTo": "terminus",
+      "side": "right",
+      "linkTo": "little-bear",
+      "label": "Little Bear River →"
     },
     {
       "id": "spring_creek_mendon",
       "name": "Spring Creek: Mendon Road",
-      "row": 9,
-      "col": 3,
-      "type": "station",
+      "kind": "tributary",
+      "connectsTo": "terminus",
+      "side": "right",
       "colorGroup": "Logan River Observatory"
-    },
-
-    {
-      "id": "bsf_ext",
-      "name": "Blacksmith Fork River",
-      "row": 6,
-      "col": 4,
-      "type": "extension",
-      "targetSchematic": "blacksmith-fork",
-      "label": "Blacksmith Fork River →"
-    }
-  ],
-  "edges": [
-    { "id": "main-1", "from": "ext_to_upper", "to": "dewitt_junc", "style": "main" },
-    { "id": "main-2", "from": "dewitt_junc", "to": "water_lab", "style": "main" },
-    { "id": "main-3", "from": "water_lab", "to": "mainstreet", "style": "main" },
-    { "id": "main-4", "from": "mainstreet", "to": "spring_creek_junc", "style": "main" },
-    { "id": "main-5", "from": "spring_creek_junc", "to": "bsf_confluence", "style": "main" },
-    { "id": "main-6", "from": "bsf_confluence", "to": "thousand_w", "style": "main" },
-    { "id": "main-7", "from": "thousand_w", "to": "mendon_rd", "style": "main" },
-    { "id": "main-8", "from": "mendon_rd", "to": "before_cutler", "style": "main" },
-    { "id": "main-9", "from": "before_cutler", "to": "terminus", "style": "main" },
-
-    {
-      "id": "dewitt-edge",
-      "from": "dewitt",
-      "to": "dewitt_junc",
-      "style": "branch",
-      "direction": "in"
-    },
-    {
-      "id": "dwri_hydenorth-edge",
-      "from": "dwri_hydenorth",
-      "to": "dewitt_junc",
-      "style": "branch",
-      "direction": "out"
-    },
-    {
-      "id": "spring_creek-edge",
-      "from": "spring_creek",
-      "to": "spring_creek_junc",
-      "style": "branch",
-      "direction": "in"
-    },
-    {
-      "id": "dwri_hydepark-edge",
-      "from": "dwri_hydepark",
-      "to": "spring_creek_junc",
-      "style": "branch",
-      "direction": "out"
-    },
-
-    {
-      "id": "dwri_provpioneer-edge",
-      "from": "dwri_provpioneer",
-      "to": "dewitt_junc",
-      "style": "branch",
-      "direction": "out"
-    },
-    {
-      "id": "dwri_nwfield-edge",
-      "from": "dwri_nwfield",
-      "to": "mainstreet",
-      "style": "branch",
-      "direction": "out"
-    },
-    {
-      "id": "dwri_swfield-edge",
-      "from": "dwri_swfield",
-      "to": "bsf_confluence",
-      "style": "branch",
-      "direction": "out"
-    },
-    {
-      "id": "dwri_littlelogan-edge",
-      "from": "dwri_littlelogan",
-      "to": "mendon_rd",
-      "style": "branch",
-      "direction": "out"
-    },
-    {
-      "id": "little_bear-edge",
-      "from": "little_bear",
-      "to": "terminus",
-      "style": "thin",
-      "direction": "in"
-    },
-    {
-      "id": "spring_creek_mendon-edge",
-      "from": "spring_creek_mendon",
-      "to": "terminus",
-      "style": "thin",
-      "direction": "in"
-    },
-
-    {
-      "id": "bsf_ext-edge",
-      "from": "bsf_ext",
-      "to": "bsf_confluence",
-      "style": "branch",
-      "direction": "in"
     }
   ]
 }
