@@ -1,0 +1,17 @@
+{
+  "_instructions": [
+    "Ordered list of schematic page slugs. This is the ONE place that registers which schematic",
+    "systems exist and what order they appear in (sidebar submenu, mobile tab bar, and the",
+    "Home page's schematic card, which all read this list at runtime).",
+    "",
+    "Each slug must match a filename in this folder (slug.json) and that file's own 'id' field.",
+    "",
+    "TO ADD A NEW SYSTEM: create public/schematics/<slug>.json (see README.md), then add <slug> here.",
+    "TO REMOVE OR REORDER: delete or move its entry below. No .vue or .ts file needs to change.",
+    "",
+    "NOTE: the bare '/schematic' URL (no slug) still redirects to a hardcoded default in",
+    "src/router/index.ts, since that redirect resolves before this file can be fetched - update",
+    "that one line too if you want a different default landing page."
+  ],
+  "slugs": ["upper-logan", "lower-logan", "blacksmith-fork", "little-bear"]
+}

@@ -27,11 +27,12 @@
     "",
     "This page continues into 'Lower Logan River' via the 'ext_to_lower' link node at the bottom - do not remove it without",
     "also updating lower-logan.json's matching recap section.",
-    "Canals/diversions (DWRi stations) are intentionally left off this page for now - only natural tributaries (Beaver Creek,",
-    "Ricks Spring, Temple Fork, Right Hand Fork, Dewitt Springs) are shown."
+    "Sites displayed here are the ones at and above the UWRL Water Lab: the natural tributaries (Beaver Creek, Ricks Spring,",
+    "Temple Fork, Right Hand Fork, Dewitt Springs) plus the USGS Cache Highline Canal and Above First Dam stations."
   ],
   "id": "upper-logan",
   "title": "Upper Logan River: Canyon",
+  "navLabel": "Upper Logan River: Canyon",
   "subtitle": "Franklin Basin down to the UWRL Water Lab",
   "nodes": [
     {
@@ -80,6 +81,21 @@
     },
     { "id": "dewitt_junc", "name": "Dewitt Springs Junction", "kind": "junction" },
     { "id": "dewitt", "name": "Dewitt Springs", "kind": "tributary", "connectsTo": "dewitt_junc", "side": "left" },
+    { "id": "highline_junc", "name": "Cache Highline Canal Junction", "kind": "junction" },
+    {
+      "id": "usgs_highline",
+      "name": "Cache Highline Canal",
+      "kind": "diversion",
+      "connectsTo": "highline_junc",
+      "side": "left",
+      "colorGroup": "USGS"
+    },
+    {
+      "id": "usgs_above_first_dam",
+      "name": "Logan River Above First Dam",
+      "kind": "mainstem",
+      "colorGroup": "USGS"
+    },
     {
       "id": "water_lab",
       "name": "Logan River: Utah Water Research Laboratory",

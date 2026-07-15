@@ -60,6 +60,12 @@
 </template>
 
 <script setup lang="ts">
+/*
+StationSparkline.vue - the small 48-hour trend chart shown inside a StationCard. Draws a plain
+inline SVG line/area path itself rather than pulling in a charting library, since it only ever
+needs one simple line. DWRi stations pass their history in via preloadedHistory (already fetched
+in bulk); every other station fetches its own recent history directly here.
+*/
 import { ref, computed, watch } from 'vue'
 import { getFreshnessStatus, type StaObservation } from '../hydroService'
 
@@ -93,6 +99,9 @@ const SPARKLINE_WIDTH = 180
 const SPARKLINE_HEIGHT = 80
 const PADDING = 12
 
+// Scales the raw (time, value) history into SVG path strings for the line and its filled
+// area-under-the-line, normalized to fit SPARKLINE_WIDTH x SPARKLINE_HEIGHT regardless of the
+// data's actual time/value range.
 const sparklinePaths = computed(() => {
   const points = sparklineObservations.value
     .map(([time, val]) => ({ x: new Date(time).getTime(), y: val }))
@@ -136,6 +145,7 @@ const sparklinePaths = computed(() => {
   return { line: [linePath], area: [areaPath] }
 })
 
+// Line/border color follows the same freshness scheme as the station's main value.
 const sparklineColors = computed(() => {
   const status = getFreshnessStatus(props.latestObservation)
   if (status === 'current') return { line: '#16a34a', border: '#e2e8f0' }
@@ -155,6 +165,10 @@ const sparklineContainerStyle = computed(() => ({
 
 const canShowSparkline = computed(() => sparklineObservations.value.length > 1)
 
+// Fetches this station's last 48 hours of readings directly (USGS or HydroServer, by id
+// prefix) - NOTE both URLs here are hardcoded rather than going through hydroService.ts's
+// setApiConfig() endpoints, unlike the rest of the app's data fetching; a deployment that
+// changes its HydroServer/USGS endpoints via config.json would need to also edit this function.
 async function fetchRecentHistory(id: string) {
   try {
     loading.value = true
@@ -187,6 +201,8 @@ async function fetchRecentHistory(id: string) {
   }
 }
 
+// Uses preloadedHistory when the parent already has it (DWRi); otherwise fetches fresh on
+// mount and whenever the station id changes.
 watch(
   [() => props.stationId, () => props.preloadedHistory],
   ([newId, preloaded]) => {

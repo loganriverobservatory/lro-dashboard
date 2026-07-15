@@ -6,7 +6,7 @@ Vue Flow node type per kind, since every kind shares the same handle setup.
 */
 import { computed, inject } from 'vue'
 import { Position, Handle, type NodeProps } from '@vue-flow/core'
-import { Droplets, ChevronRight } from 'lucide-vue-next'
+import { ChevronRight } from 'lucide-vue-next'
 import {
   type Station,
   type NodeKind,
@@ -85,11 +85,7 @@ const bgColor = computed(() => {
 
     <template v-else>
       <div v-if="data.terminus" class="terminus-card">
-        <Droplets :size="22" class="terminus-icon" />
-        <div class="terminus-details">
-          <h3>SYSTEM TERMINUS: {{ data.name }}</h3>
-          <p v-if="data.description">{{ data.description }}</p>
-        </div>
+        <h3>{{ data.name }}</h3>
       </div>
 
       <div v-else class="station-wrapper" :style="{ backgroundColor: bgColor }">
@@ -139,7 +135,7 @@ const bgColor = computed(() => {
    off the main channel's straight vertical line and every branch's connection point. */
 .schematic-node {
   position: relative;
-  width: 240px;
+  width: 360px;
   box-sizing: border-box;
 }
 
@@ -188,12 +184,11 @@ const bgColor = computed(() => {
   box-sizing: border-box;
 }
 
-/* Sized to read the same as the .link-card/.node-title reference (2rem, bold) rather than
-   the shared component's dense-sidebar-list defaults - the card is free to grow taller to
-   fit that text since its width is fixed (see .schematic-node), so this is about matching
-   the link-card's readability, not squeezing into a fixed box. */
+/* Name/value sized up from StationCard's native .is-compact sizing (0.9rem/1.6rem) so the
+   text fills more of the card's fixed 360px width instead of sitting small within it. */
 .station-wrapper :deep(.station-card.is-compact) {
-  padding: 0.35rem 0.5rem;
+  position: relative;
+  padding: 0.25rem 0.4rem;
 }
 .station-wrapper :deep(.card-header) {
   margin-bottom: 0.1rem;
@@ -203,20 +198,11 @@ const bgColor = computed(() => {
   margin-bottom: 0.05rem;
 }
 .station-wrapper :deep(.location-name) {
-  font-size: 1.9rem;
+  font-size: clamp(1.1rem, 4vw, 1.6rem);
   margin: 0;
 }
 .station-wrapper :deep(.value) {
-  font-size: 3.5rem;
-}
-.station-wrapper :deep(.unit) {
-  font-size: 1.4rem;
-}
-
-@media screen and (min-width: 769px) {
-  .station-wrapper :deep(.location-name) {
-    font-size: 2.1rem;
-  }
+  font-size: clamp(1.6rem, 5vw, 2.2rem);
 }
 .station-wrapper :deep(.timestamp) {
   display: none;
@@ -224,8 +210,30 @@ const bgColor = computed(() => {
 .station-wrapper :deep(.status-badge) {
   display: none;
 }
+/* Value snaps to the card's right edge, leaving the left side to the name above it - the unit
+   is hidden here since SchematicView.vue now shows it once for the whole page ("Discharge
+   shown in cfs") instead of repeating it on every single card. */
+.station-wrapper :deep(.value-row) {
+  display: flex;
+  justify-content: flex-end;
+  align-items: baseline;
+}
+.station-wrapper :deep(.unit) {
+  display: none;
+}
+/* Hyperlink icon moves out of the header's inline flow to the card's top-right corner,
+   directly above the right-aligned value below it. card-header/title-with-link get right
+   padding reserved so a long name wraps before reaching under the icon instead of overlapping. */
 .station-wrapper :deep(.external-site-link) {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  margin-left: 0;
   font-size: 0.8rem;
+}
+.station-wrapper :deep(.card-header),
+.station-wrapper :deep(.title-with-link) {
+  padding-right: 22px;
 }
 
 .node-card {
@@ -277,43 +285,33 @@ const bgColor = computed(() => {
   background: #fff7ed;
   border: 2px solid #ea580c;
   border-radius: 12px;
-  padding: 1.15rem 1.4rem;
+  padding: 2rem 1.4rem;
   display: flex;
   align-items: center;
-  gap: 14px;
+  justify-content: center;
   box-shadow: 0 4px 12px rgba(234, 88, 12, 0.08);
   box-sizing: border-box;
 }
 
-.terminus-icon {
-  color: #ea580c;
-  flex-shrink: 0;
-}
-
-.terminus-details h3 {
+.terminus-card h3 {
   margin: 0;
-  font-size: 1.1rem;
+  font-size: 2rem;
   font-weight: 800;
   color: #7c2d12;
-}
-
-.terminus-details p {
-  margin: 4px 0 0 0;
-  font-size: 0.85rem;
-  color: #9a3412;
+  text-align: center;
 }
 
 .link-card {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: 12px;
   width: 100%;
   background: #eff6ff;
   border: 1.5px dashed #93c5fd;
-  border-radius: 8px;
-  padding: 8px 10px;
-  min-height: 40px;
+  border-radius: 10px;
+  padding: 1.5rem 1.4rem;
+  min-height: 80px;
   box-sizing: border-box;
   cursor: pointer;
   color: #1d4ed8;
@@ -326,7 +324,7 @@ const bgColor = computed(() => {
 }
 
 .link-card .node-title {
-  font-size: 1.1rem;
+  font-size: 2.2rem;
   color: #1d4ed8;
 }
 

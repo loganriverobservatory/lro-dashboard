@@ -7,7 +7,10 @@ import 'leaflet/dist/leaflet.css'
 import { onMounted, watch, onBeforeUnmount, ref, computed } from 'vue'
 import {
   type Station,
+  type SchematicPages,
   getFreshnessStatus,
+  getSchematicSystemOrder,
+  findStationSystem,
   STATUS_COLORS,
   WATERWAY_COLORS,
   WATERWAY_LIST,
@@ -20,11 +23,26 @@ const props = defineProps<{
   selectedId: string | null
   selectedVariable: string
   activeWaterways: string[]
+  // Which schematic systems are active in the filter below - see App.vue's activeSystems.
+  activeSystems?: string[]
+  // Which of activeSystems/activeWaterways is currently applied - see App.vue's filterMode.
+  // Only one is ever actually filtered on, regardless of the other's stored checkbox state.
+  filterMode?: 'system' | 'source'
+  schematicPages?: SchematicPages | null
+  // Manifest-ordered {slug, label} list - used by resetMap() to restore every system on reset.
+  // No mobile filter UI here - MapView relies entirely on the sidebar's own FILTER STATIONS
+  // toggle, on mobile and desktop alike (see AppSidebar.vue).
+  schematicNav?: { slug: string; label: string }[]
 }>()
 
 const emit = defineEmits<{
   (e: 'resetWaterways', fallbackWaterways: string[]): void
+  (e: 'system-filter-changed', updated: string[]): void
 }>()
+
+// Same schematic data as the schematic pages themselves, but keeping each station's system
+// slug - used to filter map pins by system, same matching rule ListView uses.
+const systemOrder = computed(() => getSchematicSystemOrder(props.schematicPages))
 
 const variableLongLabel = computed(() => {
   const match = WATER_VARIBALES.find((v) => v.id === props.selectedVariable)
@@ -37,6 +55,10 @@ const hasZoomed = ref(false)
 const expandedStation = ref<Station | null>(null)
 let isProgrammaticZoom = false
 
+// Rebuilds every Leaflet marker from scratch (rather than diffing) - simplest way to keep pins
+// in sync with sites/activeWaterways changes, and cheap enough at this station count. Also
+// re-fits the map to all visible pins, but only before the user's first manual zoom (see
+// hasZoomed), so it doesn't fight a zoom/pan the user just did.
 const syncMarkers = () => {
   if (!map) return
 
@@ -46,7 +68,15 @@ const syncMarkers = () => {
   const allCoords: L.LatLngTuple[] = []
 
   props.sites.forEach((station: Station) => {
-    if (!props.activeWaterways.includes(station.tributary ?? '')) return
+    if (props.filterMode === 'source') {
+      if (!props.activeWaterways.includes(station.tributary ?? '')) return
+    } else if (props.activeSystems) {
+      // A station that doesn't match any schematic file is treated as belonging to no
+      // system, so it's hidden the same as anything else once its (nonexistent) system is
+      // deselected - add it to a schematic JSON to make it filterable.
+      const system = findStationSystem(station.displayName, systemOrder.value)
+      if (system === undefined || !props.activeSystems.includes(system)) return
+    }
     if (station.coordinates && station.coordinates.length === 2) {
       const coords = station.coordinates as L.LatLngTuple
       allCoords.push(coords)
@@ -109,10 +139,13 @@ const syncMarkers = () => {
   }
 }
 
+// The "Reset" button shown once the user has zoomed in - clears the manual-zoom flag, restores
+// every waterway and system to the active filter set, and re-fits the map to all sites.
 function resetMap() {
   hasZoomed.value = false
   expandedStation.value = null
   emit('resetWaterways', [...WATERWAY_LIST])
+  if (props.schematicNav?.length) emit('system-filter-changed', props.schematicNav.map((s) => s.slug))
   syncMarkers()
 
   const coords = props.sites
@@ -162,6 +195,8 @@ onBeforeUnmount(() => {
   }
 })
 
+// Refreshes markers as new observations arrive, and keeps an open station popup showing
+// current data (or closes it if that station disappeared, e.g. a waterway filter change).
 watch(
   () => props.sites,
   () => {
@@ -174,10 +209,13 @@ watch(
   { deep: true },
 )
 
+// Closes the open station popup if its waterway just got filtered out (only when that filter
+// is actually the active one - see filterMode), then re-syncs pins.
 watch(
   () => props.activeWaterways,
   () => {
     if (
+      props.filterMode === 'source' &&
       expandedStation.value &&
       !props.activeWaterways.includes(expandedStation.value.tributary ?? '')
     ) {
@@ -188,6 +226,26 @@ watch(
   { deep: true },
 )
 
+// Same as above, for the system filter - closes the popup if its system just got turned off.
+watch(
+  () => props.activeSystems,
+  () => {
+    if (props.filterMode !== 'source' && expandedStation.value && props.activeSystems) {
+      const system = findStationSystem(expandedStation.value.displayName, systemOrder.value)
+      if (system === undefined || !props.activeSystems.includes(system)) {
+        expandedStation.value = null
+      }
+    }
+    syncMarkers()
+  },
+  { deep: true },
+)
+
+// Switching modes changes which stations are actually filtered, without activeWaterways or
+// activeSystems themselves necessarily changing - re-sync so pins reflect the new mode.
+watch(() => props.filterMode, syncMarkers)
+
+// Selecting a station elsewhere in the app (e.g. from a list) pans the map to and opens its pin.
 watch(
   () => props.selectedId,
   (newId) => {
@@ -284,6 +342,7 @@ watch(
 .reset-btn:hover {
   background: #073763;
 }
+
 .expanded-overlay {
   position: absolute;
   inset: 0;

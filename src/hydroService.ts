@@ -3,7 +3,35 @@ src/hydroService.ts - fetches and processes data from HydroServer for use in the
 */
 import type { DatastreamExtended } from '@hydroserver/client'
 
-const BASE_URL = 'https://lro.hydroserver.org/api/sensorthings/v1.1'
+// Set once by App.vue's loadConfig(), from public/config.json, before any of the fetch
+// functions below run - there is no hardcoded LRO default to fall back to. That's deliberate:
+// a deployment with a missing/mistyped endpoint should fail loudly at startup (see
+// setApiConfig) instead of silently serving LRO's own data to a different organization.
+let BASE_URL: string
+let STATION_CONFIG_URL: string
+let USGS_API_BASE_URL: string
+
+export function setApiConfig(cfg: {
+  hydroServerBaseUrl?: unknown
+  stationConfigUrl?: unknown
+  usgsApiBaseUrl?: unknown
+}) {
+  const entries: [string, unknown][] = [
+    ['hydroServerBaseUrl', cfg.hydroServerBaseUrl],
+    ['stationConfigUrl', cfg.stationConfigUrl],
+    ['usgsApiBaseUrl', cfg.usgsApiBaseUrl],
+  ]
+  for (const [key, value] of entries) {
+    if (typeof value !== 'string' || value.trim() === '') {
+      throw new Error(
+        `config.json is missing a valid "${key}" value - the dashboard cannot start without it.`,
+      )
+    }
+  }
+  BASE_URL = cfg.hydroServerBaseUrl as string
+  STATION_CONFIG_URL = cfg.stationConfigUrl as string
+  USGS_API_BASE_URL = cfg.usgsApiBaseUrl as string
+}
 
 let apiToken: string | undefined
 export function setApiToken(token: string) { apiToken = token }
@@ -57,10 +85,10 @@ const HYDROSERVER_GROUP = 'Logan River Observatory'
 // Populated by loadStationConfig(). Small hardcoded fallbacks so the app still
 // has reasonable colors to render with if that fetch hasn't completed yet or fails.
 export let WATERWAY_COLORS: Record<string, string> = {
-  [MAIN_STEM_GROUP]: '#7d98c6',
-  [HYDROSERVER_GROUP]: '#7d98c6',
-  'USGS': '#d09559',
-  'DWRi': '#6fa26b',
+  [MAIN_STEM_GROUP]: '#2a78d6',
+  [HYDROSERVER_GROUP]: '#2a78d6',
+  'USGS': '#e87ba4',
+  'DWRi': '#4a3aa7',
 }
 
 export let WATERWAY_LIST = Object.keys(WATERWAY_COLORS)
@@ -94,7 +122,11 @@ export const WATER_VARIBALES = [
 // its label is generic enough to fuzzy-match every real station in that system. A real station
 // that also sits at a page boundary (e.g. water_lab) stays 'mainstem' and just carries linkTo.
 export type NodeKind = 'mainstem' | 'junction' | 'tributary' | 'diversion' | 'link'
-export type SchematicSlug = 'upper-logan' | 'lower-logan' | 'blacksmith-fork' | 'little-bear'
+// A schematic page's slug, e.g. 'lower-logan'. Not a fixed literal union - which slugs exist is
+// determined at runtime by public/schematics/manifest.json, so any adopter can add/rename/remove
+// river systems by editing JSON only. The tradeoff: a typo in some JSON's `linkTo` is no longer
+// caught by the type checker, only surfaced at runtime as a failed page load.
+export type SchematicSlug = string
 
 export interface SchematicNode {
   id: string
@@ -116,22 +148,42 @@ export interface SchematicNode {
 export interface SchematicPageConfig {
   _instructions?: string[] // ignored by the renderer; plain-English edit notes for non-developers
   id: SchematicSlug
-  title: string
+  title: string // shown in the page header
+  navLabel?: string // short name for the sidebar submenu / mobile tab bar; falls back to title
   subtitle?: string
   nodes: SchematicNode[]
 }
 
-const SCHEMATIC_SLUGS: SchematicSlug[] = ['upper-logan', 'lower-logan', 'blacksmith-fork', 'little-bear']
+interface SchematicManifest {
+  slugs: SchematicSlug[]
+}
 
-export type SchematicPages = Record<SchematicSlug, SchematicPageConfig | null>
+// slugs is manifest order (only slugs whose JSON fetched successfully); bySlug is a lookup for
+// resolving one page by its route param. Keeping both avoids every consumer re-deriving order.
+export interface SchematicPages {
+  slugs: SchematicSlug[]
+  bySlug: Record<SchematicSlug, SchematicPageConfig | null>
+}
 
-// Fetches the static per-page schematic layout files (edited directly in the repo under
-// public/schematics/ — no live-fetch/publishing pipeline involved, unlike
-// loadStationConfig()). Used both by SchematicView (to render whichever page is active) and
-// by App.vue (to derive ListView's upstream->downstream station order).
+// Fetches public/schematics/manifest.json (the single place that registers which schematic
+// systems exist and in what order), then each listed slug's static page file — edited directly
+// in the repo under public/schematics/, no live-fetch/publishing pipeline involved, unlike
+// loadStationConfig(). Used both by SchematicView (to render whichever page is active) and by
+// App.vue (to derive ListView's upstream->downstream station order, and the sidebar/tab nav).
 export async function loadSchematicPages(): Promise<SchematicPages> {
+  let slugs: SchematicSlug[] = []
+  try {
+    const res = await fetch('/schematics/manifest.json', { cache: 'no-cache' })
+    if (res.ok) {
+      const manifest = (await res.json()) as SchematicManifest
+      slugs = Array.isArray(manifest.slugs) ? manifest.slugs : []
+    }
+  } catch {
+    slugs = []
+  }
+
   const results = await Promise.all(
-    SCHEMATIC_SLUGS.map(async (slug): Promise<SchematicPageConfig | null> => {
+    slugs.map(async (slug): Promise<SchematicPageConfig | null> => {
       try {
         const res = await fetch(`/schematics/${slug}.json`, { cache: 'no-cache' })
         return res.ok ? ((await res.json()) as SchematicPageConfig) : null
@@ -140,11 +192,12 @@ export async function loadSchematicPages(): Promise<SchematicPages> {
       }
     }),
   )
-  const pages = {} as SchematicPages
-  SCHEMATIC_SLUGS.forEach((slug, i) => {
-    pages[slug] = results[i] ?? null
+
+  const bySlug: Record<SchematicSlug, SchematicPageConfig | null> = {}
+  slugs.forEach((slug, i) => {
+    bySlug[slug] = results[i] ?? null
   })
-  return pages
+  return { slugs, bySlug }
 }
 
 interface UsgsStationEntry {
@@ -175,9 +228,6 @@ let HIDDEN_STATIONS: string[] = []
 let DISPLAY_NAMES: Record<string, string> = {}
 let USGS_STATIONS_CONFIG: UsgsStationEntry[] = []
 let DWRI_STATIONS_DATA: DwriStationEntry[] = []
-
-const STATION_CONFIG_URL =
-  'https://raw.githubusercontent.com/loganriverobservatory/lro-dashboard/data-cache/station-config.json'
 
 // Fetches the generated station config (station lists, display names, colors)
 // and populates the module state every other function here reads from. Call
@@ -312,7 +362,7 @@ export async function getUSGSStations(variable: string = 'Discharge'): Promise<S
   if (variable.toLowerCase() !== 'discharge') return []
   if (USGS_STATIONS_CONFIG.length === 0) return []
 
-  const url = `https://waterservices.usgs.gov/nwis/iv/?sites=${USGS_STATIONS_CONFIG.map((s) => s.id).join(',')}&parameterCd=00060&format=json`
+  const url = `${USGS_API_BASE_URL}?sites=${USGS_STATIONS_CONFIG.map((s) => s.id).join(',')}&parameterCd=00060&format=json`
 
   try {
     const res = await fetch(url)
@@ -408,21 +458,29 @@ export function getFreshnessStatus(observation: StaObservation | null): Freshnes
   return 'outdated'
 }
 
-// Top-of-watershed-to-bottom order across all three schematic pages, in a fixed page
-// sequence (upper-logan -> lower-logan -> blacksmith-fork). A node's row is its position
-// among the trunk (mainstem/junction) nodes, in file order. A tributary/diversion sorts by
-// the row of the trunk node it (eventually) attaches to — found by walking its connectsTo
-// chain until it reaches a mainstem/junction node. junction and link nodes never match a
-// real station, so they're excluded from the final list (link nodes especially, since their
-// generic label would otherwise hijack the fuzzy match for every real station in that
-// system — see NodeKind). Array.sort is stable, so ties keep their file order.
-export function getSchematicOrder(pages: SchematicPages | null | undefined): string[] {
+interface SchematicOrderEntry {
+  name: string
+  slug: SchematicSlug
+  page: number
+  row: number
+}
+
+// Top-of-watershed-to-bottom order across every schematic page, in manifest.json's page
+// sequence. A node's row is its position among the trunk (mainstem/junction) nodes, in file
+// order. A tributary/diversion sorts by the row of the trunk node it (eventually) attaches
+// to — found by walking its connectsTo chain until it reaches a mainstem/junction node.
+// junction and link nodes never match a real station, so they're excluded from the final list
+// (link nodes especially, since their generic label would otherwise hijack the fuzzy match for
+// every real station in that system — see NodeKind). Array.sort is stable, so ties keep their
+// file order. Shared by getSchematicOrder() and getSchematicSystemOrder() below, so there's
+// only one place that walks the schematic files.
+function buildSchematicEntries(pages: SchematicPages | null | undefined): SchematicOrderEntry[] {
   if (!pages) return []
 
-  const entries: { name: string; page: number; row: number }[] = []
+  const entries: SchematicOrderEntry[] = []
 
-  SCHEMATIC_SLUGS.forEach((slug, pageIndex) => {
-    const page = pages[slug]
+  pages.slugs.forEach((slug, pageIndex) => {
+    const page = pages.bySlug[slug]
     if (!page) return
 
     const nodesById = new Map(page.nodes.map((n) => [n.id, n]))
@@ -445,12 +503,24 @@ export function getSchematicOrder(pages: SchematicPages | null | undefined): str
 
     page.nodes.forEach((node) => {
       if (node.kind === 'junction' || node.kind === 'link') return
-      entries.push({ name: node.name, page: pageIndex, row: trunkRowOf(node) })
+      entries.push({ name: node.name, slug, page: pageIndex, row: trunkRowOf(node) })
     })
   })
 
   entries.sort((a, b) => a.page - b.page || a.row - b.row)
-  return entries.map((e) => e.name)
+  return entries
+}
+
+export function getSchematicOrder(pages: SchematicPages | null | undefined): string[] {
+  return buildSchematicEntries(pages).map((e) => e.name)
+}
+
+// Same ordered list as getSchematicOrder(), but keeping each entry's system slug - this is
+// what lets a live station be matched back to which schematic page (Upper Logan, Little Bear,
+// etc.) it belongs to, for the List/Map view system filter. Adding or removing a station is a
+// schematic-JSON-only edit - nothing here needs to change to pick it up.
+export function getSchematicSystemOrder(pages: SchematicPages | null | undefined): { name: string; slug: SchematicSlug }[] {
+  return buildSchematicEntries(pages).map((e) => ({ name: e.name, slug: e.slug }))
 }
 
 // Matches SchematicView's findLiveStation fuzzy substring match, so list order stays
@@ -469,4 +539,22 @@ export function sortStationsBySchematic(stations: Station[], order: string[]): S
     .map((station, i) => ({ station, i, key: orderIndex(station) }))
     .sort((a, b) => a.key - b.key || a.i - b.i)
     .map((entry) => entry.station)
+}
+
+// Same fuzzy substring match as sortStationsBySchematic/findLiveStation, used by the List/Map
+// view system filter to find which schematic page a live station belongs to. Returns undefined
+// if the station doesn't match any node in any schematic file (e.g. a brand-new live station
+// that hasn't been added to a schematic JSON yet) - callers treat that the same as belonging to
+// no system, so it's hidden by the filter same as anything else, not exempted from it. Add the
+// station to a schematic JSON to make it filterable.
+export function findStationSystem(
+  displayName: string,
+  systemOrder: { name: string; slug: SchematicSlug }[],
+): SchematicSlug | undefined {
+  const liveName = displayName.toLowerCase()
+  const match = systemOrder.find((e) => {
+    const targetName = e.name.toLowerCase()
+    return liveName.includes(targetName) || targetName.includes(liveName)
+  })
+  return match?.slug
 }

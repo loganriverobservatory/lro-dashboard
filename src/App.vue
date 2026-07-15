@@ -2,7 +2,7 @@
 /*
 App.vue - root orchestrator
 */
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   getVariableStations,
@@ -10,6 +10,7 @@ import {
   getUSGSStations,
   getDWRiStations,
   setApiToken,
+  setApiConfig,
   loadStationConfig,
   loadSchematicPages,
   type Station,
@@ -32,10 +33,44 @@ const sites = ref<Station[]>([])
 const loading = ref(true)
 const sidebarOpen = ref(false)
 const currentView = ref('home')
+
+// Keeps currentView synced to the route itself, rather than relying on every possible way of
+// navigating to a schematic page (sidebar's submenu, its own tab bar, a node's "view full
+// system" button, a direct URL, browser back/forward) to remember to update it individually.
+// Without this, AppSidebar's own direct router.push() calls left currentView stuck on
+// whatever view was active before - keeping List/Map's sidebar item highlighted and the
+// FILTER STATIONS section visible even after navigating away to a schematic page.
+watch(isSchematicRoute, (isSchematic) => {
+  if (isSchematic) currentView.value = 'schematic'
+})
 const selectedId = ref<string | null>(null)
 const selectedVariable = ref('Discharge')
 const activeWaterways = ref<string[]>([])
+// Which schematic systems (Upper Logan, Little Bear, etc.) are active in List/Map view's
+// system filter - shared between both views, same pattern as activeWaterways.
+const activeSystems = ref<string[]>([])
+// Only one of activeSystems/activeWaterways is ever actually applied as a filter, chosen by
+// this mode - see setFilterMode(). Keeps List/Map view's filter to one dimension at a time
+// instead of the two stacking, which is simpler to reason about for a public-facing dashboard.
+const filterMode = ref<'system' | 'source'>('system')
 const schematicPages = ref<SchematicPages | null>(null)
+
+// Branding, cosmetic only - unlike the API endpoints in setApiConfig(), a missing value here
+// just means AppHeader falls back to its own default text rather than failing to start.
+const dashboardTitle = ref<string | undefined>(undefined)
+const headerNav = ref<{ home?: string; help?: string }>({})
+const externalLink = ref<{ url?: string; label?: string }>({})
+
+// Manifest-ordered {slug, label} list for the sidebar submenu and the schematic tab bar - the
+// single place that derives a displayable nav list from schematicPages, so neither component
+// needs its own hardcoded copy of which systems exist.
+const schematicNav = computed(() => {
+  if (!schematicPages.value) return []
+  return schematicPages.value.slugs.flatMap((slug) => {
+    const page = schematicPages.value!.bySlug[slug]
+    return page ? [{ slug, label: page.navLabel ?? page.title }] : []
+  })
+})
 
 let refreshTimer: ReturnType<typeof setInterval> | null = null
 
@@ -53,19 +88,36 @@ function handleSelect(id: string | null) {
 }
 
 async function loadConfig() {
+  // Network-level failure only (e.g. a transient outage during the 20-minute refresh) is
+  // tolerated here - config stays null and this cycle just skips re-applying it. That's
+  // different from config.json being reachable but missing/mistyping a required endpoint,
+  // which is NOT caught here - setApiConfig() below throws in that case, on purpose (see its
+  // own comment in hydroService.ts).
+  let config: Record<string, unknown> | null = null
   try {
     const res = await fetch('/config.json', { cache: 'no-cache' })
-    if (res.ok) {
-      const config = await res.json()
-      if (config.apiToken) setApiToken(config.apiToken)
-    }
+    if (res.ok) config = await res.json()
   } catch {
-    // proceed without config
+    // proceed without a freshly-fetched config this cycle
+  }
+
+  if (config) {
+    if (config.apiToken) setApiToken(config.apiToken as string)
+    setApiConfig({
+      hydroServerBaseUrl: config.hydroServerBaseUrl,
+      stationConfigUrl: config.stationConfigUrl,
+      usgsApiBaseUrl: config.usgsApiBaseUrl,
+    })
+    dashboardTitle.value = typeof config.dashboardTitle === 'string' ? config.dashboardTitle : undefined
+    headerNav.value = (config.headerNav as typeof headerNav.value) ?? {}
+    externalLink.value = (config.externalLink as typeof externalLink.value) ?? {}
+    if (dashboardTitle.value) document.title = dashboardTitle.value
   }
 
   await loadStationConfig()
   schematicPages.value = await loadSchematicPages()
   if (activeWaterways.value.length === 0) activeWaterways.value = [...WATERWAY_LIST]
+  if (activeSystems.value.length === 0) activeSystems.value = schematicNav.value.map((s) => s.slug)
 }
 
 async function loadStations(variable: string) {
@@ -115,11 +167,33 @@ function handleWaterwayFilter(updated: string[]) {
   activeWaterways.value = updated
 }
 
+function handleSystemFilter(updated: string[]) {
+  activeSystems.value = updated
+}
+
+// Switching modes always resets the newly-active mode's checkboxes to fully-checked, rather
+// than resuming wherever they were left last time - a stale partial selection from an earlier
+// visit to this mode would be confusing to land on. The mode you're leaving keeps its own
+// stored checkboxes, but List/Map view ignores them entirely while inactive (see filterMode).
+function setFilterMode(mode: 'system' | 'source') {
+  filterMode.value = mode
+  if (mode === 'system') activeSystems.value = schematicNav.value.map((s) => s.slug)
+  else activeWaterways.value = [...WATERWAY_LIST]
+}
+
 // Home/List/Map/Help nav clicks route through here so leaving a /schematic/*
 // route resets the URL back to '/' — otherwise the address bar would stay on
-// a schematic sub-route while a non-schematic view is showing.
+// a schematic sub-route while a non-schematic view is showing. Clicking into
+// 'schematic' (e.g. the Home page's card) instead pushes straight to the first
+// manifest-ordered slug, same as the sidebar's "SCHEMATIC VIEW" item.
 function changeView(view: string) {
   currentView.value = view
+  if (view === 'schematic') {
+    if (!isSchematicRoute.value && schematicNav.value.length) {
+      router.push(`/schematic/${schematicNav.value[0]!.slug}`)
+    }
+    return
+  }
   if (isSchematicRoute.value) router.push('/')
 }
 
@@ -132,7 +206,13 @@ onMounted(async () => {
 
 <template>
   <div class="grid-container">
-    <AppHeader @toggle-sidebar="sidebarOpen = true" @change-view="changeView" />
+    <AppHeader
+      :dashboard-title="dashboardTitle"
+      :header-nav="headerNav"
+      :external-link="externalLink"
+      @toggle-sidebar="sidebarOpen = true"
+      @change-view="changeView"
+    />
 
     <div v-if="sidebarOpen" class="sidebar-backdrop" @click="sidebarOpen = false" />
 
@@ -140,16 +220,28 @@ onMounted(async () => {
       :is-open="sidebarOpen"
       :current-view="currentView"
       :active-waterways="activeWaterways"
+      :active-systems="activeSystems"
+      :filter-mode="filterMode"
+      :schematic-nav="schematicNav"
       @close-sidebar="sidebarOpen = false"
       @change-view="changeView"
       @variable-changed="handleVariableChange"
       @waterway-filter-changed="handleWaterwayFilter"
+      @system-filter-changed="handleSystemFilter"
+      @filter-mode-changed="setFilterMode"
     />
 
     <main class="main-container">
       <template v-if="isSchematicRoute">
         <router-view v-slot="{ Component }">
-          <component :is="Component" :sites="sites" :loading="loading" :active-waterways="activeWaterways" />
+          <component
+            :is="Component"
+            :sites="sites"
+            :loading="loading"
+            :active-waterways="activeWaterways"
+            :schematic-nav="schematicNav"
+            :selected-variable="selectedVariable"
+          />
         </router-view>
       </template>
       <template v-else>
@@ -161,7 +253,13 @@ onMounted(async () => {
           :loading="loading"
           :selected-variable="selectedVariable"
           :active-waterways="activeWaterways"
+          :active-systems="activeSystems"
+          :filter-mode="filterMode"
           :schematic-pages="schematicPages"
+          :schematic-nav="schematicNav"
+          @system-filter-changed="handleSystemFilter"
+          @waterway-filter-changed="handleWaterwayFilter"
+          @filter-mode-changed="setFilterMode"
         />
         <MapView
           v-if="currentView === 'map'"
@@ -170,8 +268,13 @@ onMounted(async () => {
           :selected-id="selectedId"
           :selected-variable="selectedVariable"
           :active-waterways="activeWaterways"
+          :active-systems="activeSystems"
+          :filter-mode="filterMode"
+          :schematic-pages="schematicPages"
+          :schematic-nav="schematicNav"
           @select="handleSelect"
           @resetWaterways="(allWaterWays) => (activeWaterways = allWaterWays)"
+          @system-filter-changed="handleSystemFilter"
         />
       </template>
     </main>

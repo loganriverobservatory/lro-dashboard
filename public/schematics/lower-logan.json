@@ -42,6 +42,7 @@
   ],
   "id": "lower-logan",
   "title": "Lower Logan River: Valley",
+  "navLabel": "Lower Logan River: Valley",
   "subtitle": "Dewitt Springs down to Cutler Terminus",
   "nodes": [
     {
@@ -49,7 +50,7 @@
       "name": "Upper Logan Canyon",
       "kind": "link",
       "linkTo": "upper-logan",
-      "label": "← Upper Logan Canyon"
+      "label": "Continue to Upper Logan Canyon ←"
     },
     { "id": "dewitt_junc", "name": "Dewitt Springs Junction", "kind": "junction" },
     { "id": "dewitt", "name": "Dewitt Springs", "kind": "tributary", "connectsTo": "dewitt_junc", "side": "left" },
@@ -67,6 +68,30 @@
       "kind": "diversion",
       "connectsTo": "dewitt_junc",
       "side": "right",
+      "colorGroup": "Logan River"
+    },
+    {
+      "id": "dwri_crockett",
+      "name": "Logan River: 8th Ward Canal (Crockett Canal)",
+      "kind": "diversion",
+      "connectsTo": "dewitt_junc",
+      "side": "left",
+      "colorGroup": "Logan River"
+    },
+    {
+      "id": "dwri_provlogan",
+      "name": "Logan River: Providence-Logan Irrigation Company",
+      "kind": "diversion",
+      "connectsTo": "dewitt_junc",
+      "side": "right",
+      "colorGroup": "Logan River"
+    },
+    {
+      "id": "dwri_loganorthern",
+      "name": "Logan River: Logan and Northern Canal",
+      "kind": "diversion",
+      "connectsTo": "dewitt_junc",
+      "side": "left",
       "colorGroup": "Logan River"
     },
     {
@@ -105,6 +130,14 @@
       "side": "left",
       "colorGroup": "Logan River"
     },
+    {
+      "id": "dwri_benson",
+      "name": "Logan River: Benson Irrigation Company",
+      "kind": "diversion",
+      "connectsTo": "spring_creek_junc",
+      "side": "left",
+      "colorGroup": "Logan River"
+    },
     { "id": "bsf_confluence", "name": "Blacksmith Fork Confluence", "kind": "junction" },
     {
       "id": "dwri_swfield",
@@ -121,7 +154,7 @@
       "connectsTo": "bsf_confluence",
       "side": "right",
       "linkTo": "blacksmith-fork",
-      "label": "Blacksmith Fork River →"
+      "label": "Continue to Blacksmith Fork River →"
     },
     {
       "id": "bsf_1700s_preview",
@@ -171,7 +204,7 @@
       "connectsTo": "terminus",
       "side": "right",
       "linkTo": "little-bear",
-      "label": "Little Bear River →"
+      "label": "Continue to Little Bear River →"
     },
     {
       "id": "spring_creek_mendon",

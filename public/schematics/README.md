@@ -1,14 +1,21 @@
 # Schematic page config files
 
-This folder holds one JSON file per schematic diagram page shown in the dashboard's "Schematic View":
+This folder holds one JSON file per schematic diagram page shown in the dashboard's "Schematic View", plus `manifest.json`, which lists which of those pages exist and in what order:
 
+- `manifest.json` — ordered list of page slugs. Add/remove/reorder a whole system here; no code change needed.
 - `upper-logan.json` — Upper Logan Canyon (Franklin Basin down to the UWRL Water Lab)
 - `lower-logan.json` — Lower Logan River (Dewitt Springs down to Cutler Terminus, plus Cutler Inflows)
 - `blacksmith-fork.json` — Blacksmith Fork River (the full BSF system)
 - `little-bear.json` — Little Bear River (Porcupine Reservoir Outlet down to Cutler Terminus)
-- `combined.json` — the full watershed as one connected diagram (all of the above stitched together)
 
 These are plain static files served directly by the web app — edit one, commit it, and the next time someone loads that schematic page they'll see your change. There's no build step, no publishing pipeline, and no live-data fetch involved (that's different from `config/station_config.yaml`, which drives station identity/colors and *is* published through a GitHub Action — this folder is unrelated to that pipeline).
+
+## Adding a whole new system
+
+1. Create `<slug>.json` in this folder (copy an existing file as a starting point).
+2. Add `"<slug>"` to the `slugs` array in `manifest.json`, wherever you want it to appear in the sidebar/tab order.
+
+That's it — the sidebar submenu, the mobile tab bar, and the `/schematic/<slug>` route all pick it up automatically, reading each page's own `navLabel` for its display name.
 
 Each file also carries its own `_instructions` field at the top with a shorter, in-context version of everything below — this README is the full reference.
 
@@ -18,12 +25,15 @@ Each file also carries its own `_instructions` field at the top with a shorter, 
 {
   "id": "upper-logan",
   "title": "Upper Logan Canyon",
+  "navLabel": "Upper Logan Canyon",
   "subtitle": "Franklin Basin down to the UWRL Water Lab",
   "nodes": [ /* ... */ ]
 }
 ```
 
-`id` must be one of `upper-logan`, `lower-logan`, `blacksmith-fork` and must match the filename — this is how the app knows which file to load for a given page URL.
+`id` must match the filename (minus `.json`) and appear in `manifest.json`'s `slugs` list — this is how the app knows which file to load for a given page URL.
+
+`navLabel` is the short name shown in the sidebar submenu and the mobile tab bar. `title`/`subtitle` are only shown in the page header, so `navLabel` can be shorter/plainer than `title` if you want (e.g. `title: "Lower Logan River: Valley"` but `navLabel: "Lower Logan River"`).
 
 There is no separate `edges` list. A node's on-screen position and every connector line are derived automatically from `kind` + `connectsTo` + the order nodes appear in the `nodes` array — see below.
 
@@ -37,9 +47,9 @@ Each node is one card on the diagram (except `junction`, which draws as a small 
 | `name` | yes | For `kind: "mainstem"`, `"tributary"`, or `"diversion"`, this is matched (fuzzily — partial matches count both directions) against a live station's display name from HydroServer, DWRi, or USGS. For `junction`/`link` nodes it's just label text. |
 | `kind` | yes | One of `mainstem`, `junction`, `tributary`, `diversion`, `link` — see below. |
 | `connectsTo` | `tributary`/`diversion`/`link` only | The id of the mainstem/junction node this attaches to — or the id of *another* tributary/diversion/link to chain onto (e.g. a canal with several stations along it before it does anything else). A `link` node only needs this if it's a side attachment (like Blacksmith Fork River's card on the Lower Logan page); omit it if the link is just the next stop on the main channel (like `ext_to_lower`). |
-| `side` | `tributary`/`diversion`/`link` only, when `connectsTo` is set | `"left"` or `"right"` — which side of the main channel to draw the card on. Purely visual. |
+| `side` | `tributary`/`diversion`/`link` only, when `connectsTo` is set | `"left"` or `"right"` — which side of the main channel to draw the card on. Set this to match which bank of the river the station is really on, not to dodge crowding — if a side gets crowded (e.g. a long canal chain), the diagram grows taller to fit it rather than moving anything to the other side (see `computeLayout()` in `SchematicView.vue`). |
 | `colorGroup` | no | Tints the card's background. Must match a `name` from `waterway_groups` or `schematic_groups` in `config/station_config.yaml`. |
-| `linkTo` | no | A schematic page slug (`upper-logan`, `lower-logan`, `blacksmith-fork`) to navigate to on click. On a normal node this adds a "view full system" button below its card; on a `link` node this *is* the card. |
+| `linkTo` | no | A schematic page slug (any slug listed in `manifest.json`) to navigate to on click. On a normal node this adds a "view full system" button below its card; on a `link` node this *is* the card. |
 | `label` | `linkTo` nodes only | Button text. Defaults to `name` if omitted. |
 | `terminus` | `mainstem` only | Marks this node as the system's final endpoint (labeled endpoint banner instead of a normal gauge card). Only one per page, if any. |
 | `description` | `terminus` node only | Subtitle text. |

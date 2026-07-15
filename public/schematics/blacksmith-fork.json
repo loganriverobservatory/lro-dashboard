@@ -8,20 +8,21 @@
     "  name       - for kind 'mainstem'/'tributary'/'diversion', must fuzzy-match a live station's display name from",
     "               HydroServer/DWRi/USGS. For 'junction'/'link' nodes it is just label text.",
     "  kind       - 'mainstem' (a real gauge station on the main channel), 'junction' (invisible connection point, no card),",
-    "               'tributary'/'diversion' (a side attachment - none on this page yet), or 'link' (a card with no live data",
-    "               of its own that just navigates to another schematic page). This page has no 'terminus' node - it flows",
-    "               out via the 'to_lower_logan' link node instead, since Blacksmith Fork joins the main Logan River channel",
-    "               rather than ending at Cutler Reservoir directly.",
+    "               'tributary'/'diversion' (a side attachment - see nibley_junc/dwri_nibley below), or 'link' (a card with",
+    "               no live data of its own that just navigates to another schematic page). This page has no 'terminus'",
+    "               node - it flows out via the 'to_lower_logan' link node instead, since Blacksmith Fork joins the main",
+    "               Logan River channel rather than ending at Cutler Reservoir directly.",
     "  connectsTo - tributary/diversion/link only: omit for a 'link' node that's just the next stop on the main channel (see",
     "               to_lower_logan below).",
+    "  side       - tributary/diversion only, when connectsTo is set: 'left' or 'right', which side of the main channel to",
+    "               draw the card on - meant to reflect which bank of the river the station is really on.",
     "  colorGroup - optional; must match a name from waterway_groups or schematic_groups in config/station_config.yaml.",
     "  linkTo     - optional on any node; the schematic page slug to navigate to on click. On a 'link' node it's the entire",
     "               point of the card.",
     "  label      - linkTo button text override (defaults to name).",
     "",
-    "There's no separate edges list - the main channel line is derived automatically from the order nodes appear above (this",
-    "page is a simple single chain today; if a tributary or diversion is added later, give it connectsTo + side the same way",
-    "as the other two pages).",
+    "There's no separate edges list - the main channel line and every diversion's connector are derived automatically from",
+    "kind + connectsTo + side + the order nodes appear above.",
     "",
     "To add a new station: add a node with kind 'mainstem' at the right point in the list.",
     "The 'to_lower_logan' node at the bottom is the reciprocal of the 'bsf_ext' link node on lower-logan.json - do not delete",
@@ -29,12 +30,22 @@
   ],
   "id": "blacksmith-fork",
   "title": "Blacksmith Fork River",
+  "navLabel": "Blacksmith Fork River",
   "subtitle": "The full Blacksmith Fork River system",
   "nodes": [
     {
       "id": "hollow_rd",
       "name": "Blacksmith Fork River: Hollow Road",
       "kind": "mainstem",
+      "colorGroup": "Blacksmith Fork River"
+    },
+    { "id": "nibley_junc", "name": "Nibley Blacksmith Fork Canal Junction", "kind": "junction" },
+    {
+      "id": "dwri_nibley",
+      "name": "Blacksmith Fork River: Nibley Blacksmith Fork Canal",
+      "kind": "diversion",
+      "connectsTo": "nibley_junc",
+      "side": "right",
       "colorGroup": "Blacksmith Fork River"
     },
     {
@@ -54,7 +65,7 @@
       "name": "Lower Logan River",
       "kind": "link",
       "linkTo": "lower-logan",
-      "label": "Confluence with Logan River →"
+      "label": "Continue to Lower Logan River →"
     }
   ]
 }

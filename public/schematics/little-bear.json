@@ -13,12 +13,15 @@
     "  name       - for kind 'mainstem'/'tributary'/'diversion', must fuzzy-match a live station's display name from",
     "               HydroServer/DWRi/USGS. For 'junction'/'link' nodes it is just label text.",
     "  kind       - 'mainstem' (a real gauge station on the main channel), 'junction' (an invisible confluence point on the main",
-    "               channel, no card - where a tributary/diversion attaches), 'tributary' (water flowing IN), 'diversion' (water",
-    "               flowing OUT - every canal/irrigation company on this page is a diversion).",
-    "  connectsTo - diversion only here: the id of the junction this attaches to, or another diversion's id to chain onto (see",
-    "               the Highline Canal and Paradise Canal chains below - each is several DWRi stations along the same canal).",
-    "  side       - diversion only, when connectsTo is set: 'left' or 'right', which side of the main channel to draw the",
-    "               card on.",
+    "               channel, no card - where a tributary/diversion attaches), 'tributary' (water flowing IN - only South Fork,",
+    "               below, is one), 'diversion' (water flowing OUT - every canal/irrigation company on this page is a diversion).",
+    "  connectsTo - tributary/diversion only here: the id of the junction this attaches to, or another diversion's id to chain",
+    "               onto (see the Highline Canal and Paradise Canal chains below - each is several DWRi stations along the same",
+    "               canal).",
+    "  side       - tributary/diversion only, when connectsTo is set: 'left' or 'right', which side of the main channel to draw",
+    "               the card on - meant to reflect which bank of the river the station is really on, not just picked to avoid",
+    "               overlap (the layout engine grows vertical spacing to fit a crowded side instead of moving anything to the",
+    "               other side - see SchematicView.vue's computeLayout()).",
     "  colorGroup - optional; must match a name from waterway_groups or schematic_groups in config/station_config.yaml.",
     "  terminus   - mainstem only: marks this node as the system's final endpoint (only 'cutler_reservoir' below sets this).",
     "  linkTo     - the schematic page slug to navigate to; adds a 'view full system' button below the card it's on.",
@@ -28,15 +31,28 @@
     "automatically from kind + connectsTo + the order nodes appear above.",
     "",
     "Every diversion gets its own junction dot, even when two sit right next to each other in real life - see hyrum_canal_junc",
-    "and hyrum_irr_junc, which are two separate junctions rather than one shared between both diversions."
+    "and hyrum_irr_junc, which are two separate junctions rather than one shared between both diversions.",
+    "",
+    "East Fork and South Fork are two separate forks that join at 'fork_confluence', not one continuous channel - South Fork is",
+    "modeled as a 'tributary' feeding into that junction (same as any other tributary elsewhere in this app), rather than as a",
+    "third sequential mainstem station, so the diagram draws it as an actual confluence."
   ],
   "id": "little-bear",
   "title": "Little Bear River",
+  "navLabel": "Little Bear River",
   "subtitle": "Porcupine Reservoir Outlet down to Cutler Terminus",
   "nodes": [
     { "id": "porcupine", "name": "Little Bear River: Porcupine Reservoir Outlet", "kind": "mainstem", "colorGroup": "Little Bear River" },
-    { "id": "south_fork", "name": "Little Bear River: South Fork", "kind": "mainstem", "colorGroup": "Little Bear River" },
     { "id": "east_fork", "name": "Little Bear River: East Fork", "kind": "mainstem", "colorGroup": "Little Bear River" },
+    { "id": "fork_confluence", "name": "East Fork / South Fork Confluence", "kind": "junction" },
+    {
+      "id": "south_fork",
+      "name": "Little Bear River: South Fork",
+      "kind": "tributary",
+      "connectsTo": "fork_confluence",
+      "side": "right",
+      "colorGroup": "Little Bear River"
+    },
     { "id": "paradise", "name": "Little Bear River: Little Bear River at Paradise", "kind": "mainstem", "colorGroup": "Little Bear River" },
 
     { "id": "hyrum_canal_junc", "name": "Hyrum Canal at Osmonds diversion point", "kind": "junction" },
@@ -150,7 +166,7 @@
       "terminus": true,
       "description": "Ultimate drainage collection basin for all main channels and lateral streams.",
       "linkTo": "lower-logan",
-      "label": "← Lower Logan River"
+      "label": "Continue to Lower Logan River ←"
     }
   ]
 }

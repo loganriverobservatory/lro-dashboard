@@ -25,13 +25,13 @@
 # ------------------------------------------------------------
 waterway_groups:
   - name: "Logan River Observatory"
-    color: "#7d98c6"
+    color: "#2a78d6"
   - name: "Logan River Observatory: Logan River Main Stem"
-    color: "#7d98c6"
+    color: "#2a78d6"
   - name: "USGS"
-    color: "#d09559"
+    color: "#e87ba4"
   - name: "DWRi"
-    color: "#6fa26b"
+    color: "#4a3aa7"
 
 
 # ------------------------------------------------------------
