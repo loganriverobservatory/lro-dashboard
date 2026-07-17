@@ -1,21 +1,21 @@
 {
-  "fetchedAt": "2026-07-17T20:48:55.481836+00:00",
+  "fetchedAt": "2026-07-17T21:43:03.003748+00:00",
   "waterwayGroups": [
     {
       "name": "Logan River Observatory",
-      "color": "#7d98c6"
+      "color": "#2a78d6"
     },
     {
       "name": "Logan River Observatory: Logan River Main Stem",
-      "color": "#7d98c6"
+      "color": "#2a78d6"
     },
     {
       "name": "USGS",
-      "color": "#d09559"
+      "color": "#e87ba4"
     },
     {
       "name": "DWRi",
-      "color": "#6fa26b"
+      "color": "#4a3aa7"
     }
   ],
   "schematicGroups": [
@@ -32,377 +32,6 @@
       "color": "#8a6fa2"
     }
   ],
-  "schematicLayout": {
-    "mainStem": [
-      {
-        "id": "franklin",
-        "name": "Logan River: Franklin Basin",
-        "row": 1,
-        "type": "source"
-      },
-      {
-        "id": "beaver_junc",
-        "name": "Beaver Creek Junction",
-        "row": 2,
-        "type": "line-junction"
-      },
-      {
-        "id": "tony_grove",
-        "name": "Logan River: Tony Grove",
-        "row": 3,
-        "type": "gauge"
-      },
-      {
-        "id": "ricks_junc",
-        "name": "Ricks Spring Junction",
-        "row": 4,
-        "type": "line-junction"
-      },
-      {
-        "id": "temple_junc",
-        "name": "Temple Fork Junction",
-        "row": 5,
-        "type": "line-junction"
-      },
-      {
-        "id": "above_wood",
-        "name": "Logan River: Above Wood Camp",
-        "row": 6,
-        "type": "gauge"
-      },
-      {
-        "id": "wood_camp",
-        "name": "Logan River: Wood Camp Bridge",
-        "row": 7,
-        "type": "gauge"
-      },
-      {
-        "id": "right_hand_junc",
-        "name": "Right Hand Fork Junction",
-        "row": 8,
-        "type": "line-junction"
-      },
-      {
-        "id": "guinivah",
-        "name": "Logan River: Guinavah Campground",
-        "row": 9,
-        "type": "gauge"
-      },
-      {
-        "id": "dewitt_junc",
-        "name": "Dewitt Springs Junction",
-        "row": 10,
-        "type": "line-junction"
-      },
-      {
-        "id": "water_lab",
-        "name": "Logan River: Utah Water Research Laboratory",
-        "row": 11,
-        "type": "gauge"
-      },
-      {
-        "id": "mainstreet",
-        "name": "Logan River: Main Street",
-        "row": 12,
-        "type": "gauge"
-      },
-      {
-        "id": "spring_creek_junc",
-        "name": "Spring Creek Junction",
-        "row": 13,
-        "type": "line-junction"
-      },
-      {
-        "id": "bsf_confluence",
-        "name": "Blacksmith Fork Confluence",
-        "row": 14,
-        "type": "line-junction"
-      },
-      {
-        "id": "thousand_w",
-        "name": "Logan River: 1000 West",
-        "row": 15,
-        "type": "gauge"
-      },
-      {
-        "id": "mendon_rd",
-        "name": "Logan River: Mendon Road",
-        "row": 16,
-        "type": "gauge"
-      },
-      {
-        "id": "before_cutler",
-        "name": "Logan River: Before Confluence with Cutler Reservoir",
-        "row": 17,
-        "type": "gauge"
-      }
-    ],
-    "leftTributaries": [
-      {
-        "id": "beaver",
-        "name": "Beaver Creek",
-        "row": 1,
-        "juncId": "beaver_junc",
-        "col": "left"
-      },
-      {
-        "id": "ricks",
-        "name": "Ricks Spring",
-        "row": 3,
-        "juncId": "ricks_junc",
-        "col": "left"
-      },
-      {
-        "id": "temple",
-        "name": "Temple Fork",
-        "row": 4,
-        "juncId": "temple_junc",
-        "col": "right"
-      },
-      {
-        "id": "right_hand",
-        "name": "Right Hand Fork",
-        "row": 7,
-        "juncId": "right_hand_junc",
-        "col": "right"
-      },
-      {
-        "id": "dewitt",
-        "name": "Dewitt Springs",
-        "row": 9,
-        "juncId": "dewitt_junc",
-        "col": "left"
-      },
-      {
-        "id": "spring_creek",
-        "name": "Spring Creek",
-        "row": 12,
-        "juncId": "spring_creek_junc",
-        "col": "left"
-      }
-    ],
-    "diversions": [
-      {
-        "id": "dwri_benson",
-        "name": "Logan River: Benson Irrigation Company",
-        "row": 2,
-        "juncId": "beaver_junc",
-        "col": "left",
-        "schematicGroup": "Logan River"
-      },
-      {
-        "id": "dwri_lognorth",
-        "name": "Logan River: Logan and Northern Canal",
-        "row": 5,
-        "juncId": "temple_junc",
-        "col": "left",
-        "schematicGroup": "Logan River"
-      },
-      {
-        "id": "dwri_provlogan",
-        "name": "Logan River: Providence-Logan Irrigation Company",
-        "row": 8,
-        "juncId": "right_hand_junc",
-        "col": "left",
-        "schematicGroup": "Logan River"
-      },
-      {
-        "id": "dwri_hydenorth",
-        "name": "Logan River: Hyde Park and Logan Northfield",
-        "row": 11,
-        "juncId": "dewitt_junc",
-        "col": "left",
-        "schematicGroup": "Logan River"
-      },
-      {
-        "id": "dwri_hydepark",
-        "name": "Logan River: Hyde Park Canal",
-        "row": 14,
-        "juncId": "spring_creek_junc",
-        "col": "left",
-        "schematicGroup": "Logan River"
-      },
-      {
-        "id": "dwri_8thward",
-        "name": "Logan River: 8th Ward Canal (Crockett Canal)",
-        "row": 1,
-        "juncId": "right_hand_junc",
-        "col": "right",
-        "schematicGroup": "Logan River"
-      },
-      {
-        "id": "dwri_provpioneer",
-        "name": "Logan River: Providence Pioneer Canal",
-        "row": 3,
-        "juncId": "dewitt_junc",
-        "col": "right",
-        "schematicGroup": "Logan River"
-      },
-      {
-        "id": "dwri_nwfield",
-        "name": "Logan River: Northwest Field Canal",
-        "row": 6,
-        "juncId": "mainstreet",
-        "col": "right",
-        "schematicGroup": "Logan River"
-      },
-      {
-        "id": "dwri_swfield",
-        "name": "Logan River: Southwest Field Canal",
-        "row": 9,
-        "juncId": "bsf_confluence",
-        "col": "right",
-        "schematicGroup": "Logan River"
-      },
-      {
-        "id": "dwri_littlelogan",
-        "name": "Logan River: Little Logan Return to Bear",
-        "row": 11,
-        "juncId": "mendon_rd",
-        "col": "right",
-        "schematicGroup": "Logan River"
-      }
-    ],
-    "blacksmithFork": [
-      {
-        "id": "hollow_rd",
-        "name": "Blacksmith Fork River: Hollow Road",
-        "row": 11
-      },
-      {
-        "id": "seventeen_s",
-        "name": "Blacksmith Fork River: 1700 South Footbridge",
-        "row": 12
-      },
-      {
-        "id": "bsf_before_conf",
-        "name": "Blacksmith Fork River: Before Confluence with Logan River",
-        "row": 13
-      }
-    ],
-    "littleBear": [
-      {
-        "id": "lb_east_fork",
-        "name": "Little Bear River: East Fork",
-        "row": 1,
-        "type": "gauge",
-        "schematicGroup": "Little Bear River"
-      },
-      {
-        "id": "lb_highline",
-        "name": "Little Bear River: Highline Canal",
-        "row": 2,
-        "type": "gauge",
-        "schematicGroup": "Little Bear River"
-      },
-      {
-        "id": "lb_highline_pond_a",
-        "name": "Little Bear River: Highline Canal at Pond",
-        "row": 3,
-        "type": "gauge",
-        "schematicGroup": "Little Bear River"
-      },
-      {
-        "id": "lb_highline_weeks",
-        "name": "Little Bear River: Highline Canal below Weeks Farm",
-        "row": 4,
-        "type": "gauge",
-        "schematicGroup": "Little Bear River"
-      },
-      {
-        "id": "lb_highline_pond_b",
-        "name": "Little Bear River: Highline Pond",
-        "row": 5,
-        "type": "gauge",
-        "schematicGroup": "Little Bear River"
-      },
-      {
-        "id": "lb_hyrum_osmonds",
-        "name": "Little Bear River: Hyrum Canal at Osmonds",
-        "row": 6,
-        "type": "gauge",
-        "schematicGroup": "Little Bear River"
-      },
-      {
-        "id": "lb_hyrum_irr",
-        "name": "Little Bear River: Hyrum Irrigating Company",
-        "row": 7,
-        "type": "gauge",
-        "schematicGroup": "Little Bear River"
-      },
-      {
-        "id": "lb_paradise",
-        "name": "Little Bear River: Little Bear River at Paradise",
-        "row": 8,
-        "type": "gauge",
-        "schematicGroup": "Little Bear River"
-      },
-      {
-        "id": "lb_little_feeder",
-        "name": "Little Bear River: Little Feeder",
-        "row": 9,
-        "type": "gauge",
-        "schematicGroup": "Little Bear River"
-      },
-      {
-        "id": "lb_paradise_canal",
-        "name": "Little Bear River: Paradise Canal",
-        "row": 10,
-        "type": "gauge",
-        "schematicGroup": "Little Bear River"
-      },
-      {
-        "id": "lb_paradise_blacktube",
-        "name": "Little Bear River: Paradise Canal below Black Tube",
-        "row": 11,
-        "type": "gauge",
-        "schematicGroup": "Little Bear River"
-      },
-      {
-        "id": "lb_paradise_highline",
-        "name": "Little Bear River: Paradise City through Highline Canal",
-        "row": 12,
-        "type": "gauge",
-        "schematicGroup": "Little Bear River"
-      },
-      {
-        "id": "lb_porcupine",
-        "name": "Little Bear River: Porcupine Reservoir Outlet",
-        "row": 13,
-        "type": "gauge",
-        "schematicGroup": "Little Bear River"
-      },
-      {
-        "id": "lb_south_fork",
-        "name": "Little Bear River: South Fork",
-        "row": 14,
-        "type": "gauge",
-        "schematicGroup": "Little Bear River"
-      },
-      {
-        "id": "lb_wellsville_e",
-        "name": "Little Bear River: Wellsville East Field",
-        "row": 15,
-        "type": "gauge",
-        "schematicGroup": "Little Bear River"
-      },
-      {
-        "id": "lb_wellsville_mendon",
-        "name": "Little Bear River: Wellsville Mendon Canal",
-        "row": 16,
-        "type": "gauge",
-        "schematicGroup": "Little Bear River"
-      }
-    ],
-    "cutlerInflows": [
-      {
-        "id": "spring_creek_mendon",
-        "name": "Spring Creek: Mendon Road",
-        "row": 16,
-        "tributary": "Logan River Observatory"
-      }
-    ]
-  },
   "hiddenStations": [
     "TF_SAWM_A",
     "SPC_CONF_A",
@@ -448,6 +77,12 @@
       "displayName": "USGS: Logan River Above First Dam",
       "siteLink": "https://waterdata.usgs.gov/monitoring-location/USGS-10109000/#dataTypeId=continuous-00060-0&period=P7D&showMedian=true&showFieldMeasurements=true",
       "active": true
+    },
+    {
+      "id": "10113500",
+      "displayName": "USGS: Blacksmith Fork River Above UP&L Dam near Hyrum, UT",
+      "siteLink": "https://waterdata.usgs.gov/monitoring-location/USGS-10113500/#dataTypeId=continuous-00060-0&period=P7D&showMedian=true&showFieldMeasurements=true",
+      "active": true
     }
   ],
   "dwriStations": [
@@ -458,8 +93,8 @@
       "schematicGroup": "Logan River",
       "lat": 41.734148,
       "lng": -111.811971,
-      "latestCfs": 68.17,
-      "latestTime": "2026-07-17T13:00:00",
+      "latestCfs": 68.37,
+      "latestTime": "2026-07-17T13:30:00",
       "history": [
         {
           "time": "2026-07-15T00:00:00",
@@ -1440,6 +1075,14 @@
         {
           "time": "2026-07-17T13:00:00",
           "value": 68.17
+        },
+        {
+          "time": "2026-07-17T13:15:00",
+          "value": 68.2
+        },
+        {
+          "time": "2026-07-17T13:30:00",
+          "value": 68.37
         }
       ]
     },
@@ -1782,8 +1425,8 @@
       "schematicGroup": "Logan River",
       "lat": 41.731542,
       "lng": -111.830394,
-      "latestCfs": 21.37,
-      "latestTime": "2026-07-17T12:45:00",
+      "latestCfs": 21.5,
+      "latestTime": "2026-07-17T14:15:00",
       "history": [
         {
           "time": "2026-07-15T00:00:00",
@@ -2760,6 +2403,30 @@
         {
           "time": "2026-07-17T12:45:00",
           "value": 21.37
+        },
+        {
+          "time": "2026-07-17T13:00:00",
+          "value": 21.42
+        },
+        {
+          "time": "2026-07-17T13:15:00",
+          "value": 21.46
+        },
+        {
+          "time": "2026-07-17T13:30:00",
+          "value": 21.43
+        },
+        {
+          "time": "2026-07-17T13:45:00",
+          "value": 21.48
+        },
+        {
+          "time": "2026-07-17T14:00:00",
+          "value": 21.49
+        },
+        {
+          "time": "2026-07-17T14:15:00",
+          "value": 21.5
         }
       ]
     },
@@ -2770,8 +2437,8 @@
       "schematicGroup": "Logan River",
       "lat": 41.765056,
       "lng": -111.822041,
-      "latestCfs": 7.93,
-      "latestTime": "2026-07-17T12:58:00",
+      "latestCfs": 7.067,
+      "latestTime": "2026-07-17T13:58:00",
       "history": [
         {
           "time": "2026-07-15T00:58:00",
@@ -3016,6 +2683,10 @@
         {
           "time": "2026-07-17T12:58:00",
           "value": 7.93
+        },
+        {
+          "time": "2026-07-17T13:58:00",
+          "value": 7.067
         }
       ]
     },
@@ -3026,8 +2697,8 @@
       "schematicGroup": "Logan River",
       "lat": 41.71283,
       "lng": -111.870446,
-      "latestCfs": 3.912,
-      "latestTime": "2026-07-17T13:00:00",
+      "latestCfs": 3.838,
+      "latestTime": "2026-07-17T13:45:00",
       "history": [
         {
           "time": "2026-07-15T00:00:00",
@@ -3592,6 +3263,18 @@
         {
           "time": "2026-07-17T13:00:00",
           "value": 3.912
+        },
+        {
+          "time": "2026-07-17T13:15:00",
+          "value": 3.892
+        },
+        {
+          "time": "2026-07-17T13:30:00",
+          "value": 3.831
+        },
+        {
+          "time": "2026-07-17T13:45:00",
+          "value": 3.838
         }
       ]
     },
@@ -3613,8 +3296,8 @@
       "schematicGroup": "Logan River",
       "lat": 41.727074,
       "lng": -111.843648,
-      "latestCfs": 26.17,
-      "latestTime": "2026-07-17T13:30:00",
+      "latestCfs": 25.58,
+      "latestTime": "2026-07-17T14:15:00",
       "history": [
         {
           "time": "2026-07-15T00:00:00",
@@ -4579,6 +4262,18 @@
         {
           "time": "2026-07-17T13:30:00",
           "value": 26.17
+        },
+        {
+          "time": "2026-07-17T13:45:00",
+          "value": 26.04
+        },
+        {
+          "time": "2026-07-17T14:00:00",
+          "value": 25.68
+        },
+        {
+          "time": "2026-07-17T14:15:00",
+          "value": 25.58
         }
       ]
     },
@@ -4589,8 +4284,8 @@
       "schematicGroup": "Logan River",
       "lat": 41.724699,
       "lng": -111.825988,
-      "latestCfs": 0.273,
-      "latestTime": "2026-07-17T13:15:00",
+      "latestCfs": 0.269,
+      "latestTime": "2026-07-17T14:00:00",
       "history": [
         {
           "time": "2026-07-15T00:00:00",
@@ -5575,6 +5270,18 @@
         {
           "time": "2026-07-17T13:15:00",
           "value": 0.273
+        },
+        {
+          "time": "2026-07-17T13:30:00",
+          "value": 0.271
+        },
+        {
+          "time": "2026-07-17T13:45:00",
+          "value": 0.27
+        },
+        {
+          "time": "2026-07-17T14:00:00",
+          "value": 0.269
         }
       ]
     },
@@ -5586,7 +5293,7 @@
       "lat": 41.73947,
       "lng": -111.8005,
       "latestCfs": 4.706,
-      "latestTime": "2026-07-17T13:30:00",
+      "latestTime": "2026-07-17T14:15:00",
       "history": [
         {
           "time": "2026-07-15T00:00:00",
@@ -6575,6 +6282,18 @@
         {
           "time": "2026-07-17T13:30:00",
           "value": 4.706
+        },
+        {
+          "time": "2026-07-17T13:45:00",
+          "value": 4.705
+        },
+        {
+          "time": "2026-07-17T14:00:00",
+          "value": 4.703
+        },
+        {
+          "time": "2026-07-17T14:15:00",
+          "value": 4.706
         }
       ]
     },
@@ -6585,8 +6304,8 @@
       "schematicGroup": "Logan River",
       "lat": 41.723808,
       "lng": -111.845284,
-      "latestCfs": 12.28,
-      "latestTime": "2026-07-17T13:30:00",
+      "latestCfs": 12.0,
+      "latestTime": "2026-07-17T14:15:00",
       "history": [
         {
           "time": "2026-07-15T00:00:00",
@@ -7575,6 +7294,18 @@
         {
           "time": "2026-07-17T13:30:00",
           "value": 12.28
+        },
+        {
+          "time": "2026-07-17T13:45:00",
+          "value": 11.87
+        },
+        {
+          "time": "2026-07-17T14:00:00",
+          "value": 12.21
+        },
+        {
+          "time": "2026-07-17T14:15:00",
+          "value": 12.0
         }
       ]
     },
@@ -7586,7 +7317,7 @@
       "lat": 41.518116,
       "lng": -111.714435,
       "latestCfs": 8.232212890625,
-      "latestTime": "2026-07-17T14:47:28",
+      "latestTime": "2026-07-17T15:35:47",
       "history": [
         {
           "time": "2026-07-15T00:01:58",
@@ -8391,6 +8122,18 @@
         {
           "time": "2026-07-17T14:47:28",
           "value": 8.232212890625
+        },
+        {
+          "time": "2026-07-17T15:05:20",
+          "value": 7.9985778125
+        },
+        {
+          "time": "2026-07-17T15:21:17",
+          "value": 7.89474
+        },
+        {
+          "time": "2026-07-17T15:35:47",
+          "value": 8.232212890625
         }
       ]
     },
@@ -8402,7 +8145,7 @@
       "lat": 41.518169,
       "lng": -111.754416,
       "latestCfs": 35.310135864,
-      "latestTime": "2026-07-17T14:45:43",
+      "latestTime": "2026-07-17T15:34:11",
       "history": [
         {
           "time": "2026-07-15T00:01:10",
@@ -8883,6 +8626,18 @@
         {
           "time": "2026-07-17T14:45:43",
           "value": 35.310135864
+        },
+        {
+          "time": "2026-07-17T15:04:45",
+          "value": 35.310135864
+        },
+        {
+          "time": "2026-07-17T15:20:08",
+          "value": 35.310135864
+        },
+        {
+          "time": "2026-07-17T15:34:11",
+          "value": 35.310135864
         }
       ]
     },
@@ -8893,8 +8648,8 @@
       "schematicGroup": "Little Bear River",
       "lat": 41.621092,
       "lng": -111.799909,
-      "latestCfs": 4.453,
-      "latestTime": "2026-07-17T14:00:00",
+      "latestCfs": 3.868,
+      "latestTime": "2026-07-17T15:00:00",
       "history": [
         {
           "time": "2026-07-15T00:00:00",
@@ -9891,6 +9646,22 @@
         {
           "time": "2026-07-17T14:00:00",
           "value": 4.453
+        },
+        {
+          "time": "2026-07-17T14:15:00",
+          "value": 4.21
+        },
+        {
+          "time": "2026-07-17T14:30:00",
+          "value": 3.965
+        },
+        {
+          "time": "2026-07-17T14:45:00",
+          "value": 3.994
+        },
+        {
+          "time": "2026-07-17T15:00:00",
+          "value": 3.868
         }
       ]
     },
@@ -9901,8 +9672,8 @@
       "schematicGroup": "Little Bear River",
       "lat": 41.576291,
       "lng": -111.816182,
-      "latestCfs": 17.546875,
-      "latestTime": "2026-07-17T14:47:56",
+      "latestCfs": 17.390625,
+      "latestTime": "2026-07-17T15:22:03",
       "history": [
         {
           "time": "2026-07-15T00:02:47",
@@ -10519,514 +10290,14 @@
         {
           "time": "2026-07-17T14:47:56",
           "value": 17.546875
-        }
-      ]
-    },
-    {
-      "id": 12355,
-      "displayName": "Little Bear River: Highline Pond",
-      "group": "DWRi",
-      "schematicGroup": "Little Bear River",
-      "lat": 41.62136,
-      "lng": -111.800252,
-      "latestCfs": 7.441,
-      "latestTime": "2026-07-17T13:58:00",
-      "history": [
-        {
-          "time": "2026-07-15T00:28:00",
-          "value": 5.167
-        },
-        {
-          "time": "2026-07-15T00:58:00",
-          "value": 5.146
-        },
-        {
-          "time": "2026-07-15T01:28:00",
-          "value": 5.134
-        },
-        {
-          "time": "2026-07-15T01:58:00",
-          "value": 5.124
-        },
-        {
-          "time": "2026-07-15T02:28:00",
-          "value": 5.11
-        },
-        {
-          "time": "2026-07-15T02:58:00",
-          "value": 5.101
-        },
-        {
-          "time": "2026-07-15T03:28:00",
-          "value": 5.096
-        },
-        {
-          "time": "2026-07-15T03:58:00",
-          "value": 5.093
-        },
-        {
-          "time": "2026-07-15T04:28:00",
-          "value": 5.087
-        },
-        {
-          "time": "2026-07-15T04:58:00",
-          "value": 5.083
-        },
-        {
-          "time": "2026-07-15T05:28:00",
-          "value": 5.075
-        },
-        {
-          "time": "2026-07-15T05:58:00",
-          "value": 5.07
-        },
-        {
-          "time": "2026-07-15T06:28:00",
-          "value": 5.063
-        },
-        {
-          "time": "2026-07-15T06:58:00",
-          "value": 5.052
-        },
-        {
-          "time": "2026-07-15T07:28:00",
-          "value": 5.045
-        },
-        {
-          "time": "2026-07-15T07:58:00",
-          "value": 5.043
-        },
-        {
-          "time": "2026-07-15T08:28:00",
-          "value": 5.068
-        },
-        {
-          "time": "2026-07-15T08:58:00",
-          "value": 5.108
-        },
-        {
-          "time": "2026-07-15T09:28:00",
-          "value": 5.137
-        },
-        {
-          "time": "2026-07-15T09:58:00",
-          "value": 5.161
-        },
-        {
-          "time": "2026-07-15T10:28:00",
-          "value": 5.191
-        },
-        {
-          "time": "2026-07-15T10:58:00",
-          "value": 5.234
-        },
-        {
-          "time": "2026-07-15T11:28:00",
-          "value": 5.282
-        },
-        {
-          "time": "2026-07-15T11:58:00",
-          "value": 5.328
-        },
-        {
-          "time": "2026-07-15T12:28:00",
-          "value": 5.365
-        },
-        {
-          "time": "2026-07-15T12:58:00",
-          "value": 5.399
-        },
-        {
-          "time": "2026-07-15T13:28:00",
-          "value": 5.434
-        },
-        {
-          "time": "2026-07-15T13:58:00",
-          "value": 5.468
-        },
-        {
-          "time": "2026-07-15T14:28:00",
-          "value": 5.499
-        },
-        {
-          "time": "2026-07-15T14:58:00",
-          "value": 5.538
-        },
-        {
-          "time": "2026-07-15T15:28:00",
-          "value": 5.589
-        },
-        {
-          "time": "2026-07-15T15:58:00",
-          "value": 5.641
-        },
-        {
-          "time": "2026-07-15T16:28:00",
-          "value": 5.682
-        },
-        {
-          "time": "2026-07-15T16:58:00",
-          "value": 5.714
-        },
-        {
-          "time": "2026-07-15T17:28:00",
-          "value": 5.741
-        },
-        {
-          "time": "2026-07-15T17:58:00",
-          "value": 5.77
-        },
-        {
-          "time": "2026-07-15T18:28:00",
-          "value": 5.804
-        },
-        {
-          "time": "2026-07-15T18:58:00",
-          "value": 5.84
-        },
-        {
-          "time": "2026-07-15T19:28:00",
-          "value": 5.888
-        },
-        {
-          "time": "2026-07-15T19:58:00",
-          "value": 5.989
-        },
-        {
-          "time": "2026-07-15T20:28:00",
-          "value": 6.092
-        },
-        {
-          "time": "2026-07-15T20:58:00",
-          "value": 6.166
-        },
-        {
-          "time": "2026-07-15T21:28:00",
-          "value": 6.221
-        },
-        {
-          "time": "2026-07-15T21:58:00",
-          "value": 6.276
-        },
-        {
-          "time": "2026-07-15T22:28:00",
-          "value": 6.334
-        },
-        {
-          "time": "2026-07-15T22:58:00",
-          "value": 6.394
-        },
-        {
-          "time": "2026-07-15T23:28:00",
-          "value": 6.461
-        },
-        {
-          "time": "2026-07-15T23:58:00",
-          "value": 6.543
-        },
-        {
-          "time": "2026-07-16T00:28:00",
-          "value": 6.633
-        },
-        {
-          "time": "2026-07-16T00:58:00",
-          "value": 6.73
-        },
-        {
-          "time": "2026-07-16T01:28:00",
-          "value": 6.826
-        },
-        {
-          "time": "2026-07-16T01:58:00",
-          "value": 6.917
-        },
-        {
-          "time": "2026-07-16T02:28:00",
-          "value": 7.006
-        },
-        {
-          "time": "2026-07-16T02:58:00",
-          "value": 7.093
-        },
-        {
-          "time": "2026-07-16T03:28:00",
-          "value": 7.185
-        },
-        {
-          "time": "2026-07-16T03:58:00",
-          "value": 7.28
-        },
-        {
-          "time": "2026-07-16T04:28:00",
-          "value": 7.381
-        },
-        {
-          "time": "2026-07-16T04:58:00",
-          "value": 7.485
-        },
-        {
-          "time": "2026-07-16T05:28:00",
-          "value": 7.587
-        },
-        {
-          "time": "2026-07-16T05:58:00",
-          "value": 7.693
-        },
-        {
-          "time": "2026-07-16T06:28:00",
-          "value": 7.805
-        },
-        {
-          "time": "2026-07-16T06:58:00",
-          "value": 7.917
-        },
-        {
-          "time": "2026-07-16T07:28:00",
-          "value": 8.03
-        },
-        {
-          "time": "2026-07-16T07:58:00",
-          "value": 8.15
-        },
-        {
-          "time": "2026-07-16T08:28:00",
-          "value": 8.27
-        },
-        {
-          "time": "2026-07-16T08:58:00",
-          "value": 8.38
-        },
-        {
-          "time": "2026-07-16T09:28:00",
-          "value": 8.49
-        },
-        {
-          "time": "2026-07-16T09:58:00",
-          "value": 8.59
-        },
-        {
-          "time": "2026-07-16T10:28:00",
-          "value": 8.7
-        },
-        {
-          "time": "2026-07-16T10:58:00",
-          "value": 8.8
-        },
-        {
-          "time": "2026-07-16T11:28:00",
-          "value": 8.9
-        },
-        {
-          "time": "2026-07-16T11:58:00",
-          "value": 8.97
-        },
-        {
-          "time": "2026-07-16T12:28:00",
-          "value": 9.03
-        },
-        {
-          "time": "2026-07-16T12:58:00",
-          "value": 9.1
-        },
-        {
-          "time": "2026-07-16T13:28:00",
-          "value": 9.14
-        },
-        {
-          "time": "2026-07-16T13:58:00",
-          "value": 9.14
-        },
-        {
-          "time": "2026-07-16T14:28:00",
-          "value": 9.16
-        },
-        {
-          "time": "2026-07-16T14:58:00",
-          "value": 9.18
-        },
-        {
-          "time": "2026-07-16T15:28:00",
-          "value": 9.19
-        },
-        {
-          "time": "2026-07-16T15:58:00",
-          "value": 9.2
-        },
-        {
-          "time": "2026-07-16T16:28:00",
-          "value": 9.2
-        },
-        {
-          "time": "2026-07-16T16:58:00",
-          "value": 9.18
-        },
-        {
-          "time": "2026-07-16T17:28:00",
-          "value": 9.16
-        },
-        {
-          "time": "2026-07-16T17:58:00",
-          "value": 9.16
-        },
-        {
-          "time": "2026-07-16T18:28:00",
-          "value": 9.13
-        },
-        {
-          "time": "2026-07-16T18:58:00",
-          "value": 9.08
-        },
-        {
-          "time": "2026-07-16T19:28:00",
-          "value": 9.03
-        },
-        {
-          "time": "2026-07-16T19:58:00",
-          "value": 8.98
-        },
-        {
-          "time": "2026-07-16T20:28:00",
-          "value": 8.93
-        },
-        {
-          "time": "2026-07-16T20:58:00",
-          "value": 8.86
-        },
-        {
-          "time": "2026-07-16T21:28:00",
-          "value": 8.77
-        },
-        {
-          "time": "2026-07-16T21:58:00",
-          "value": 8.67
-        },
-        {
-          "time": "2026-07-16T22:28:00",
-          "value": 8.57
-        },
-        {
-          "time": "2026-07-16T22:58:00",
-          "value": 8.47
-        },
-        {
-          "time": "2026-07-16T23:28:00",
-          "value": 8.39
-        },
-        {
-          "time": "2026-07-16T23:58:00",
-          "value": 8.31
-        },
-        {
-          "time": "2026-07-17T00:28:00",
-          "value": 8.24
-        },
-        {
-          "time": "2026-07-17T00:58:00",
-          "value": 8.18
-        },
-        {
-          "time": "2026-07-17T01:28:00",
-          "value": 8.13
-        },
-        {
-          "time": "2026-07-17T01:58:00",
-          "value": 8.08
-        },
-        {
-          "time": "2026-07-17T02:28:00",
-          "value": 8.04
-        },
-        {
-          "time": "2026-07-17T02:58:00",
-          "value": 8.01
-        },
-        {
-          "time": "2026-07-17T03:28:00",
-          "value": 7.972
-        },
-        {
-          "time": "2026-07-17T03:58:00",
-          "value": 7.937
-        },
-        {
-          "time": "2026-07-17T04:28:00",
-          "value": 7.898
-        },
-        {
-          "time": "2026-07-17T04:58:00",
-          "value": 7.86
-        },
-        {
-          "time": "2026-07-17T05:28:00",
-          "value": 7.818
-        },
-        {
-          "time": "2026-07-17T05:58:00",
-          "value": 7.774
-        },
-        {
-          "time": "2026-07-17T06:28:00",
-          "value": 7.73
-        },
-        {
-          "time": "2026-07-17T06:58:00",
-          "value": 7.686
-        },
-        {
-          "time": "2026-07-17T07:28:00",
-          "value": 7.652
-        },
-        {
-          "time": "2026-07-17T07:58:00",
-          "value": 7.602
-        },
-        {
-          "time": "2026-07-17T08:28:00",
-          "value": 7.56
-        },
-        {
-          "time": "2026-07-17T08:58:00",
-          "value": 7.538
-        },
-        {
-          "time": "2026-07-17T09:28:00",
-          "value": 7.527
-        },
-        {
-          "time": "2026-07-17T09:58:00",
-          "value": 7.521
-        },
-        {
-          "time": "2026-07-17T10:28:00",
-          "value": 7.514
-        },
-        {
-          "time": "2026-07-17T10:58:00",
-          "value": 7.505
-        },
-        {
-          "time": "2026-07-17T11:28:00",
-          "value": 7.492
-        },
-        {
-          "time": "2026-07-17T11:58:00",
-          "value": 7.479
-        },
-        {
-          "time": "2026-07-17T12:28:00",
-          "value": 7.47
-        },
-        {
-          "time": "2026-07-17T12:58:00",
-          "value": 7.461
         },
         {
-          "time": "2026-07-17T13:28:00",
-          "value": 7.452
+          "time": "2026-07-17T15:05:57",
+          "value": 17.375
         },
         {
-          "time": "2026-07-17T13:58:00",
-          "value": 7.441
+          "time": "2026-07-17T15:22:03",
+          "value": 17.390625
         }
       ]
     },
@@ -11317,8 +10588,8 @@
       "schematicGroup": "Little Bear River",
       "lat": 41.515479,
       "lng": -111.813172,
-      "latestCfs": 19.93,
-      "latestTime": "2026-07-17T13:00:00",
+      "latestCfs": 19.91,
+      "latestTime": "2026-07-17T14:00:00",
       "history": [
         {
           "time": "2026-07-15T00:00:00",
@@ -11567,6 +10838,10 @@
         {
           "time": "2026-07-17T13:00:00",
           "value": 19.93
+        },
+        {
+          "time": "2026-07-17T14:00:00",
+          "value": 19.91
         }
       ]
     },
@@ -11577,8 +10852,8 @@
       "schematicGroup": "Little Bear River",
       "lat": 41.5755,
       "lng": -111.855222,
-      "latestCfs": 19.9,
-      "latestTime": "2026-07-17T13:45:00",
+      "latestCfs": 21.4,
+      "latestTime": "2026-07-17T14:45:00",
       "history": [
         {
           "time": "2026-07-15T00:45:00",
@@ -11803,6 +11078,10 @@
         {
           "time": "2026-07-17T13:45:00",
           "value": 19.9
+        },
+        {
+          "time": "2026-07-17T14:45:00",
+          "value": 21.4
         }
       ]
     },
@@ -11813,8 +11092,8 @@
       "schematicGroup": "Little Bear River",
       "lat": 41.629641,
       "lng": -111.872435,
-      "latestCfs": 2.26875,
-      "latestTime": "2026-07-17T14:39:52",
+      "latestCfs": 2.60625,
+      "latestTime": "2026-07-17T15:29:24",
       "history": [
         {
           "time": "2026-07-15T00:27:46",
@@ -12451,6 +11730,18 @@
         {
           "time": "2026-07-17T14:39:52",
           "value": 2.26875
+        },
+        {
+          "time": "2026-07-17T14:55:34",
+          "value": 2.55
+        },
+        {
+          "time": "2026-07-17T15:12:55",
+          "value": 2.5375
+        },
+        {
+          "time": "2026-07-17T15:29:24",
+          "value": 2.60625
         }
       ]
     },
@@ -12462,7 +11753,7 @@
       "lat": 41.532265,
       "lng": -111.812996,
       "latestCfs": 31.106168422,
-      "latestTime": "2026-07-17T14:40:15",
+      "latestTime": "2026-07-17T15:29:41",
       "history": [
         {
           "time": "2026-07-15T00:11:38",
@@ -13279,6 +12570,18 @@
         {
           "time": "2026-07-17T14:40:15",
           "value": 31.106168422
+        },
+        {
+          "time": "2026-07-17T14:55:52",
+          "value": 31.106168422
+        },
+        {
+          "time": "2026-07-17T15:13:20",
+          "value": 31.106168422
+        },
+        {
+          "time": "2026-07-17T15:29:41",
+          "value": 31.106168422
         }
       ]
     },
@@ -13289,8 +12592,8 @@
       "schematicGroup": "Little Bear River",
       "lat": 41.532271,
       "lng": -111.813021,
-      "latestCfs": 26.112028668,
-      "latestTime": "2026-07-17T14:29:55",
+      "latestCfs": 25.96106336,
+      "latestTime": "2026-07-17T15:33:03",
       "history": [
         {
           "time": "2026-07-15T00:15:04",
@@ -14099,6 +13402,18 @@
         {
           "time": "2026-07-17T14:29:55",
           "value": 26.112028668
+        },
+        {
+          "time": "2026-07-17T14:59:18",
+          "value": 25.96106336
+        },
+        {
+          "time": "2026-07-17T15:16:46",
+          "value": 25.96106336
+        },
+        {
+          "time": "2026-07-17T15:33:03",
+          "value": 25.96106336
         }
       ]
     },
@@ -14109,8 +13424,8 @@
       "schematicGroup": "Little Bear River",
       "lat": 41.56851,
       "lng": -111.824085,
-      "latestCfs": 5.6675625,
-      "latestTime": "2026-07-17T14:30:03",
+      "latestCfs": 5.71975,
+      "latestTime": "2026-07-17T15:17:06",
       "history": [
         {
           "time": "2026-07-15T00:15:18",
@@ -14423,6 +13738,10 @@
         {
           "time": "2026-07-17T14:30:03",
           "value": 5.6675625
+        },
+        {
+          "time": "2026-07-17T15:17:06",
+          "value": 5.71975
         }
       ]
     },
@@ -14433,8 +13752,8 @@
       "schematicGroup": "Little Bear River",
       "lat": 41.518167,
       "lng": -111.747908,
-      "latestCfs": 68.59375,
-      "latestTime": "2026-07-17T14:30:40",
+      "latestCfs": 70.15625,
+      "latestTime": "2026-07-17T15:20:32",
       "history": [
         {
           "time": "2026-07-15T00:01:18",
@@ -15167,6 +14486,14 @@
         {
           "time": "2026-07-17T14:30:40",
           "value": 68.59375
+        },
+        {
+          "time": "2026-07-17T15:04:50",
+          "value": 70.46875
+        },
+        {
+          "time": "2026-07-17T15:20:32",
+          "value": 70.15625
         }
       ]
     },
@@ -15178,7 +14505,7 @@
       "lat": 41.501149,
       "lng": -111.816632,
       "latestCfs": 18.37,
-      "latestTime": "2026-07-17T13:00:00",
+      "latestTime": "2026-07-17T14:00:00",
       "history": [
         {
           "time": "2026-07-15T00:00:00",
@@ -15427,6 +14754,10 @@
         {
           "time": "2026-07-17T13:00:00",
           "value": 18.37
+        },
+        {
+          "time": "2026-07-17T14:00:00",
+          "value": 18.37
         }
       ]
     },
@@ -15438,7 +14769,7 @@
       "lat": 41.62964,
       "lng": -111.872436,
       "latestCfs": 42.9,
-      "latestTime": "2026-07-17T14:39:47",
+      "latestTime": "2026-07-17T15:29:19",
       "history": [
         {
           "time": "2026-07-15T00:10:12",
@@ -16263,6 +15594,18 @@
         {
           "time": "2026-07-17T14:39:47",
           "value": 42.9
+        },
+        {
+          "time": "2026-07-17T14:55:11",
+          "value": 42.9
+        },
+        {
+          "time": "2026-07-17T15:12:44",
+          "value": 42.9
+        },
+        {
+          "time": "2026-07-17T15:29:19",
+          "value": 42.9
         }
       ]
     },
@@ -16274,7 +15617,7 @@
       "lat": 41.628556,
       "lng": -111.880464,
       "latestCfs": 63.02,
-      "latestTime": "2026-07-17T14:39:32",
+      "latestTime": "2026-07-17T15:43:53",
       "history": [
         {
           "time": "2026-07-15T00:09:47",
@@ -17095,6 +16438,22 @@
         {
           "time": "2026-07-17T14:39:32",
           "value": 63.02
+        },
+        {
+          "time": "2026-07-17T14:54:43",
+          "value": 63.02
+        },
+        {
+          "time": "2026-07-17T15:12:18",
+          "value": 63.02
+        },
+        {
+          "time": "2026-07-17T15:28:51",
+          "value": 63.02
+        },
+        {
+          "time": "2026-07-17T15:43:53",
+          "value": 63.02
         }
       ]
     },
@@ -17106,7 +16465,7 @@
       "lat": 41.645562,
       "lng": -111.818574,
       "latestCfs": 160.2028659375,
-      "latestTime": "2026-07-17T14:39:19",
+      "latestTime": "2026-07-17T15:43:09",
       "history": [
         {
           "time": "2026-07-15T00:09:32",
@@ -17794,6 +17153,22 @@
         },
         {
           "time": "2026-07-17T14:39:19",
+          "value": 160.2028659375
+        },
+        {
+          "time": "2026-07-17T14:54:29",
+          "value": 160.2028659375
+        },
+        {
+          "time": "2026-07-17T15:12:07",
+          "value": 160.2028659375
+        },
+        {
+          "time": "2026-07-17T15:28:18",
+          "value": 160.2028659375
+        },
+        {
+          "time": "2026-07-17T15:43:09",
           "value": 160.2028659375
         }
       ]
