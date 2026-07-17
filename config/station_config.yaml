@@ -25,13 +25,13 @@
 # ------------------------------------------------------------
 waterway_groups:
   - name: "Logan River Observatory"
-    color: "#7d98c6"
+    color: "#2a78d6"
   - name: "Logan River Observatory: Logan River Main Stem"
-    color: "#7d98c6"
+    color: "#2a78d6"
   - name: "USGS"
-    color: "#d09559"
+    color: "#e87ba4"
   - name: "DWRi"
-    color: "#6fa26b"
+    color: "#4a3aa7"
 
 
 # ------------------------------------------------------------
@@ -119,6 +119,11 @@ usgs_stations:
   - id: "10109000"
     displayName: "USGS: Logan River Above First Dam"
     siteLink: "https://waterdata.usgs.gov/monitoring-location/USGS-10109000/#dataTypeId=continuous-00060-0&period=P7D&showMedian=true&showFieldMeasurements=true"
+    active: true
+
+  - id: "10113500"
+    displayName: "USGS: Blacksmith Fork River Above UP&L Dam near Hyrum, UT"
+    siteLink: "https://waterdata.usgs.gov/monitoring-location/USGS-10113500/#dataTypeId=continuous-00060-0&period=P7D&showMedian=true&showFieldMeasurements=true"
     active: true
 
 
@@ -246,14 +251,6 @@ dwri_stations:
     lng: -111.816182
     active: true
 
-  - id: 12355
-    displayName: "Little Bear River: Highline Pond"
-    group: "DWRi"
-    schematicGroup: "Little Bear River"
-    lat: 41.621360
-    lng: -111.800252
-    active: true
-
   - id: 2771
     displayName: "Little Bear River: Hyrum Canal at Osmonds"
     group: "DWRi"
@@ -349,83 +346,3 @@ dwri_stations:
     lat: 41.645562
     lng: -111.818574
     active: true
-
-
-# ------------------------------------------------------------
-# SCHEMATIC LAYOUT
-# ------------------------------------------------------------
-# Controls the position of every node in the schematic diagram
-# view. This is more structural than the sections above — row
-# numbers control vertical order, "col" controls left/right
-# placement, and "juncId" attaches a tributary/diversion to the
-# main-stem junction it branches from.
-#
-# Carried over as-is from the previous config.json — edit with
-# care, since row/col numbers must stay consistent for the
-# diagram to render correctly.
-# ------------------------------------------------------------
-schematic_layout:
-  mainStem:
-    - { id: "franklin",          name: "Logan River: Franklin Basin",                          row: 1,  type: "source" }
-    - { id: "beaver_junc",       name: "Beaver Creek Junction",                                 row: 2,  type: "line-junction" }
-    - { id: "tony_grove",        name: "Logan River: Tony Grove",                               row: 3,  type: "gauge" }
-    - { id: "ricks_junc",        name: "Ricks Spring Junction",                                 row: 4,  type: "line-junction" }
-    - { id: "temple_junc",       name: "Temple Fork Junction",                                  row: 5,  type: "line-junction" }
-    - { id: "above_wood",        name: "Logan River: Above Wood Camp",                          row: 6,  type: "gauge" }
-    - { id: "wood_camp",         name: "Logan River: Wood Camp Bridge",                         row: 7,  type: "gauge" }
-    - { id: "right_hand_junc",   name: "Right Hand Fork Junction",                              row: 8,  type: "line-junction" }
-    - { id: "guinivah",          name: "Logan River: Guinavah Campground",                       row: 9,  type: "gauge" }
-    - { id: "dewitt_junc",       name: "Dewitt Springs Junction",                               row: 10, type: "line-junction" }
-    - { id: "water_lab",         name: "Logan River: Utah Water Research Laboratory",           row: 11, type: "gauge" }
-    - { id: "mainstreet",        name: "Logan River: Main Street",                              row: 12, type: "gauge" }
-    - { id: "spring_creek_junc", name: "Spring Creek Junction",                                 row: 13, type: "line-junction" }
-    - { id: "bsf_confluence",    name: "Blacksmith Fork Confluence",                             row: 14, type: "line-junction" }
-    - { id: "thousand_w",        name: "Logan River: 1000 West",                                row: 15, type: "gauge" }
-    - { id: "mendon_rd",         name: "Logan River: Mendon Road",                              row: 16, type: "gauge" }
-    - { id: "before_cutler",     name: "Logan River: Before Confluence with Cutler Reservoir",  row: 17, type: "gauge" }
-
-  leftTributaries:
-    - { id: "beaver",       name: "Beaver Creek",    row: 1,  juncId: "beaver_junc",       col: "left" }
-    - { id: "ricks",        name: "Ricks Spring",    row: 3,  juncId: "ricks_junc",        col: "left" }
-    - { id: "temple",       name: "Temple Fork",     row: 4,  juncId: "temple_junc",       col: "right" }
-    - { id: "right_hand",   name: "Right Hand Fork", row: 7,  juncId: "right_hand_junc",   col: "right" }
-    - { id: "dewitt",       name: "Dewitt Springs",  row: 9,  juncId: "dewitt_junc",       col: "left" }
-    - { id: "spring_creek", name: "Spring Creek",    row: 12, juncId: "spring_creek_junc", col: "left" }
-
-  diversions:
-    - { id: "dwri_benson",      name: "Logan River: Benson Irrigation Company",          row: 2,  juncId: "beaver_junc",       col: "left",  schematicGroup: "Logan River" }
-    - { id: "dwri_lognorth",    name: "Logan River: Logan and Northern Canal",           row: 5,  juncId: "temple_junc",       col: "left",  schematicGroup: "Logan River" }
-    - { id: "dwri_provlogan",   name: "Logan River: Providence-Logan Irrigation Company",row: 8,  juncId: "right_hand_junc",   col: "left",  schematicGroup: "Logan River" }
-    - { id: "dwri_hydenorth",   name: "Logan River: Hyde Park and Logan Northfield",     row: 11, juncId: "dewitt_junc",       col: "left",  schematicGroup: "Logan River" }
-    - { id: "dwri_hydepark",    name: "Logan River: Hyde Park Canal",                    row: 14, juncId: "spring_creek_junc", col: "left",  schematicGroup: "Logan River" }
-    - { id: "dwri_8thward",     name: "Logan River: 8th Ward Canal (Crockett Canal)",    row: 1,  juncId: "right_hand_junc",   col: "right", schematicGroup: "Logan River" }
-    - { id: "dwri_provpioneer", name: "Logan River: Providence Pioneer Canal",           row: 3,  juncId: "dewitt_junc",       col: "right", schematicGroup: "Logan River" }
-    - { id: "dwri_nwfield",     name: "Logan River: Northwest Field Canal",              row: 6,  juncId: "mainstreet",        col: "right", schematicGroup: "Logan River" }
-    - { id: "dwri_swfield",     name: "Logan River: Southwest Field Canal",              row: 9,  juncId: "bsf_confluence",    col: "right", schematicGroup: "Logan River" }
-    - { id: "dwri_littlelogan", name: "Logan River: Little Logan Return to Bear",        row: 11, juncId: "mendon_rd",         col: "right", schematicGroup: "Logan River" }
-
-  blacksmithFork:
-    - { id: "hollow_rd",       name: "Blacksmith Fork River: Hollow Road",                        row: 11 }
-    - { id: "seventeen_s",     name: "Blacksmith Fork River: 1700 South Footbridge",              row: 12 }
-    - { id: "bsf_before_conf", name: "Blacksmith Fork River: Before Confluence with Logan River", row: 13 }
-
-  littleBear:
-    - { id: "lb_east_fork",          name: "Little Bear River: East Fork",                            row: 1,  type: "gauge", schematicGroup: "Little Bear River" }
-    - { id: "lb_highline",           name: "Little Bear River: Highline Canal",                       row: 2,  type: "gauge", schematicGroup: "Little Bear River" }
-    - { id: "lb_highline_pond_a",    name: "Little Bear River: Highline Canal at Pond",               row: 3,  type: "gauge", schematicGroup: "Little Bear River" }
-    - { id: "lb_highline_weeks",     name: "Little Bear River: Highline Canal below Weeks Farm",      row: 4,  type: "gauge", schematicGroup: "Little Bear River" }
-    - { id: "lb_highline_pond_b",    name: "Little Bear River: Highline Pond",                        row: 5,  type: "gauge", schematicGroup: "Little Bear River" }
-    - { id: "lb_hyrum_osmonds",      name: "Little Bear River: Hyrum Canal at Osmonds",               row: 6,  type: "gauge", schematicGroup: "Little Bear River" }
-    - { id: "lb_hyrum_irr",          name: "Little Bear River: Hyrum Irrigating Company",             row: 7,  type: "gauge", schematicGroup: "Little Bear River" }
-    - { id: "lb_paradise",           name: "Little Bear River: Little Bear River at Paradise",        row: 8,  type: "gauge", schematicGroup: "Little Bear River" }
-    - { id: "lb_little_feeder",      name: "Little Bear River: Little Feeder",                        row: 9,  type: "gauge", schematicGroup: "Little Bear River" }
-    - { id: "lb_paradise_canal",     name: "Little Bear River: Paradise Canal",                       row: 10, type: "gauge", schematicGroup: "Little Bear River" }
-    - { id: "lb_paradise_blacktube", name: "Little Bear River: Paradise Canal below Black Tube",      row: 11, type: "gauge", schematicGroup: "Little Bear River" }
-    - { id: "lb_paradise_highline",  name: "Little Bear River: Paradise City through Highline Canal", row: 12, type: "gauge", schematicGroup: "Little Bear River" }
-    - { id: "lb_porcupine",          name: "Little Bear River: Porcupine Reservoir Outlet",           row: 13, type: "gauge", schematicGroup: "Little Bear River" }
-    - { id: "lb_south_fork",         name: "Little Bear River: South Fork",                           row: 14, type: "gauge", schematicGroup: "Little Bear River" }
-    - { id: "lb_wellsville_e",       name: "Little Bear River: Wellsville East Field",                row: 15, type: "gauge", schematicGroup: "Little Bear River" }
-    - { id: "lb_wellsville_mendon",  name: "Little Bear River: Wellsville Mendon Canal",              row: 16, type: "gauge", schematicGroup: "Little Bear River" }
-
-  cutlerInflows:
-    - { id: "spring_creek_mendon", name: "Spring Creek: Mendon Road", row: 16, tributary: "Logan River Observatory" }

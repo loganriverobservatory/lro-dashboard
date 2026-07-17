@@ -1,3 +1,15 @@
 {
-  "apiToken": "D6IC2YFhsb7qZCTPfRe8N8ylDt3cMGyRr4tHlHfoIfciIoe17szzUog"
+  "apiToken": "D6IC2YFhsb7qZCTPfRe8N8ylDt3cMGyRr4tHlHfoIfciIoe17szzUog",
+  "dashboardTitle": "Logan River Observatory Dashboard",
+  "headerNav": {
+    "home": "Home",
+    "help": "Help"
+  },
+  "externalLink": {
+    "url": "https://lro.hydroserver.org/",
+    "label": "HydroServer"
+  },
+  "hydroServerBaseUrl": "https://lro.hydroserver.org/api/sensorthings/v1.1",
+  "stationConfigUrl": "https://raw.githubusercontent.com/loganriverobservatory/lro-dashboard/data-cache/station-config.json",
+  "usgsApiBaseUrl": "https://waterservices.usgs.gov/nwis/iv/"
 }

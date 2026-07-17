@@ -5,6 +5,23 @@
 import { Menu, Home, HelpCircle } from 'lucide-vue-next'
 import hslogo from '../assets/hydroserver-icon.png'
 
+// Branding comes from App.vue (ultimately public/config.json) with defaults here so the app
+// still renders sensibly if a deployment's config.json omits any of these - unlike the API
+// endpoints in hydroService.ts's setApiConfig(), a missing header label isn't a functional
+// break, so it doesn't need to fail loudly.
+const props = withDefaults(
+  defineProps<{
+    dashboardTitle?: string
+    headerNav?: { home?: string; help?: string }
+    externalLink?: { url?: string; label?: string }
+  }>(),
+  {
+    dashboardTitle: 'Dashboard',
+    headerNav: () => ({}),
+    externalLink: () => ({}),
+  },
+)
+
 const emit = defineEmits(['toggle-sidebar', 'change-view'])
 </script>
 
@@ -15,30 +32,31 @@ const emit = defineEmits(['toggle-sidebar', 'change-view'])
     </div>
 
     <div class="header-left">
-      <span class="dashboard-tag">Logan River Observatory Dashboard</span>
+      <span class="dashboard-tag">{{ dashboardTitle }}</span>
     </div>
 
     <div class="header-right">
       <div class="nav-action-btn" @click="emit('change-view', 'home')" title="Go to Homepage">
         <Home :size="20" class="nav-icon" />
-        <span class="nav-label">Home</span>
+        <span class="nav-label">{{ headerNav.home ?? 'Home' }}</span>
       </div>
 
       <div class="nav-action-btn" @click="emit('change-view', 'help')" title="View Help">
         <HelpCircle :size="20" class="nav-icon" />
-        <span class="nav-label">Help</span>
+        <span class="nav-label">{{ headerNav.help ?? 'Help' }}</span>
       </div>
 
       <a
-        href="https://lro.hydroserver.org/"
+        v-if="props.externalLink.url"
+        :href="props.externalLink.url"
         target="_blank"
         rel="noopener noreferrer"
         class="nav-action-btn brand-link"
-        title="Open HydroServer"
+        :title="`Open ${props.externalLink.label ?? 'external site'}`"
       >
         <img
           :src="hslogo"
-          alt="HydroServer Icon"
+          alt=""
           style="
             height: 22px;
             width: auto;
@@ -52,7 +70,7 @@ const emit = defineEmits(['toggle-sidebar', 'change-view'])
             opacity: 1;
           "
         />
-        <span class="nav-label">HydroServer</span>
+        <span class="nav-label">{{ props.externalLink.label ?? 'External Link' }}</span>
       </a>
     </div>
   </header>

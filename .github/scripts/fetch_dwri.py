@@ -163,7 +163,6 @@ def build_output(config):
         "fetchedAt": datetime.now(timezone.utc).isoformat(),
         "waterwayGroups": config.get("waterway_groups", []),
         "schematicGroups": config.get("schematic_groups", []),
-        "schematicLayout": config.get("schematic_layout", {}),
         "hiddenStations": config.get("hidden_stations", []),
         "displayNames": config.get("display_names", {}),
         "usgsStations": active_usgs,

@@ -12,14 +12,13 @@ const props = withDefaults(
   defineProps<{
     site: Station
     compact?: boolean
-    mapMode?: boolean
   }>(),
   {
     compact: false,
-    mapMode: false,
   },
 )
 
+// "Last Reading" timestamp, formatted for display (e.g. "Jan 5, 2026, 3:45 PM").
 function formatDate(dateStr: string | undefined): string {
   if (!dateStr) return ''
   const date = new Date(dateStr)
@@ -32,6 +31,7 @@ function formatDate(dateStr: string | undefined): string {
   })
 }
 
+// Maps a reading's age to the CSS class that colors its value (fresh/warning/stale/unknown).
 function getFreshnessClass(dateStr: string | undefined): string {
   if (!dateStr) return 'unknown'
   const status = getFreshnessStatus({ '@iot.id': '', result: null, phenomenonTime: dateStr })
@@ -44,11 +44,9 @@ function getFreshnessClass(dateStr: string | undefined): string {
   }[status]
 }
 
-const shortDisplayName = computed(() => {
-  const name = props.site?.displayName || ''
-  return (name.split(':')[0] ?? name).trim()
-})
-
+// Normalizes a station's observation(s) - which may be a single reading or (for future
+// multi-parameter datastreams) an array - into a flat list of displayable {label, value, unit,
+// time, fresh, displayable} rows the template can iterate uniformly.
 const parsedMeasurements = computed(() => {
   const obs = props.site?.observation
   if (!obs) return []
@@ -102,15 +100,14 @@ const isAwaitingTelemetry = computed(() => props.site.observation === null && !p
       'station-card',
       {
         'card-stale': !hasAnyLiveTelemetry,
-        'is-compact': compact || mapMode,
-        'is-map': mapMode,
+        'is-compact': compact,
       },
     ]"
   >
     <div class="card-header">
       <div class="title-with-link">
         <h2 class="location-name">
-          {{ mapMode ? shortDisplayName : site.displayName }}
+          {{ site.displayName }}
         </h2>
 
         <a
@@ -139,7 +136,6 @@ const isAwaitingTelemetry = computed(() => props.site.observation === null && !p
       </div>
 
       <span
-        v-if="!mapMode"
         :class="['status-badge', hasAnyLiveTelemetry ? 'badge-online' : 'badge-offline']"
       >
         {{ hasAnyLiveTelemetry ? 'Live' : 'Offline' }}
@@ -171,15 +167,15 @@ const isAwaitingTelemetry = computed(() => props.site.observation === null && !p
           </div>
 
           <div v-if="!hasDisplayableData" class="value-row offline-row">
-            <span class="value fallback-text">{{ mapMode ? 'n/a' : 'No data available' }}</span>
+            <span class="value fallback-text">No data available</span>
           </div>
 
-          <p v-if="site.observation?.phenomenonTime && !mapMode" class="timestamp">
+          <p v-if="site.observation?.phenomenonTime" class="timestamp">
             Last Reading: {{ formatDate(site.observation.phenomenonTime) }}
           </p>
         </div>
 
-        <div v-if="!compact && !mapMode && site.id" class="sparkline-sidebar-wrapper">
+        <div v-if="!compact && site.id" class="sparkline-sidebar-wrapper">
           <div class="sparkline-title">Recent 48-Hour Trend</div>
           <StationSparkline
             :station-id="site.id"
@@ -510,7 +506,7 @@ const isAwaitingTelemetry = computed(() => props.site.observation === null && !p
 }
 
 /* ==========================================================================
-   4. ALTERNATE VIEW CONFIGURATIONS (Compact & Map Variants)
+   4. ALTERNATE VIEW CONFIGURATIONS (Compact Variant)
    ========================================================================== */
 /* Compact View Modifications */
 .station-card.is-compact {
@@ -550,74 +546,5 @@ const isAwaitingTelemetry = computed(() => props.site.observation === null && !p
 .station-card.is-compact .link-svg {
   width: 0.95rem;
   height: 0.95rem;
-}
-
-/* Map View Modifications */
-.station-card.is-map {
-  background: rgba(255, 255, 255, 0.95) !important;
-  border: 1px solid #94a3b8 !important;
-  padding: 1px 2px !important;
-  border-radius: 4px;
-  min-width: auto !important;
-  margin: 0 !important;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  text-align: center !important;
-}
-.station-card.is-map::before {
-  content: '';
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  border-width: 7px;
-  border-style: solid;
-  border-color: #94a3b8 transparent transparent transparent;
-}
-.station-card.is-map .metric-row,
-.station-card.is-map .value-row {
-  margin: 0 !important;
-  padding: 0 !important;
-  line-height: 0.5 !important;
-}
-.station-card.is-map::after {
-  content: '';
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  border-width: 6px;
-  border-style: solid;
-  border-color: rgba(255, 255, 255, 0.95) transparent transparent transparent;
-}
-.station-card.is-map .card-header {
-  order: 2 !important;
-  margin: -2px 0 0 0 !important;
-  padding: 0 !important;
-}
-.station-card.is-map .card-body {
-  order: 1 !important;
-  margin: 0 !important;
-  padding: 0 !important;
-}
-.station-card.is-map .location-name {
-  font-size: 0.7rem !important;
-  font-weight: 700;
-  color: #0f172a;
-}
-.station-card.is-map .value {
-  font-size: 1.2rem !important;
-  line-height: 1 !important;
-  margin: 0 !important;
-  padding: 0 !important;
-}
-.station-card.is-map .unit {
-  font-size: 0.75rem !important;
-}
-.station-card.is-map .link-svg {
-  width: 1rem;
-  height: 1rem;
 }
 </style>

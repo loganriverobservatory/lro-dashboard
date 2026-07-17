@@ -1,5 +1,13 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+/*
+AppSidebar.vue - left-hand navigation: List/Map/Schematic view switching, the variable picker,
+the List/Map "FILTER STATIONS" Systems/Data-Sources toggle, and the "DATA STATUS" legend (plus
+a plain, un-toggled "DATA SOURCES" list on the schematic view specifically - see
+showSchematicSources). Collapses to a toggleable overlay on narrow screens (see App.vue's
+sidebarOpen), controlled by AppHeader's menu icon.
+*/
+import { ref, computed, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import {
   X,
   List,
@@ -15,7 +23,38 @@ const props = defineProps<{
   isOpen: boolean
   currentView: string
   activeWaterways: string[]
+  // Which schematic systems are active in List/Map view's system filter - see App.vue's
+  // activeSystems.
+  activeSystems: string[]
+  // Which of activeSystems/activeWaterways List/Map view's filter is currently applying - see
+  // App.vue's filterMode.
+  filterMode: 'system' | 'source'
+  // Manifest-ordered {slug, label} list built by App.vue from the loaded schematic pages -
+  // this is what lets the submenu below (and the SYSTEMS filter checkboxes) reflect any
+  // adopter's own schematic JSON files without editing this component.
+  schematicNav: { slug: string; label: string }[]
 }>()
+
+const route = useRoute()
+const router = useRouter()
+const isSchematicActive = computed(() => route.path.startsWith('/schematic/'))
+// Collapsed by default so it doesn't crowd the nav on first load, but auto-expands once you're
+// actually on a schematic page, so its four systems are visible without an extra click. Doesn't
+// auto-collapse again on leaving - the chevron stays under manual control after that.
+const schematicOpen = ref(false)
+watch(
+  isSchematicActive,
+  (active) => {
+    if (active) schematicOpen.value = true
+  },
+  { immediate: true },
+)
+
+// Falls back to the router's own default redirect target when the manifest hasn't loaded yet.
+function openSchematic() {
+  const firstSlug = props.schematicNav[0]?.slug
+  router.push(firstSlug ? `/schematic/${firstSlug}` : '/schematic')
+}
 
 const variables = [
   { id: 'Discharge', label: 'Discharge' },
@@ -54,19 +93,29 @@ const freshnessItems = [
   },
 ]
 
-const emit = defineEmits([
-  'close-sidebar',
-  'change-view',
-  'variable-changed',
-  'waterway-filter-changed',
-])
+const emit = defineEmits<{
+  (e: 'close-sidebar'): void
+  (e: 'change-view', view: string): void
+  (e: 'variable-changed', variable: string): void
+  (e: 'waterway-filter-changed', updated: string[]): void
+  (e: 'system-filter-changed', updated: string[]): void
+  (e: 'filter-mode-changed', mode: 'system' | 'source'): void
+}>()
 
-const showLegend = () => ['map', 'list', 'schematic'].includes(props.currentView)
+// The DATA STATUS legend makes sense on any view that shows colored stations/pins.
+const showFreshnessLegend = () => ['map', 'list'].includes(props.currentView) || isSchematicActive.value
+// List/Map get the combined Systems/Data Sources filter toggle below - the schematic view
+// only ever shows one system at a time via its own page routing, so a systems filter doesn't
+// apply there; it keeps a plain, un-toggled Data Sources list instead (see showSchematicSources).
+const showFilterToggle = () => ['map', 'list'].includes(props.currentView)
+const showSchematicSources = () => isSchematicActive.value
 
 const handleVariableChange = () => {
   emit('variable-changed', selectedVariable.value)
 }
 
+// Adds/removes one waterway group from the active filter set (used by both the map and list
+// views, and the schematic's live-station lookup) - see App.vue's activeWaterways.
 function toggleWaterway(name: string) {
   const current = new Set(props.activeWaterways)
   if (current.has(name)) {
@@ -77,11 +126,35 @@ function toggleWaterway(name: string) {
   emit('waterway-filter-changed', [...current])
 }
 
+// The "Select All"/"Deselect All" toggle button - flips between every waterway active and none.
 function toggleAll() {
   if (props.activeWaterways.length === WATERWAY_LIST.length) {
     emit('waterway-filter-changed', [])
   } else {
     emit('waterway-filter-changed', [...WATERWAY_LIST])
+  }
+}
+
+// Adds/removes one schematic system from the List/Map view filter - see App.vue's
+// activeSystems. Mirrors toggleWaterway above, just for a different filter dimension.
+function toggleSystem(slug: string) {
+  const current = new Set(props.activeSystems)
+  if (current.has(slug)) {
+    current.delete(slug)
+  } else {
+    current.add(slug)
+  }
+  emit('system-filter-changed', [...current])
+}
+
+function toggleAllSystems() {
+  if (props.activeSystems.length === props.schematicNav.length) {
+    emit('system-filter-changed', [])
+  } else {
+    emit(
+      'system-filter-changed',
+      props.schematicNav.map((s) => s.slug),
+    )
   }
 }
 </script>
@@ -123,18 +196,100 @@ function toggleAll() {
         <MapIcon :size="18" /> <span>MAP VIEW</span>
       </li>
       <li
-        class="sidebar-list-item"
-        :class="{ 'active-item': currentView === 'schematic' }"
-        @click="emit('change-view', 'schematic')"
+        class="sidebar-list-item schematic-parent-item"
+        :class="{ 'active-item': isSchematicActive }"
+        @click="openSchematic"
       >
         <MapPin :size="18" /> <span>SCHEMATIC VIEW</span>
+        <component
+          :is="schematicOpen ? ChevronDown : ChevronRight"
+          :size="14"
+          class="submenu-chevron"
+          @click.stop="schematicOpen = !schematicOpen"
+        />
       </li>
+      <ul v-if="schematicOpen" class="schematic-submenu">
+        <li
+          v-for="p in schematicNav"
+          :key="p.slug"
+          class="schematic-submenu-item"
+          :class="{ 'active-item': route.path === `/schematic/${p.slug}` }"
+          @click="router.push(`/schematic/${p.slug}`)"
+        >
+          {{ p.label }}
+        </li>
+      </ul>
     </ul>
 
-    <div v-if="showLegend()" class="legend-section">
+    <!-- List/Map's combined filter: a mode toggle picks which single dimension is currently
+    applied (see App.vue's filterMode), with one checkbox list underneath for whichever mode is
+    active - simpler than showing both dimensions' checkboxes stacked at once. -->
+    <div v-if="showFilterToggle()" class="legend-section">
       <button class="legend-toggle" @click="legendOpen = !legendOpen">
         <component :is="legendOpen ? ChevronDown : ChevronRight" :size="14" />
-        <span>REGIONAL WATERWAYS</span>
+        <span>FILTER STATIONS</span>
+      </button>
+
+      <div v-if="legendOpen" class="legend-body">
+        <div class="filter-mode-toggle">
+          <button
+            type="button"
+            class="filter-mode-btn"
+            :class="{ active: filterMode === 'system' }"
+            @click="emit('filter-mode-changed', 'system')"
+          >
+            Systems
+          </button>
+          <button
+            type="button"
+            class="filter-mode-btn"
+            :class="{ active: filterMode === 'source' }"
+            @click="emit('filter-mode-changed', 'source')"
+          >
+            Data Sources
+          </button>
+        </div>
+
+        <template v-if="filterMode === 'system'">
+          <button class="toggle-all-btn" @click="toggleAllSystems">
+            {{ activeSystems.length === schematicNav.length ? 'Deselect All' : 'Select All' }}
+          </button>
+          <label v-for="s in schematicNav" :key="s.slug" class="legend-item">
+            <input
+              type="checkbox"
+              class="legend-checkbox"
+              :checked="activeSystems.includes(s.slug)"
+              @change="toggleSystem(s.slug)"
+            />
+            <span class="legend-name">{{ s.label }}</span>
+          </label>
+        </template>
+
+        <template v-else>
+          <button class="toggle-all-btn" @click="toggleAll">
+            {{ activeWaterways.length === WATERWAY_LIST.length ? 'Deselect All' : 'Select All' }}
+          </button>
+          <label v-for="name in WATERWAY_LIST" :key="name" class="legend-item">
+            <input
+              type="checkbox"
+              class="legend-checkbox"
+              :checked="activeWaterways.includes(name)"
+              @change="toggleWaterway(name)"
+            />
+            <span class="legend-swatch" :style="{ background: WATERWAY_COLORS[name] }"></span>
+            <span class="legend-name">{{ name }}</span>
+          </label>
+        </template>
+      </div>
+    </div>
+
+    <!-- The schematic view already shows exactly one system at a time via its own page
+    routing, so it only gets a plain Data Sources list here (no mode toggle, no system filter -
+    that's what filters which stations fuzzy-match onto the diagram, same as before). -->
+    <div v-if="showSchematicSources()" class="legend-section">
+      <button class="legend-toggle" @click="legendOpen = !legendOpen">
+        <component :is="legendOpen ? ChevronDown : ChevronRight" :size="14" />
+        <span>DATA SOURCES</span>
       </button>
 
       <div v-if="legendOpen" class="legend-body">
@@ -154,7 +309,7 @@ function toggleAll() {
       </div>
     </div>
 
-    <div v-if="showLegend()" class="legend-section">
+    <div v-if="showFreshnessLegend()" class="legend-section">
       <button class="legend-toggle" @click="freshnessOpen = !freshnessOpen">
         <component :is="freshnessOpen ? ChevronDown : ChevronRight" :size="14" />
         <span>DATA STATUS</span>
@@ -306,6 +461,44 @@ function toggleAll() {
   box-shadow: inset 4px 0 0 #ffffff;
 }
 
+.schematic-parent-item {
+  justify-content: space-between;
+}
+
+.submenu-chevron {
+  margin-left: auto;
+  opacity: 0.75;
+  flex-shrink: 0;
+}
+
+.submenu-chevron:hover {
+  opacity: 1;
+}
+
+.schematic-submenu {
+  list-style-type: none;
+  margin: 0 0 6px 0;
+  padding: 0 12px 0 34px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.schematic-submenu-item {
+  padding: 8px 12px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.75);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.schematic-submenu-item:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
 .legend-section {
   padding: 0 12px 16px 12px;
   border-top: 1px solid rgba(255, 255, 255, 0.12);
@@ -353,6 +546,42 @@ function toggleAll() {
 
 .toggle-all-btn:hover {
   background: rgba(255, 255, 255, 0.25);
+}
+
+/* Segmented control picking which single filter dimension (Systems or Data Sources) is
+   currently applied - see App.vue's filterMode. */
+.filter-mode-toggle {
+  display: flex;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 3px;
+  margin-bottom: 10px;
+}
+
+.filter-mode-btn {
+  flex: 1;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 6px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: center;
+  transition:
+    background 0.18s ease,
+    color 0.18s ease;
+}
+
+.filter-mode-btn:hover {
+  color: #ffffff;
+}
+
+.filter-mode-btn.active {
+  background: #ffffff;
+  color: #073763;
 }
 
 .legend-item {

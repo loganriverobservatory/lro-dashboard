@@ -41,3 +41,6 @@ __screenshots__/
 # Python (fetch_dwri.py local runs)
 __pycache__/
 *.pyc
+
+# Claude Code local tooling state (worktrees, locks) — not part of the app
+.claude/
