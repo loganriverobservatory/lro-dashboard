@@ -121,6 +121,11 @@ usgs_stations:
     siteLink: "https://waterdata.usgs.gov/monitoring-location/USGS-10109000/#dataTypeId=continuous-00060-0&period=P7D&showMedian=true&showFieldMeasurements=true"
     active: true
 
+  - id: "10113500"
+    displayName: "USGS: Blacksmith Fork River Above UP&L Dam near Hyrum, UT"
+    siteLink: "https://waterdata.usgs.gov/monitoring-location/USGS-10113500/#dataTypeId=continuous-00060-0&period=P7D&showMedian=true&showFieldMeasurements=true"
+    active: true
+
 
 # ------------------------------------------------------------
 # DWRi STATIONS
@@ -244,14 +249,6 @@ dwri_stations:
     schematicGroup: "Little Bear River"
     lat: 41.576291
     lng: -111.816182
-    active: true
-
-  - id: 12355
-    displayName: "Little Bear River: Highline Pond"
-    group: "DWRi"
-    schematicGroup: "Little Bear River"
-    lat: 41.621360
-    lng: -111.800252
     active: true
 
   - id: 2771

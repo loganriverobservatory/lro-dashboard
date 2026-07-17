@@ -135,7 +135,7 @@ const bgColor = computed(() => {
    off the main channel's straight vertical line and every branch's connection point. */
 .schematic-node {
   position: relative;
-  width: 360px;
+  width: 380px;
   box-sizing: border-box;
 }
 
@@ -188,21 +188,27 @@ const bgColor = computed(() => {
    text fills more of the card's fixed 360px width instead of sitting small within it. */
 .station-wrapper :deep(.station-card.is-compact) {
   position: relative;
-  padding: 0.25rem 0.4rem;
+  padding: 0.35rem 0.5rem;
 }
 .station-wrapper :deep(.card-header) {
   margin-bottom: 0.1rem;
   margin-top: 0;
 }
+.station-wrapper :deep(.title-with-link) {
+  min-width: 0;
+}
 .station-wrapper :deep(.metric-row) {
   margin-bottom: 0.05rem;
 }
 .station-wrapper :deep(.location-name) {
-  font-size: clamp(1.1rem, 4vw, 1.6rem);
+  font-size: 2rem !important;
+  line-height: 1.1 !important;
   margin: 0;
+  white-space: normal;
+  overflow-wrap: break-word;
 }
 .station-wrapper :deep(.value) {
-  font-size: clamp(1.6rem, 5vw, 2.2rem);
+  font-size: clamp(1.8rem, 5vw, 2.4rem) !important;
 }
 .station-wrapper :deep(.timestamp) {
   display: none;
@@ -230,6 +236,10 @@ const bgColor = computed(() => {
   right: 4px;
   margin-left: 0;
   font-size: 0.8rem;
+}
+.station-wrapper :deep(.link-svg) {
+  width: 1.5rem !important;
+  height: 1.5rem !important;
 }
 .station-wrapper :deep(.card-header),
 .station-wrapper :deep(.title-with-link) {
@@ -324,7 +334,7 @@ const bgColor = computed(() => {
 }
 
 .link-card .node-title {
-  font-size: 2.2rem;
+  font-size: 2rem;
   color: #1d4ed8;
 }
 

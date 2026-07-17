@@ -20,6 +20,7 @@ import StationCard from '../components/StationCard.vue'
 
 const props = defineProps<{
   sites: Station[]
+  loading: boolean
   selectedId: string | null
   selectedVariable: string
   activeWaterways: string[]
@@ -264,6 +265,11 @@ watch(
   <div class="map-container">
     <div id="map-div"></div>
 
+    <div v-if="loading" class="map-loading-overlay">
+      <div class="spinner"></div>
+      <p>Loading stations…</p>
+    </div>
+
     <div v-if="!hasZoomed" class="map-banner">
       <div class="banner-live-label">Live {{ variableLongLabel }}</div>
       Zoom in/out to see <strong>{{ selectedVariable }}</strong> values. Click on values for more
@@ -302,6 +308,37 @@ watch(
 }
 :deep(.leaflet-control-container) {
   z-index: 800;
+}
+
+.map-loading-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 950;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  background: rgba(248, 250, 252, 0.85);
+  color: #64748b;
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #e2e8f0;
+  border-top: 3px solid #01377d;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .map-banner {

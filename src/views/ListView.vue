@@ -158,6 +158,7 @@ function toggleWaterway(name: string) {
     </header>
 
     <div v-if="loading" class="loading-state">
+      <div class="spinner"></div>
       <p>Connecting to river sensors...</p>
     </div>
 
@@ -302,10 +303,31 @@ function toggleWaterway(name: string) {
 }
 
 .loading-state {
-  text-align: center;
-  padding: 2rem;
-  font-size: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem;
+  gap: 15px;
   color: #64748b;
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #e2e8f0;
+  border-top: 3px solid #01377d;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .station-grid {

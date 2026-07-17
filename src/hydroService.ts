@@ -137,6 +137,7 @@ export interface SchematicNode {
   side?: 'left' | 'right' // tributary/diversion/link only: which side of the trunk
   linkTo?: SchematicSlug // page to navigate to; required for 'link', optional elsewhere
   label?: string // linkTo button text override (defaults to name)
+  cardLabel?: string // overrides the on-card name shown once matched to a live station
   terminus?: boolean // marks this mainstem node as the system's final endpoint
   description?: string // terminus subtitle text
   // tributary/diversion only: if this is the last node in a chain and the water rejoins
@@ -523,16 +524,35 @@ export function getSchematicSystemOrder(pages: SchematicPages | null | undefined
   return buildSchematicEntries(pages).map((e) => ({ name: e.name, slug: e.slug }))
 }
 
-// Matches SchematicView's findLiveStation fuzzy substring match, so list order stays
-// consistent with how the schematic resolves config entries to live stations.
+// Shared by findLiveStation (SchematicView.vue), sortStationsBySchematic, and
+// findStationSystem below - all three need to match a live station's display name against a
+// schematic-authored name via fuzzy (bidirectional) substring matching. Picking the *first*
+// candidate that satisfies the substring check (as all three used to) breaks when one name is
+// a literal text-prefix of another's, e.g. "Highline Canal" vs "Highline Canal at Pond" - the
+// shorter name's station would win the match for both, showing its reading on both cards.
+// Preferring an exact match, then the closest-length partial match, fixes that.
+export function bestFuzzyMatch<T>(targetName: string, items: T[], nameOf: (item: T) => string): T | undefined {
+  const target = targetName.toLowerCase()
+  let best: T | undefined
+  let bestDiff = Infinity
+  for (const item of items) {
+    const name = nameOf(item).toLowerCase()
+    if (name === target) return item
+    if (name.includes(target) || target.includes(name)) {
+      const diff = Math.abs(name.length - target.length)
+      if (diff < bestDiff) {
+        best = item
+        bestDiff = diff
+      }
+    }
+  }
+  return best
+}
+
 export function sortStationsBySchematic(stations: Station[], order: string[]): Station[] {
   const orderIndex = (station: Station): number => {
-    const liveName = station.displayName.toLowerCase()
-    const idx = order.findIndex((name) => {
-      const targetName = name.toLowerCase()
-      return liveName.includes(targetName) || targetName.includes(liveName)
-    })
-    return idx === -1 ? Infinity : idx
+    const match = bestFuzzyMatch(station.displayName, order, (name) => name)
+    return match === undefined ? Infinity : order.indexOf(match)
   }
 
   return stations
@@ -541,20 +561,14 @@ export function sortStationsBySchematic(stations: Station[], order: string[]): S
     .map((entry) => entry.station)
 }
 
-// Same fuzzy substring match as sortStationsBySchematic/findLiveStation, used by the List/Map
-// view system filter to find which schematic page a live station belongs to. Returns undefined
-// if the station doesn't match any node in any schematic file (e.g. a brand-new live station
-// that hasn't been added to a schematic JSON yet) - callers treat that the same as belonging to
-// no system, so it's hidden by the filter same as anything else, not exempted from it. Add the
-// station to a schematic JSON to make it filterable.
+// Used by the List/Map view system filter to find which schematic page a live station belongs
+// to. Returns undefined if the station doesn't match any node in any schematic file (e.g. a
+// brand-new live station that hasn't been added to a schematic JSON yet) - callers treat that
+// the same as belonging to no system, so it's hidden by the filter same as anything else, not
+// exempted from it. Add the station to a schematic JSON to make it filterable.
 export function findStationSystem(
   displayName: string,
   systemOrder: { name: string; slug: SchematicSlug }[],
 ): SchematicSlug | undefined {
-  const liveName = displayName.toLowerCase()
-  const match = systemOrder.find((e) => {
-    const targetName = e.name.toLowerCase()
-    return liveName.includes(targetName) || targetName.includes(liveName)
-  })
-  return match?.slug
+  return bestFuzzyMatch(displayName, systemOrder, (e) => e.name)?.slug
 }

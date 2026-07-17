@@ -25,6 +25,7 @@ import {
   type SchematicPageConfig,
   type SchematicNode as SchematicNodeData,
   WATER_VARIBALES,
+  bestFuzzyMatch,
 } from '../hydroService'
 import SchematicNode from '../components/SchematicNode.vue'
 import StationCard from '../components/StationCard.vue'
@@ -74,7 +75,7 @@ const COL_WIDTH = 520
 const ROW_HEIGHT = 130
 
 // Keep in sync with SchematicNode.vue's .schematic-node / .kind-junction widths.
-const NODE_WIDTH = 360
+const NODE_WIDTH = 380
 const JUNCTION_WIDTH = 10
 
 // The main channel's lane. A direct trunk attachment is always +/-1 from this. A multi-stop
@@ -100,11 +101,7 @@ async function loadPage() {
 }
 
 function findLiveStation(schematicName: string): Station | undefined {
-  const match = props.sites.find((site) => {
-    const liveName = site.displayName.toLowerCase()
-    const targetName = schematicName.toLowerCase()
-    return liveName.includes(targetName) || targetName.includes(liveName)
-  })
+  const match = bestFuzzyMatch(schematicName, props.sites, (site) => site.displayName)
   if (!match) return undefined
   if (props.activeWaterways && !props.activeWaterways.includes(match.tributary ?? ''))
     return undefined
@@ -349,7 +346,7 @@ const vfNodes = computed<VFNode[]>(() => {
         terminus: node.terminus,
         linkTo: node.linkTo,
         liveStation: liveStation
-          ? { ...liveStation, displayName: shortenForSchematic(liveStation.displayName) }
+          ? { ...liveStation, displayName: node.cardLabel ?? shortenForSchematic(liveStation.displayName) }
           : undefined,
       },
     }

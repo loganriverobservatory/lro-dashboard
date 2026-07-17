@@ -88,13 +88,15 @@
       "kind": "diversion",
       "connectsTo": "highline_junc",
       "side": "left",
-      "colorGroup": "USGS"
+      "colorGroup": "USGS",
+      "cardLabel": "Cache Highline Canal"
     },
     {
       "id": "usgs_above_first_dam",
       "name": "Logan River Above First Dam",
       "kind": "mainstem",
-      "colorGroup": "USGS"
+      "colorGroup": "USGS",
+      "cardLabel": "Above First Dam"
     },
     {
       "id": "water_lab",
@@ -107,7 +109,7 @@
       "name": "Lower Logan River",
       "kind": "link",
       "linkTo": "lower-logan",
-      "label": "Continue to Lower Logan River →"
+      "label": "Continue to Lower Logan River"
     }
   ]
 }

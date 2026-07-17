@@ -74,8 +74,6 @@
       "colorGroup": "Little Bear River"
     },
 
-    { "id": "highline_pond", "name": "Little Bear River: Highline Pond", "kind": "mainstem", "colorGroup": "Little Bear River" },
-
     { "id": "highline_canal_junc", "name": "Highline Canal diversion point", "kind": "junction" },
     {
       "id": "highline_canal",

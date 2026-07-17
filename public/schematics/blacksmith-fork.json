@@ -34,6 +34,13 @@
   "subtitle": "The full Blacksmith Fork River system",
   "nodes": [
     {
+      "id": "usgs_upl_dam",
+      "name": "Blacksmith Fork River Above UP&L Dam",
+      "kind": "mainstem",
+      "colorGroup": "USGS",
+      "cardLabel": "Above UP&L Dam"
+    },
+    {
       "id": "hollow_rd",
       "name": "Blacksmith Fork River: Hollow Road",
       "kind": "mainstem",
@@ -55,17 +62,11 @@
       "colorGroup": "Blacksmith Fork River"
     },
     {
-      "id": "bsf_before_conf",
-      "name": "Blacksmith Fork River: Before Confluence with Logan River",
-      "kind": "mainstem",
-      "colorGroup": "Blacksmith Fork River"
-    },
-    {
       "id": "to_lower_logan",
       "name": "Lower Logan River",
       "kind": "link",
       "linkTo": "lower-logan",
-      "label": "Continue to Lower Logan River →"
+      "label": "Continue to Lower Logan River"
     }
   ]
 }

@@ -32,8 +32,9 @@
     "for tributary, out for diversion) are all derived automatically from kind + connectsTo + the order nodes appear above.",
     "",
     "The 'bsf_ext' node is where Blacksmith Fork River used to be drawn directly on this page - it's now a 'link' card that",
-    "navigates to its own page (blacksmith-fork.json), plus one real preview station ('bsf_1700s_preview') chained onto it so",
-    "readers see one real BSF card before clicking through. Do not delete bsf_ext without also removing the reciprocal",
+    "navigates to its own page (blacksmith-fork.json), plus one real preview station ('bsf_before_conf', the last BSF gauge",
+    "before it joins the Logan River) chained onto it, with returnsTo pointing back at bsf_confluence so its connector rejoins",
+    "the main trunk right where the real confluence is. Do not delete bsf_ext without also removing the reciprocal",
     "'to_lower_logan' link node on that page.",
     "",
     "Little Bear River works the same way: 'little_bear' is a 'link' card (right before Spring Creek: Mendon Road) that",
@@ -154,15 +155,17 @@
       "connectsTo": "bsf_confluence",
       "side": "right",
       "linkTo": "blacksmith-fork",
-      "label": "Continue to Blacksmith Fork River →"
+      "label": "Continue to Blacksmith Fork River"
     },
     {
-      "id": "bsf_1700s_preview",
-      "name": "Blacksmith Fork River: 1700 South Footbridge",
+      "id": "bsf_before_conf",
+      "name": "Blacksmith Fork River: Before Confluence with Logan River",
       "kind": "tributary",
       "connectsTo": "bsf_ext",
       "side": "right",
-      "colorGroup": "Blacksmith Fork River"
+      "colorGroup": "Blacksmith Fork River",
+      "cardLabel": "Before Confluence with Logan River",
+      "returnsTo": "bsf_confluence"
     },
     {
       "id": "thousand_w",
@@ -188,7 +191,8 @@
       "id": "before_cutler",
       "name": "Logan River: Before Confluence with Cutler Reservoir",
       "kind": "mainstem",
-      "colorGroup": "Logan River Observatory: Logan River Main Stem"
+      "colorGroup": "Logan River Observatory: Logan River Main Stem",
+      "cardLabel": "Before Cutler Reservoir"
     },
     {
       "id": "terminus",
@@ -204,7 +208,7 @@
       "connectsTo": "terminus",
       "side": "right",
       "linkTo": "little-bear",
-      "label": "Continue to Little Bear River →"
+      "label": "Continue to Little Bear River"
     },
     {
       "id": "spring_creek_mendon",
