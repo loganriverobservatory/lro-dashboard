@@ -37,6 +37,13 @@ function onLinkClick() {
   if (props.data.linkTo) navigateToSystem?.(props.data.linkTo)
 }
 
+const bgColor = computed(() => {
+  const group = resolvedColorGroup.value
+  if (!group) return undefined
+  const color = WATERWAY_COLORS[group] ?? SCHEMATIC_ACCENT_COLORS[group]
+  return color ? color + '18' : undefined
+})
+
 // Full-strength version of the same color used for bgColor's tint - drawn as the card's
 // border so the border always matches whichever data source (USGS/DWRi/Logan River
 // Observatory) this station's own colorGroup resolves to.
@@ -107,7 +114,11 @@ const resolvedColorGroup = computed(() => {
         <h3>{{ data.name }}</h3>
       </div>
 
-      <div v-else class="station-wrapper" :style="{ borderColor: borderColor }">
+      <div
+        v-else
+        class="station-wrapper"
+        :style="{ backgroundColor: bgColor, borderColor: borderColor }"
+      >
         <StationCard v-if="data.liveStation" :site="data.liveStation" compact />
         <div v-else class="node-card placeholder-card">
           <span class="node-title">{{ data.name }}</span>
@@ -196,12 +207,12 @@ const resolvedColorGroup = computed(() => {
 }
 
 .station-wrapper {
-  border-radius: 20px;
-  padding: 0;
+  border-radius: 14px;
+  padding: 4px;
   width: 100%;
   box-sizing: border-box;
-  border: 7px solid transparent;
-  overflow: hidden;
+  border: 2px solid transparent;
+}
 }
 
 /* Name/value sized up from StationCard's native .is-compact sizing (0.9rem/1.6rem) so the

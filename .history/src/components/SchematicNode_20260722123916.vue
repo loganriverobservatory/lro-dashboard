@@ -37,13 +37,11 @@ function onLinkClick() {
   if (props.data.linkTo) navigateToSystem?.(props.data.linkTo)
 }
 
-// Full-strength version of the same color used for bgColor's tint - drawn as the card's
-// border so the border always matches whichever data source (USGS/DWRi/Logan River
-// Observatory) this station's own colorGroup resolves to.
-const borderColor = computed(() => {
+const bgColor = computed(() => {
   const group = resolvedColorGroup.value
   if (!group) return undefined
-  return WATERWAY_COLORS[group] ?? SCHEMATIC_ACCENT_COLORS[group]
+  const color = WATERWAY_COLORS[group] ?? SCHEMATIC_ACCENT_COLORS[group]
+  return color ? color + '18' : undefined
 })
 
 // Picks which colorGroup key actually drives this card's tint. Whenever a live station is
@@ -107,12 +105,13 @@ const resolvedColorGroup = computed(() => {
         <h3>{{ data.name }}</h3>
       </div>
 
-      <div v-else class="station-wrapper" :style="{ borderColor: borderColor }">
+      <div v-else class="station-wrapper" :style="{ backgroundColor: bgColor }">
         <StationCard v-if="data.liveStation" :site="data.liveStation" compact />
         <div v-else class="node-card placeholder-card">
           <span class="node-title">{{ data.name }}</span>
         </div>
       </div>
+
       <!-- A real station that also happens to sit at a page boundary (e.g. Water Lab
       linking into Lower Logan) gets this extra button instead of being its own 'link'
       card. @click.stop keeps it from also triggering onNodeClick's mobile station-sheet
@@ -195,13 +194,20 @@ const resolvedColorGroup = computed(() => {
   transform: none;
 }
 
+/* .kind-junction has no fixed height of its own - it just shrinks to fit its 6px dot - so
+   the 13px offset above (tuned for a full-height station card) lands well below where the
+   dot actually is. .kind-junction below gets an explicit height so this can target its real
+   center instead. */
+.schematic-node.kind-junction :deep(.vue-flow__handle-left),
+.schematic-node.kind-junction :deep(.vue-flow__handle-right) {
+  top: 5px;
+}
+
 .station-wrapper {
-  border-radius: 20px;
+  border-radius: 14px;
   padding: 0;
   width: 100%;
   box-sizing: border-box;
-  border: 7px solid transparent;
-  overflow: hidden;
 }
 
 /* Name/value sized up from StationCard's native .is-compact sizing (0.9rem/1.6rem) so the
@@ -290,9 +296,11 @@ const resolvedColorGroup = computed(() => {
 /* Narrower than the standard 280px node so its handles hug the small visible dot instead
    of sitting at the edges of an invisible 280px box. SchematicView.vue knows this width
    too and offsets the node's x position to keep its center aligned with everything else
-   in its column. */
+   in its column. Explicit height (rather than shrinking to fit the 6px dot) gives the
+   left/right handle-position fix above a known, fixed center to target. */
 .kind-junction {
   width: 10px;
+  height: 10px;
   display: flex;
   align-items: center;
   justify-content: center;

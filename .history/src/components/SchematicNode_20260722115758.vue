@@ -200,7 +200,7 @@ const resolvedColorGroup = computed(() => {
   padding: 0;
   width: 100%;
   box-sizing: border-box;
-  border: 7px solid transparent;
+  border: 5px solid transparent;
   overflow: hidden;
 }
 

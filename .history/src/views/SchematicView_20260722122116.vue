@@ -598,14 +598,12 @@ watch(
         .zoom-reset-btn below) instead of Vue Flow's default square icon-button styling. -->
         <div class="zoom-control-group">
           <div class="zoom-btn-row">
-            <div class="zoom-icon-group">
-              <button type="button" class="zoom-icon-btn" aria-label="Zoom out" @click="zoomOut()">
-                <Minus :size="isCompact ? 11 : 14" />
-              </button>
-              <button type="button" class="zoom-icon-btn" aria-label="Zoom in" @click="zoomIn()">
-                <Plus :size="isCompact ? 11 : 14" />
-              </button>
-            </div>
+            <button type="button" class="zoom-icon-btn" aria-label="Zoom out" @click="zoomOut()">
+              <Minus :size="isCompact ? 11 : 14" />
+            </button>
+            <button type="button" class="zoom-icon-btn" aria-label="Zoom in" @click="zoomIn()">
+              <Plus :size="isCompact ? 11 : 14" />
+            </button>
             <button type="button" class="zoom-reset-btn" @click="resetView">Reset</button>
           </div>
           <p v-if="!loading && page" class="corner-hint">
@@ -678,12 +676,11 @@ watch(
 
 /* Page-level "Discharge shown in cfs" indicator, replacing what used to be repeated on every
    single station card (see SchematicNode.vue - the per-card unit text is hidden there now).
-   Sits directly under the title row rather than off in the header's top-right corner. Same
-   navy as the title so it reads as part of the same heading block. */
+   Sits directly under the title row rather than off in the header's top-right corner. */
 .variable-indicator {
   font-size: 0.95rem;
   font-weight: 600;
-  color: #073763;
+  color: #64748b;
   font-family:
     system-ui,
     -apple-system,
@@ -696,7 +693,7 @@ watch(
 
 /* The page "title" at every screen size - a functional system-switcher dropdown styled to
    read as a heading, rather than a big static title on desktop and a separate small dropdown
-   on mobile. */
+   on mobile. Regular weight (not bold) so it reads as a lighter-touch heading. */
 .system-select-title {
   appearance: none;
   border: 1px solid #cbd5e1;
@@ -704,8 +701,8 @@ watch(
   background: #ffffff;
   color: #073763;
   font-family: inherit;
-  font-size: 1.05rem;
-  font-weight: 600;
+  font-size: 1.2rem;
+  font-weight: 400;
   letter-spacing: -0.01em;
   padding: 6px 30px 6px 12px;
   cursor: pointer;
@@ -718,7 +715,7 @@ watch(
 
 @media screen and (max-width: 480px) {
   .system-select-title {
-    font-size: 0.9rem;
+    font-size: 1rem;
   }
 }
 
@@ -809,12 +806,6 @@ watch(
   gap: 6px;
 }
 
-.zoom-icon-group {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
 .zoom-icon-btn {
   display: flex;
   align-items: center;
@@ -853,13 +844,12 @@ watch(
   background: #0a4a82;
 }
 
-/* Same threshold as isCompact (768px) elsewhere in this file - on mobile only Reset drops
-   below the zoom-in/zoom-out pair (which stays side by side), and everything shrinks further
-   to match the rest of the app's compact mobile sizing. */
+/* Same threshold as isCompact (768px) elsewhere in this file - on mobile the buttons stack
+   vertically instead of sitting in a row, and shrink further to match the rest of the app's
+   compact mobile sizing. */
 @media screen and (max-width: 768px) {
   .zoom-btn-row {
     flex-direction: column;
-    align-items: center;
     gap: 4px;
   }
 

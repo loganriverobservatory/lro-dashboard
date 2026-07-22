@@ -3,10 +3,9 @@
     "This file draws the 'Lower Logan River' schematic page (Dewitt Springs down to Cutler Terminus).",
     "See public/schematics/README.md for the full field reference and a longer walkthrough - this is the quick version.",
     "",
-    "This page intentionally RECAPS Guinavah Campground, the Dewitt Springs Junction, the Dewitt Springs tributary, and the",
-    "Water Lab station at its own top (same node ids as in upper-logan.json) so the page reads as a complete, standalone",
-    "diagram - and starts at a recognizable landmark (GCB) - even though those same live stations already appear at the",
-    "bottom of the Upper Logan Canyon page. This duplication is deliberate, not a bug.",
+    "This page intentionally RECAPS the Dewitt Springs Junction, the Dewitt Springs tributary, and the Water Lab station at its",
+    "own top (same node ids as in upper-logan.json) so the page reads as a complete, standalone diagram even though those same",
+    "live stations already appear at the bottom of the Upper Logan Canyon page. This duplication is deliberate, not a bug.",
     "",
     "NODES: each node is a card on the diagram, listed in the order the water actually flows.",
     "  id         - unique within this file. Tributaries/diversions/links reference another node's id via connectsTo.",
@@ -54,21 +53,8 @@
       "linkTo": "upper-logan",
       "label": "Continue to Upper Logan Canyon ←"
     },
-    {
-      "id": "guinivah",
-      "name": "Logan River: Guinavah Campground",
-      "kind": "mainstem",
-      "colorGroup": "Logan River Observatory: Logan River Main Stem"
-    },
     { "id": "dewitt_junc", "name": "Dewitt Springs Junction", "kind": "junction" },
-    {
-      "id": "dewitt",
-      "name": "Dewitt Springs",
-      "kind": "tributary",
-      "connectsTo": "dewitt_junc",
-      "side": "left",
-      "colorGroup": "Logan River Observatory"
-    },
+    { "id": "dewitt", "name": "Dewitt Springs", "kind": "tributary", "connectsTo": "dewitt_junc", "side": "left" },
     {
       "id": "dwri_hydenorth",
       "name": "Logan River: Hyde Park and Logan Northfield",
@@ -81,7 +67,7 @@
       "id": "dwri_provpioneer",
       "name": "Logan River: Providence Pioneer Canal",
       "kind": "diversion",
-      "connectsTo": "dwri_hydenorth",
+      "connectsTo": "dewitt_junc",
       "side": "right",
       "colorGroup": "Logan River"
     },
@@ -89,7 +75,7 @@
       "id": "dwri_crockett",
       "name": "Logan River: 8th Ward Canal (Crockett Canal)",
       "kind": "diversion",
-      "connectsTo": "dwri_provpioneer",
+      "connectsTo": "dewitt_junc",
       "side": "left",
       "colorGroup": "Logan River"
     },
@@ -97,7 +83,7 @@
       "id": "dwri_provlogan",
       "name": "Logan River: Providence-Logan Irrigation Company",
       "kind": "diversion",
-      "connectsTo": "dwri_crockett",
+      "connectsTo": "dewitt_junc",
       "side": "right",
       "colorGroup": "Logan River"
     },
@@ -105,7 +91,7 @@
       "id": "dwri_loganorthern",
       "name": "Logan River: Logan and Northern Canal",
       "kind": "diversion",
-      "connectsTo": "dwri_provlogan",
+      "connectsTo": "dewitt_junc",
       "side": "left",
       "colorGroup": "Logan River"
     },
@@ -135,8 +121,7 @@
       "name": "Spring Creek",
       "kind": "tributary",
       "connectsTo": "spring_creek_junc",
-      "side": "left",
-      "colorGroup": "Logan River Observatory"
+      "side": "left"
     },
     {
       "id": "dwri_hydepark",
@@ -150,7 +135,7 @@
       "id": "dwri_benson",
       "name": "Logan River: Benson Irrigation Company",
       "kind": "diversion",
-      "connectsTo": "dwri_hydepark",
+      "connectsTo": "spring_creek_junc",
       "side": "left",
       "colorGroup": "Logan River"
     },

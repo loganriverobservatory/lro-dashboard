@@ -15,8 +15,10 @@ import {
   type Node as VFNode,
   type Edge as VFEdge,
 } from '@vue-flow/core'
-import { Plus, Minus } from 'lucide-vue-next'
+import { Controls, ControlButton } from '@vue-flow/controls'
+import { Droplets } from 'lucide-vue-next'
 import '@vue-flow/core/dist/style.css'
+import '@vue-flow/controls/dist/style.css'
 import {
   type Station,
   type SchematicSlug,
@@ -40,7 +42,7 @@ const props = defineProps<{
 }>()
 
 const router = useRouter()
-const { fitView, zoomIn, zoomOut, onNodesInitialized } = useVueFlow()
+const { fitView, onNodesInitialized } = useVueFlow()
 
 const nodeTypes = { schematic: markRaw(SchematicNode) }
 
@@ -62,6 +64,10 @@ const pageLoadFailed = ref(false)
 const selectedStation = ref<Station | null>(null)
 const isCompact = ref(false)
 const wideChains = ref(false)
+// 992px, same as the sidebar's own collapse point - separate from isCompact (768px, used for
+// the mobile station-sheet behavior) so the mobile system-select dropdown's visibility range
+// is independent of that.
+const isNarrowNav = ref(false)
 
 // Must stay comfortably wider than the fixed node width set in SchematicNode.vue, so
 // adjacent columns never overlap.
@@ -237,7 +243,7 @@ function placeForest(
   }
 
   // Anything left has a missing or cyclic connectsTo (malformed data) - place it rather than
-  // silently dropping it from the diagram, so a bad edit is visible instead of invisible.
+  // silently dropping it from the diagram.
   pending.forEach((node) => {
     const side = node.side ?? 'left'
     const col = side === 'left' ? CENTER_COL - 1 : CENTER_COL + 1
@@ -490,6 +496,7 @@ function onSystemSelect(event: Event) {
 
 function updateBreakpoints() {
   isCompact.value = window.innerWidth <= 768
+  isNarrowNav.value = window.innerWidth <= 992
   wideChains.value = window.innerWidth >= WIDE_CHAINS_BREAKPOINT
 }
 
@@ -544,21 +551,43 @@ watch(
 
 <template>
   <div class="schematic-container">
+    <!-- Mobile-only (see isNarrowNav) top row: a compact system-switcher dropdown (navigates
+    on change, same destination as the sidebar's own schematic submenu) plus the interaction
+    hint beside it - neither collapses, both stay visible the whole time. -->
+    <div v-if="isNarrowNav" class="mobile-top-row">
+      <select
+        class="mobile-system-select"
+        :value="slug"
+        aria-label="Switch schematic system"
+        @change="onSystemSelect"
+      >
+        <option v-for="system in schematicNav" :key="system.slug" :value="system.slug">
+          {{ system.label }}
+        </option>
+      </select>
+
+      <p v-if="!loading && page" class="schematic-hint">
+        <span class="hint-dot"></span>
+        Pinch to zoom, drag to pan the schematic.
+      </p>
+
+      <span v-if="variableLabel" class="variable-indicator">
+        {{ variableLabel }} shown in {{ variableUnit }}
+      </span>
+    </div>
+
     <div class="header-row">
-      <div class="header-block">
-        <div class="title-row">
-          <select
-            class="system-select-title"
-            :value="slug"
-            aria-label="Switch schematic system"
-            @change="onSystemSelect"
-          >
-            <option v-for="system in schematicNav" :key="system.slug" :value="system.slug">
-              {{ system.label }}
-            </option>
-          </select>
-          <span v-if="page?.subtitle" class="subtitle-inline">{{ page.subtitle }}</span>
-        </div>
+      <div v-if="!isCompact" class="header-block">
+        <Droplets :size="22" class="title-icon" />
+        <h2>{{ page?.title ?? 'Logan River System Schematic' }}</h2>
+        <span v-if="page?.subtitle" class="subtitle-inline">{{ page.subtitle }}</span>
+      </div>
+
+      <div v-if="!isNarrowNav" class="header-right-group">
+        <p v-if="!loading && page" class="schematic-hint">
+          <span class="hint-dot"></span>
+          Scroll to zoom, drag to pan the schematic.
+        </p>
 
         <span v-if="variableLabel" class="variable-indicator">
           {{ variableLabel }} shown in {{ variableUnit }}
@@ -593,24 +622,18 @@ watch(
         :fit-view-on-init="true"
         @node-click="onNodeClick"
       >
-        <!-- Custom zoom controls rather than Vue Flow's stock Controls component, so the
-        buttons can match the app's own rounded/navy button language (see .zoom-icon-btn /
-        .zoom-reset-btn below) instead of Vue Flow's default square icon-button styling. -->
+        <!-- Wraps the stock Controls in our own positioned group so a "Zoom" caption can sit
+        above the button cluster - Controls' own CSS is absolute-positioned internally, so it's
+        un-set to static here and the wrapper takes over placement instead. show-fit-view is off
+        since the labeled ControlButton below replaces the stock icon-only fit-view button with
+        the same action, rather than duplicating it. -->
         <div class="zoom-control-group">
-          <div class="zoom-btn-row">
-            <div class="zoom-icon-group">
-              <button type="button" class="zoom-icon-btn" aria-label="Zoom out" @click="zoomOut()">
-                <Minus :size="isCompact ? 11 : 14" />
-              </button>
-              <button type="button" class="zoom-icon-btn" aria-label="Zoom in" @click="zoomIn()">
-                <Plus :size="isCompact ? 11 : 14" />
-              </button>
-            </div>
-            <button type="button" class="zoom-reset-btn" @click="resetView">Reset</button>
-          </div>
-          <p v-if="!loading && page" class="corner-hint">
-            {{ isCompact ? 'Pinch to zoom, drag to pan.' : 'Scroll to zoom, drag to pan.' }}
-          </p>
+          <span class="zoom-control-label">Zoom</span>
+          <Controls :show-interactive="false" :show-fit-view="false">
+            <ControlButton title="Reset view" class="reset-control-btn" @click="resetView">
+              Reset
+            </ControlButton>
+          </Controls>
         </div>
       </VueFlow>
     </div>
@@ -646,15 +669,18 @@ watch(
   }
 }
 
-.header-row {
+/* Mobile-only top row (see isNarrowNav): a compact system-switcher dropdown next to the
+   interaction hint - a dropdown rather than a row of tab buttons so it stays small, leaving
+   room for the hint beside it. Neither collapses; the sidebar's own schematic submenu already
+   covers this navigation whenever it's permanently visible. */
+.mobile-top-row {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
   margin-bottom: 0.6rem;
   /* Stays pinned to the top of the page while scrolling, rather than scrolling out of view -
-     the system switcher should stay reachable without scrolling back up. */
+     the pinch/pan hint should always be visible, not just on first load. */
   position: sticky;
   top: 0;
   z-index: 20;
@@ -662,28 +688,50 @@ watch(
   padding: 6px 0;
 }
 
-.header-block {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
+.mobile-system-select {
+  flex: 0 1 auto;
+  width: auto;
+  max-width: 55%;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #073763;
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
 }
 
-.title-row {
+.header-row {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 0.6rem;
+}
+
+.header-block {
+  display: flex;
+  align-items: baseline;
   flex-wrap: wrap;
   gap: 10px;
 }
 
+.header-right-group {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 /* Page-level "Discharge shown in cfs" indicator, replacing what used to be repeated on every
-   single station card (see SchematicNode.vue - the per-card unit text is hidden there now).
-   Sits directly under the title row rather than off in the header's top-right corner. Same
-   navy as the title so it reads as part of the same heading block. */
+   single station card (see SchematicNode.vue - the per-card unit text is hidden there now). */
 .variable-indicator {
-  font-size: 0.95rem;
+  font-size: 0.72rem;
   font-weight: 600;
-  color: #073763;
+  color: #64748b;
   font-family:
     system-ui,
     -apple-system,
@@ -694,32 +742,17 @@ watch(
   white-space: nowrap;
 }
 
-/* The page "title" at every screen size - a functional system-switcher dropdown styled to
-   read as a heading, rather than a big static title on desktop and a separate small dropdown
-   on mobile. */
-.system-select-title {
-  appearance: none;
-  border: 1px solid #cbd5e1;
-  border-radius: 10px;
-  background: #ffffff;
-  color: #073763;
-  font-family: inherit;
-  font-size: 1.05rem;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  padding: 6px 30px 6px 12px;
-  cursor: pointer;
-  max-width: 100%;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23073763' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 8px center;
-  background-size: 16px;
+.title-icon {
+  color: #01377d;
+  align-self: center;
 }
 
-@media screen and (max-width: 480px) {
-  .system-select-title {
-    font-size: 0.9rem;
-  }
+h2 {
+  font-size: 1.35rem;
+  font-weight: 1000;
+  color: #073763;
+  letter-spacing: -0.01em;
+  margin: 0;
 }
 
 .subtitle-inline {
@@ -733,6 +766,35 @@ watch(
     sans-serif;
   font-size: 0.9rem;
   font-weight: 400;
+}
+
+.schematic-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 6px 12px;
+  border-radius: 9999px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.hint-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #1d4ed8;
+  flex-shrink: 0;
 }
 
 .loading-state {
@@ -764,9 +826,9 @@ watch(
   }
 }
 
-/* Positions the pan/zoom hint and the custom zoom-button row together in the bottom-left
-   corner, where Vue Flow's own default Controls component used to sit before it was replaced
-   with fully custom buttons (see .zoom-icon-btn / .zoom-reset-btn below). */
+/* Takes over positioning from vue-flow's own Controls component (see :deep() override below)
+   so a "Zoom" caption can sit directly above the button cluster, in the same bottom-left corner
+   Controls used by default. */
 .zoom-control-group {
   position: absolute;
   bottom: 10px;
@@ -775,104 +837,34 @@ watch(
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 6px;
+  gap: 4px;
 }
 
-.corner-hint {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  margin: 0;
-  padding: 0 1px;
-  color: #64748b;
-  font-family:
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    Roboto,
-    sans-serif;
-  font-size: 0.68rem;
-  font-weight: 600;
-  white-space: nowrap;
-  text-shadow:
-    0 1px 2px rgba(255, 255, 255, 0.9),
-    0 0 6px rgba(255, 255, 255, 0.9);
+.zoom-control-group :deep(.vue-flow__controls) {
+  position: static !important;
 }
 
-/* Zoom in/out/Reset, side by side - styled to match the app's own rounded navy button
-   language used elsewhere (e.g. MapView.vue's .reset-btn) instead of Vue Flow's default
-   square icon buttons. */
-.zoom-btn-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
+.zoom-control-label {
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #475569;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 2px 8px;
 }
 
-.zoom-icon-group {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.zoom-icon-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 9999px;
-  border: none;
-  background: #073763;
-  color: #ffffff;
-  cursor: pointer;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-  transition: background 0.18s ease;
-}
-
-.zoom-icon-btn:hover {
-  background: #0a4a82;
-}
-
-.zoom-reset-btn {
-  border-radius: 9999px;
-  border: none;
-  background: #073763;
-  color: #ffffff;
-  font-family: inherit;
+/* Wider than Vue Flow's default square icon button (28px) so "Reset" reads as text, not a
+   cramped icon - the rest of the control bar's zoom in/out/lock buttons are left untouched. */
+.reset-control-btn {
+  width: auto !important;
+  padding: 0 10px !important;
   font-size: 0.7rem;
   font-weight: 700;
-  padding: 0 12px;
-  height: 28px;
-  cursor: pointer;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-  transition: background 0.18s ease;
-}
-
-.zoom-reset-btn:hover {
-  background: #0a4a82;
-}
-
-/* Same threshold as isCompact (768px) elsewhere in this file - on mobile only Reset drops
-   below the zoom-in/zoom-out pair (which stays side by side), and everything shrinks further
-   to match the rest of the app's compact mobile sizing. */
-@media screen and (max-width: 768px) {
-  .zoom-btn-row {
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-  }
-
-  .zoom-icon-btn {
-    width: 22px;
-    height: 22px;
-  }
-
-  .zoom-reset-btn {
-    height: 22px;
-    padding: 0 8px;
-    font-size: 0.6rem;
-  }
+  font-family: inherit;
+  letter-spacing: 0.02em;
 }
 
 .vueflow-wrapper {

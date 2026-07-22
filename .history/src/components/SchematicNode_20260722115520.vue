@@ -196,12 +196,11 @@ const resolvedColorGroup = computed(() => {
 }
 
 .station-wrapper {
-  border-radius: 20px;
+  border-radius: 14px;
   padding: 0;
   width: 100%;
   box-sizing: border-box;
-  border: 7px solid transparent;
-  overflow: hidden;
+  border: 4px solid transparent;
 }
 
 /* Name/value sized up from StationCard's native .is-compact sizing (0.9rem/1.6rem) so the

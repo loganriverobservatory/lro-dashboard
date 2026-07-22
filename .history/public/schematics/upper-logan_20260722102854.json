@@ -42,14 +42,7 @@
       "colorGroup": "Logan River Observatory: Logan River Main Stem"
     },
     { "id": "beaver_junc", "name": "Beaver Creek Junction", "kind": "junction" },
-    {
-      "id": "beaver",
-      "name": "Beaver Creek",
-      "kind": "tributary",
-      "connectsTo": "beaver_junc",
-      "side": "left",
-      "colorGroup": "Logan River Observatory"
-    },
+    { "id": "beaver", "name": "Beaver Creek", "kind": "tributary", "connectsTo": "beaver_junc", "side": "left" },
     {
       "id": "tony_grove",
       "name": "Logan River: Tony Grove",
@@ -57,23 +50,9 @@
       "colorGroup": "Logan River Observatory: Logan River Main Stem"
     },
     { "id": "ricks_junc", "name": "Ricks Spring Junction", "kind": "junction" },
-    {
-      "id": "ricks",
-      "name": "Ricks Spring",
-      "kind": "tributary",
-      "connectsTo": "ricks_junc",
-      "side": "left",
-      "colorGroup": "Logan River Observatory"
-    },
+    { "id": "ricks", "name": "Ricks Spring", "kind": "tributary", "connectsTo": "ricks_junc", "side": "left" },
     { "id": "temple_junc", "name": "Temple Fork Junction", "kind": "junction" },
-    {
-      "id": "temple",
-      "name": "Temple Fork",
-      "kind": "tributary",
-      "connectsTo": "temple_junc",
-      "side": "right",
-      "colorGroup": "Logan River Observatory"
-    },
+    { "id": "temple", "name": "Temple Fork", "kind": "tributary", "connectsTo": "temple_junc", "side": "right" },
     {
       "id": "above_wood",
       "name": "Logan River: Above Wood Camp",
@@ -92,8 +71,7 @@
       "name": "Right Hand Fork",
       "kind": "tributary",
       "connectsTo": "right_hand_junc",
-      "side": "right",
-      "colorGroup": "Logan River Observatory"
+      "side": "right"
     },
     {
       "id": "guinivah",
@@ -102,14 +80,7 @@
       "colorGroup": "Logan River Observatory: Logan River Main Stem"
     },
     { "id": "dewitt_junc", "name": "Dewitt Springs Junction", "kind": "junction" },
-    {
-      "id": "dewitt",
-      "name": "Dewitt Springs",
-      "kind": "tributary",
-      "connectsTo": "dewitt_junc",
-      "side": "left",
-      "colorGroup": "Logan River Observatory"
-    },
+    { "id": "dewitt", "name": "Dewitt Springs", "kind": "tributary", "connectsTo": "dewitt_junc", "side": "left" },
     { "id": "highline_junc", "name": "Cache Highline Canal Junction", "kind": "junction" },
     {
       "id": "usgs_highline",

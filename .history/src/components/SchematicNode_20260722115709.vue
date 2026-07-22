@@ -196,11 +196,11 @@ const resolvedColorGroup = computed(() => {
 }
 
 .station-wrapper {
-  border-radius: 20px;
+  border-radius: 14px;
   padding: 0;
   width: 100%;
   box-sizing: border-box;
-  border: 7px solid transparent;
+  border: 5px solid transparent;
   overflow: hidden;
 }
 
