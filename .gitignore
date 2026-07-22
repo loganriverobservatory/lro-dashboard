@@ -44,3 +44,6 @@ __pycache__/
 
 # Claude Code local tooling state (worktrees, locks) — not part of the app
 .claude/
+
+# Local Netlify folder
+.netlify
