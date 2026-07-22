@@ -5,7 +5,6 @@ and a link to the full historical data on HydroServer. Used in ListView, MapView
 */
 import { computed } from 'vue'
 import { type Station, getFreshnessStatus } from '../hydroService'
-// FIXED: Updated import path to match your multi-word component file name
 import StationSparkline from './StationSparkline.vue'
 
 const props = withDefaults(
@@ -44,9 +43,8 @@ function getFreshnessClass(dateStr: string | undefined): string {
   }[status]
 }
 
-// Normalizes a station's observation(s) - which may be a single reading or (for future
-// multi-parameter datastreams) an array - into a flat list of displayable {label, value, unit,
-// time, fresh, displayable} rows the template can iterate uniformly.
+// Normalizes a station's observation into the single-row {label, value, unit, time, fresh,
+// displayable} shape the template iterates over.
 const parsedMeasurements = computed(() => {
   const obs = props.site?.observation
   if (!obs) return []
@@ -64,23 +62,17 @@ const parsedMeasurements = computed(() => {
     ]
   }
 
-  const processObservation = (m: any) => {
-    const status = getFreshnessStatus(m)
-    return {
-      label: m.label || m.name || '',
-      value: Number(m.result).toFixed(2),
-      unit: m.unit || props.site.unit || '',
-      time: m.phenomenonTime,
+  const status = getFreshnessStatus(obs)
+  return [
+    {
+      label: '',
+      value: Number(obs.result).toFixed(2),
+      unit: props.site.unit || '',
+      time: obs.phenomenonTime,
       fresh: status === 'current',
       displayable: status !== 'unknown',
-    }
-  }
-
-  if (Array.isArray(obs)) {
-    return obs.map(processObservation)
-  }
-
-  return [processObservation(obs)]
+    },
+  ]
 })
 
 const hasAnyLiveTelemetry = computed(() => {
@@ -277,14 +269,6 @@ const isAwaitingTelemetry = computed(() => props.site.observation === null && !p
   margin-left: 0.5rem;
 }
 
-.unit-expansion {
-  font-size: 0.85rem;
-  font-weight: 400;
-  color: #94a3b8;
-  display: inline-block;
-  margin-left: 0.25rem;
-}
-
 .timestamp {
   font-size: clamp(0.75rem, 0.6vw + 0.45rem, 0.85rem); /* Dynamic timestamp sizing */
   color: #64748b;
@@ -360,10 +344,6 @@ const isAwaitingTelemetry = computed(() => props.site.observation === null && !p
 
   :deep(.w-full) {
     height: 40px !important;
-  }
-
-  unit-expansion {
-    display: none !important;
   }
 }
 
@@ -535,9 +515,6 @@ const isAwaitingTelemetry = computed(() => props.site.observation === null && !p
 .station-card.is-compact .unit {
   font-size: 0.8rem;
   margin-left: 0.25rem;
-}
-.station-card.is-compact .unit-expansion {
-  display: none;
 }
 .station-card.is-compact .timestamp {
   font-size: 0.7rem;

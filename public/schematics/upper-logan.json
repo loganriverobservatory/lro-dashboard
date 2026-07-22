@@ -6,8 +6,11 @@
     "NODES: each node is a card on the diagram, listed in the order the water actually flows.",
     "  id         - unique within this file. Tributaries/diversions/links reference another node's id via connectsTo.",
     "  name       - for kind 'mainstem'/'tributary'/'diversion', must fuzzy-match a live station's display name from",
-    "               HydroServer/DWRi/USGS (partial matches work, e.g. 'Beaver Creek' will match 'Beaver Creek: Above Diversion').",
-    "               For 'junction'/'link' nodes it is just label text.",
+    "               HydroServer/DWRi/USGS (partial matches work, e.g. 'Beaver Creek' will match 'Beaver Creek: Above Diversion'),",
+    "               unless stationId is set, in which case that always wins. For 'junction'/'link' nodes it is just label text.",
+    "  stationId  - optional but recommended: the exact station id/code to match instead of guessing from name - the same id",
+    "               used in config/station_config.yaml (usgs_stations/dwri_stations), or a HydroServer station code (a",
+    "               display_names key, e.g. 'BC_CONF_A'). See README.md for details.",
     "  kind       - 'mainstem' (a real gauge station on the main channel), 'junction' (an invisible confluence point on the main",
     "               channel, no card - where a tributary/diversion attaches), 'tributary' (water flowing IN), 'diversion' (water",
     "               flowing OUT), or 'link' (a card with no live data of its own that just navigates to another schematic page).",
@@ -38,30 +41,34 @@
     {
       "id": "franklin",
       "name": "Logan River: Franklin Basin",
+      "stationId": "LR_FB_BA",
       "kind": "mainstem",
       "colorGroup": "Logan River Observatory: Logan River Main Stem"
     },
     { "id": "beaver_junc", "name": "Beaver Creek Junction", "kind": "junction" },
-    { "id": "beaver", "name": "Beaver Creek", "kind": "tributary", "connectsTo": "beaver_junc", "side": "left" },
+    { "id": "beaver", "name": "Beaver Creek", "stationId": "BC_CONF_A", "kind": "tributary", "connectsTo": "beaver_junc", "side": "left" },
     {
       "id": "tony_grove",
       "name": "Logan River: Tony Grove",
+      "stationId": "LR_TG_BA",
       "kind": "mainstem",
       "colorGroup": "Logan River Observatory: Logan River Main Stem"
     },
     { "id": "ricks_junc", "name": "Ricks Spring Junction", "kind": "junction" },
-    { "id": "ricks", "name": "Ricks Spring", "kind": "tributary", "connectsTo": "ricks_junc", "side": "left" },
+    { "id": "ricks", "name": "Ricks Spring", "stationId": "RS_CONF_A", "kind": "tributary", "connectsTo": "ricks_junc", "side": "left" },
     { "id": "temple_junc", "name": "Temple Fork Junction", "kind": "junction" },
-    { "id": "temple", "name": "Temple Fork", "kind": "tributary", "connectsTo": "temple_junc", "side": "right" },
+    { "id": "temple", "name": "Temple Fork", "stationId": "TF_CONF_A", "kind": "tributary", "connectsTo": "temple_junc", "side": "right" },
     {
       "id": "above_wood",
       "name": "Logan River: Above Wood Camp",
+      "stationId": "LR_WC_A",
       "kind": "mainstem",
       "colorGroup": "Logan River Observatory: Logan River Main Stem"
     },
     {
       "id": "wood_camp",
       "name": "Logan River: Wood Camp Bridge",
+      "stationId": "LR_WCB_A",
       "kind": "mainstem",
       "colorGroup": "Logan River Observatory: Logan River Main Stem"
     },
@@ -69,6 +76,7 @@
     {
       "id": "right_hand",
       "name": "Right Hand Fork",
+      "stationId": "RHF_CONF_A",
       "kind": "tributary",
       "connectsTo": "right_hand_junc",
       "side": "right"
@@ -76,15 +84,17 @@
     {
       "id": "guinivah",
       "name": "Logan River: Guinavah Campground",
+      "stationId": "LR_GCB_A",
       "kind": "mainstem",
       "colorGroup": "Logan River Observatory: Logan River Main Stem"
     },
     { "id": "dewitt_junc", "name": "Dewitt Springs Junction", "kind": "junction" },
-    { "id": "dewitt", "name": "Dewitt Springs", "kind": "tributary", "connectsTo": "dewitt_junc", "side": "left" },
+    { "id": "dewitt", "name": "Dewitt Springs", "stationId": "DS_CONF_A", "kind": "tributary", "connectsTo": "dewitt_junc", "side": "left" },
     { "id": "highline_junc", "name": "Cache Highline Canal Junction", "kind": "junction" },
     {
       "id": "usgs_highline",
       "name": "Cache Highline Canal",
+      "stationId": "10108400",
       "kind": "diversion",
       "connectsTo": "highline_junc",
       "side": "left",
@@ -94,6 +104,7 @@
     {
       "id": "usgs_above_first_dam",
       "name": "Logan River Above First Dam",
+      "stationId": "10109000",
       "kind": "mainstem",
       "colorGroup": "USGS",
       "cardLabel": "Above First Dam"
@@ -101,6 +112,7 @@
     {
       "id": "water_lab",
       "name": "Logan River: Utah Water Research Laboratory",
+      "stationId": "LR_WaterLab_AA",
       "kind": "mainstem",
       "colorGroup": "Logan River Observatory: Logan River Main Stem"
     },

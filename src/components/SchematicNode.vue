@@ -41,7 +41,7 @@ const bgColor = computed(() => {
   const group = props.data.colorGroup
   if (!group) return undefined
   const color = WATERWAY_COLORS[group] ?? SCHEMATIC_ACCENT_COLORS[group]
-  return color ? color + '18' : undefined
+  return color ? color + '0a' : undefined
 })
 </script>
 

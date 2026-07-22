@@ -63,6 +63,11 @@ export interface StaObservation {
 export interface Station {
   id: string
   uuid: string
+  // Stable identifier matching config/station_config.yaml: the HydroServer station code (e.g.
+  // "BC_CONF_A", the key used in display_names), or the plain USGS/DWRi id from usgs_stations/
+  // dwri_stations (without the "USGS-"/"DWRi-" prefix `id` carries). Lets schematic nodes match a
+  // station by exact id (SchematicNode.stationId) instead of relying only on fuzzy name matching.
+  code: string
   displayName: string
   description?: string
   observation?: StaObservation | null
@@ -104,13 +109,35 @@ export let SCHEMATIC_ACCENT_COLORS: Record<string, string> = {
   'Blacksmith Fork River': '#8a6fa2',
 }
 
-export const WATER_VARIBALES = [
+export interface WaterVariable {
+  id: string
+  label: string
+  longLabel: string
+}
+
+// Populated by setWaterVariables() from public/config.json's "waterVariables" array. Small
+// hardcoded fallback (same shape as WATERWAY_COLORS above) so the app still has a reasonable
+// variable list to render with if that fetch hasn't completed yet or config.json omits it.
+export let WATER_VARIBALES: WaterVariable[] = [
   { id: 'Discharge', label: 'Discharge (cfs)', longLabel: 'Discharge in cfs (cubic feet per second)' },
   { id: 'Water Temperature', label: 'Temperature (°C)', longLabel: 'Water Temperature in °C (degrees Celsius)' },
   { id: 'Specific Conductance', label: 'SPC (µS/cm)', longLabel: 'Specific Conductance in µS/cm (microsiemens per centimeter)' },
   { id: 'pH', label: 'pH', longLabel: 'pH (potential of hydrogen)' },
   { id: 'Oxygen, dissolved', label: 'Dissolved Oxygen (mg/L)', longLabel: 'Dissolved Oxygen in mg/L (milligrams per liter)' },
 ]
+
+// Called by App.vue's loadConfig() with config.json's "waterVariables" array, if present. Unlike
+// setApiConfig()'s endpoint URLs, a missing or malformed list here doesn't stop the app from
+// starting - it just keeps the hardcoded fallback above.
+export function setWaterVariables(variables: unknown) {
+  if (
+    Array.isArray(variables) &&
+    variables.length > 0 &&
+    variables.every((v) => v && typeof v.id === 'string' && typeof v.label === 'string')
+  ) {
+    WATER_VARIBALES = variables as WaterVariable[]
+  }
+}
 
 // mainstem/junction form the trunk, in file order (no row numbers). tributary (flows in) and
 // diversion (flows out) attach to a trunk node via connectsTo, or chain onto another
@@ -131,6 +158,11 @@ export type SchematicSlug = string
 export interface SchematicNode {
   id: string
   name: string // fuzzy-matched to a live station, except for junction/link nodes
+  // Exact station identifier - config/station_config.yaml's usgs_stations/dwri_stations "id", or
+  // a HydroServer station code (display_names key), e.g. "BC_CONF_A". When set, findLiveStation()
+  // matches on this instead of fuzzily comparing `name` against every live station's displayName.
+  // mainstem/tributary/diversion only; omit to keep relying on the name-based fuzzy match.
+  stationId?: string
   kind: NodeKind
   colorGroup?: string // key into WATERWAY_COLORS or SCHEMATIC_ACCENT_COLORS
   connectsTo?: string // tributary/diversion/link only: id of the node this attaches to
@@ -212,7 +244,6 @@ interface DwriStationEntry {
   id: number
   displayName: string
   group: string
-  schematicGroup: string
   lat: number
   lng: number
   latestCfs: number | null
@@ -314,6 +345,7 @@ export async function getVariableStations(variable: string = 'Discharge'): Promi
       return {
         id: ds['@iot.id']?.toString(),
         uuid: thingInfo.uuid,
+        code: stationCode,
         displayName: displayNameText,
         description: ds.description || '',
         observation: null,
@@ -391,6 +423,7 @@ export async function getUSGSStations(variable: string = 'Discharge'): Promise<S
       return {
         id: stationCode,
         uuid: stationCode,
+        code: siteCode,
         displayName,
         coordinates,
         unit: 'cfs',
@@ -423,6 +456,7 @@ export async function getDWRiStations(variable: string = 'Discharge'): Promise<S
     return {
       id: code,
       uuid: code,
+      code: String(station.id),
       displayName: station.displayName,
       coordinates: station.lat != null && station.lng != null ? [station.lat, station.lng] : null,
       unit: 'cfs',

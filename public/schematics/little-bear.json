@@ -11,7 +11,11 @@
     "NODES: each node is a card on the diagram, listed in the order the water actually flows.",
     "  id         - unique within this file. Tributaries/diversions/links reference another node's id via connectsTo.",
     "  name       - for kind 'mainstem'/'tributary'/'diversion', must fuzzy-match a live station's display name from",
-    "               HydroServer/DWRi/USGS. For 'junction'/'link' nodes it is just label text.",
+    "               HydroServer/DWRi/USGS, unless stationId is set, in which case that always wins. For 'junction'/'link'",
+    "               nodes it is just label text.",
+    "  stationId  - optional but recommended: the exact station id/code to match instead of guessing from name - the same id",
+    "               used in config/station_config.yaml (usgs_stations/dwri_stations), or a HydroServer station code (a",
+    "               display_names key, e.g. 'BC_CONF_A'). See README.md for details.",
     "  kind       - 'mainstem' (a real gauge station on the main channel), 'junction' (an invisible confluence point on the main",
     "               channel, no card - where a tributary/diversion attaches), 'tributary' (water flowing IN - only South Fork,",
     "               below, is one), 'diversion' (water flowing OUT - every canal/irrigation company on this page is a diversion).",
@@ -42,23 +46,25 @@
   "navLabel": "Little Bear River",
   "subtitle": "Porcupine Reservoir Outlet down to Cutler Terminus",
   "nodes": [
-    { "id": "porcupine", "name": "Little Bear River: Porcupine Reservoir Outlet", "kind": "mainstem", "colorGroup": "Little Bear River" },
-    { "id": "east_fork", "name": "Little Bear River: East Fork", "kind": "mainstem", "colorGroup": "Little Bear River" },
+    { "id": "porcupine", "name": "Little Bear River: Porcupine Reservoir Outlet", "stationId": "2778", "kind": "mainstem", "colorGroup": "Little Bear River" },
+    { "id": "east_fork", "name": "Little Bear River: East Fork", "stationId": "2786", "kind": "mainstem", "colorGroup": "Little Bear River" },
     { "id": "fork_confluence", "name": "East Fork / South Fork Confluence", "kind": "junction" },
     {
       "id": "south_fork",
       "name": "Little Bear River: South Fork",
+      "stationId": "10287",
       "kind": "tributary",
       "connectsTo": "fork_confluence",
       "side": "right",
       "colorGroup": "Little Bear River"
     },
-    { "id": "paradise", "name": "Little Bear River: Little Bear River at Paradise", "kind": "mainstem", "colorGroup": "Little Bear River" },
+    { "id": "paradise", "name": "Little Bear River: Little Bear River at Paradise", "stationId": "10019", "kind": "mainstem", "colorGroup": "Little Bear River" },
 
     { "id": "hyrum_canal_junc", "name": "Hyrum Canal at Osmonds diversion point", "kind": "junction" },
     {
       "id": "hyrum_canal",
       "name": "Little Bear River: Hyrum Canal at Osmonds",
+      "stationId": "2771",
       "kind": "diversion",
       "connectsTo": "hyrum_canal_junc",
       "side": "right",
@@ -68,6 +74,7 @@
     {
       "id": "hyrum_irr",
       "name": "Little Bear River: Hyrum Irrigating Company",
+      "stationId": "10516",
       "kind": "diversion",
       "connectsTo": "hyrum_irr_junc",
       "side": "left",
@@ -78,6 +85,7 @@
     {
       "id": "highline_canal",
       "name": "Little Bear River: Highline Canal",
+      "stationId": "2779",
       "kind": "diversion",
       "connectsTo": "highline_canal_junc",
       "side": "right",
@@ -86,6 +94,7 @@
     {
       "id": "highline_atpond",
       "name": "Little Bear River: Highline Canal at Pond",
+      "stationId": "12354",
       "kind": "diversion",
       "connectsTo": "highline_canal",
       "side": "right",
@@ -94,6 +103,7 @@
     {
       "id": "highline_weeks",
       "name": "Little Bear River: Highline Canal below Weeks Farm",
+      "stationId": "9739",
       "kind": "diversion",
       "connectsTo": "highline_atpond",
       "side": "right",
@@ -102,6 +112,7 @@
     {
       "id": "paradise_city",
       "name": "Little Bear River: Paradise City through Highline Canal",
+      "stationId": "10424",
       "kind": "diversion",
       "connectsTo": "highline_weeks",
       "side": "right",
@@ -112,6 +123,7 @@
     {
       "id": "paradise_canal",
       "name": "Little Bear River: Paradise Canal",
+      "stationId": "2776",
       "kind": "diversion",
       "connectsTo": "paradise_canal_junc",
       "side": "right",
@@ -120,6 +132,7 @@
     {
       "id": "paradise_blacktube",
       "name": "Little Bear River: Paradise Canal below Black Tube",
+      "stationId": "9738",
       "kind": "diversion",
       "connectsTo": "paradise_canal",
       "side": "right",
@@ -130,6 +143,7 @@
     {
       "id": "little_feeder",
       "name": "Little Bear River: Little Feeder",
+      "stationId": "2772",
       "kind": "diversion",
       "connectsTo": "littlefeeder_junc",
       "side": "left",
@@ -140,6 +154,7 @@
     {
       "id": "wellsville_east",
       "name": "Little Bear River: Wellsville East Field",
+      "stationId": "2770",
       "kind": "diversion",
       "connectsTo": "wellsville_east_junc",
       "side": "right",
@@ -150,13 +165,14 @@
     {
       "id": "wellsville_mendon",
       "name": "Little Bear River: Wellsville Mendon Canal",
+      "stationId": "2775",
       "kind": "diversion",
       "connectsTo": "wellsville_mendon_junc",
       "side": "left",
       "colorGroup": "Little Bear River"
     },
 
-    { "id": "lbr_mendon", "name": "Little Bear River: Mendon Road", "kind": "mainstem", "colorGroup": "Little Bear River" },
+    { "id": "lbr_mendon", "name": "Little Bear River: Mendon Road", "stationId": "LBR_MR_A", "kind": "mainstem", "colorGroup": "Little Bear River" },
     {
       "id": "cutler_reservoir",
       "name": "Cutler Reservoir",

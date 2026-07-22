@@ -15,6 +15,7 @@ import {
   findStationSystem,
   sortStationsBySchematic,
 } from '../hydroService'
+import { toggleInList } from '../utils'
 
 const props = defineProps<{
   sites: Station[]
@@ -78,23 +79,11 @@ const filteredSites = computed(() => {
 })
 
 function toggleSystem(slug: string) {
-  const current = new Set(props.activeSystems ?? [])
-  if (current.has(slug)) {
-    current.delete(slug)
-  } else {
-    current.add(slug)
-  }
-  emit('system-filter-changed', [...current])
+  emit('system-filter-changed', toggleInList(props.activeSystems ?? [], slug))
 }
 
 function toggleWaterway(name: string) {
-  const current = new Set(props.activeWaterways ?? [])
-  if (current.has(name)) {
-    current.delete(name)
-  } else {
-    current.add(name)
-  }
-  emit('waterway-filter-changed', [...current])
+  emit('waterway-filter-changed', toggleInList(props.activeWaterways ?? [], name))
 }
 </script>
 

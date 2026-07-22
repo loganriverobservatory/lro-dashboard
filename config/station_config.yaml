@@ -77,6 +77,12 @@ hidden_stations:
 # dashboard.
 #
 # TO RENAME A STATION: change the text after its code below.
+#
+# These codes double as identifiers elsewhere: a schematic node in
+# public/schematics/*.json can set "stationId" to one of these
+# codes (e.g. "BC_CONF_A") to link that diagram card to this exact
+# station, instead of guessing from name text. See that folder's
+# README.md for details.
 # ------------------------------------------------------------
 display_names:
   BC_CONF_A:        "Beaver Creek: Before Confluence with the Logan River"
@@ -109,6 +115,10 @@ display_names:
 # TO ADD A USGS STATION: find its site number on
 # waterdata.usgs.gov, add a new entry below in the same shape.
 # TO HIDE ONE: set active: false (don't delete it).
+#
+# Each entry's "id" also doubles as the "stationId" a schematic
+# node in public/schematics/*.json can set to link a diagram card
+# to this exact station - see that folder's README.md.
 # ------------------------------------------------------------
 usgs_stations:
   - id: "10108400"
@@ -124,6 +134,36 @@ usgs_stations:
   - id: "10113500"
     displayName: "USGS: Blacksmith Fork River Above UP&L Dam near Hyrum, UT"
     siteLink: "https://waterdata.usgs.gov/monitoring-location/USGS-10113500/#dataTypeId=continuous-00060-0&period=P7D&showMedian=true&showFieldMeasurements=true"
+    active: true
+
+  - id: "10105900"
+    displayName: "USGS: Little Bear River at Paradise, UT"
+    siteLink: "https://waterdata.usgs.gov/monitoring-location/USGS-10105900/#dataTypeId=continuous-00060-0&period=P7D&showMedian=true&showFieldMeasurements=true"
+    active: true
+
+  - id: "10092700"
+    displayName: "USGS: Bear River at Idaho-Utah State Line"
+    siteLink: "https://waterdata.usgs.gov/monitoring-location/USGS-10092700/#dataTypeId=continuous-00060-0&period=P7D&showMedian=true&showFieldMeasurements=true"
+    active: true
+
+  - id: "10102250"
+    displayName: "USGS: Bear River near Smithfield, UT"
+    siteLink: "https://waterdata.usgs.gov/monitoring-location/USGS-10102250/#dataTypeId=continuous-00060-0&period=P7D&showMedian=true&showFieldMeasurements=true"
+    active: true
+
+  - id: "10126000"
+    displayName: "USGS: Bear River near Corinne, UT"
+    siteLink: "https://waterdata.usgs.gov/monitoring-location/USGS-10126000/#dataTypeId=continuous-00060-0&period=P7D&showMedian=true&showFieldMeasurements=true"
+    active: true
+
+  - id: "10102350"
+    displayName: "USGS: Summit Creek at Mouth near Smithfield, UT"
+    siteLink: "https://waterdata.usgs.gov/monitoring-location/USGS-10102350/#dataTypeId=continuous-00060-0&period=P7D&showMedian=true&showFieldMeasurements=true"
+    active: true
+
+  - id: "10102220"
+    displayName: "USGS: Cub River near Mouth near Richmond, UT"
+    siteLink: "https://waterdata.usgs.gov/monitoring-location/USGS-10102220/#dataTypeId=continuous-00060-0&period=P7D&showMedian=true&showFieldMeasurements=true"
     active: true
 
 

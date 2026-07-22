@@ -128,11 +128,6 @@ const emit = defineEmits(['toggle-sidebar', 'change-view'])
   transition: transform 0.2s ease;
 }
 
-.droplet-icon {
-  width: 20px;
-  height: 20px;
-}
-
 .nav-label {
   font-size: 0.85rem;
   font-weight: 600;

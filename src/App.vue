@@ -11,6 +11,7 @@ import {
   getDWRiStations,
   setApiToken,
   setApiConfig,
+  setWaterVariables,
   loadStationConfig,
   loadSchematicPages,
   type Station,
@@ -112,6 +113,7 @@ async function loadConfig() {
     headerNav.value = (config.headerNav as typeof headerNav.value) ?? {}
     externalLink.value = (config.externalLink as typeof externalLink.value) ?? {}
     if (dashboardTitle.value) document.title = dashboardTitle.value
+    setWaterVariables(config.waterVariables)
   }
 
   await loadStationConfig()
