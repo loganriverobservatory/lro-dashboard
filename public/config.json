@@ -1,4 +1,16 @@
 {
+  "_instructions": [
+    "App-wide settings for the LRO Dashboard frontend. This is a plain static file - edit a value and reload the page, no build step or publishing pipeline involved (unlike config/station_config.yaml, which goes through a GitHub Action - see that file's own header comment).",
+    "",
+    "apiToken - sent as an Authorization header on every HydroServer SensorThings API request (see src/hydroService.ts's authHeaders()), so private/hidden stations can be fetched. SENSITIVE, but this file is served publicly as-is (anyone can read this value by requesting /config.json) - do not rely on it staying secret. A real fix requires moving these API calls behind a server-side proxy that holds the token itself; not yet built.",
+    "dashboardTitle - page title shown in the header and browser tab.",
+    "headerNav.home / headerNav.help - label text for the header's two nav links.",
+    "externalLink - the header's outbound link to the data source site: {url, label}.",
+    "hydroServerBaseUrl - root of the HydroServer SensorThings API this dashboard reads live station data from. Required - the app throws an error at startup if this is missing or not a string (see setApiConfig() in hydroService.ts) rather than silently pointing at the wrong server.",
+    "stationConfigUrl - where the published station identity/group config is fetched from: the data-cache branch's station-config.json, built from config/station_config.yaml by .github/scripts/fetch_dwri.py. Required, same as hydroServerBaseUrl.",
+    "usgsApiBaseUrl - root of the USGS NWIS instantaneous-values API used for USGS station readings (the station identities themselves come from config/station_config.yaml's usgs_stations). Required, same as hydroServerBaseUrl.",
+    "waterVariables - which sensor variables the dashboard tracks and lets users switch between (the SELECT VARIABLE dropdown, and the headers/labels shown throughout List/Map/Schematic views). Each entry needs: id (must exactly match the variable name as it appears in HydroServer datastream names, e.g. 'Water Temperature'), label (short form shown in dropdowns, e.g. with units), longLabel (fuller sentence form used in some view headers). TO ADD OR REMOVE A TRACKED VARIABLE: add or remove an entry here - no code change needed. If this is missing or malformed, the app falls back to a small hardcoded default list rather than failing to start."
+  ],
   "apiToken": "D6IC2YFhsb7qZCTPfRe8N8ylDt3cMGyRr4tHlHfoIfciIoe17szzUog",
   "dashboardTitle": "Logan River Observatory Dashboard",
   "headerNav": {
@@ -11,5 +23,12 @@
   },
   "hydroServerBaseUrl": "https://lro.hydroserver.org/api/sensorthings/v1.1",
   "stationConfigUrl": "https://raw.githubusercontent.com/loganriverobservatory/lro-dashboard/data-cache/station-config.json",
-  "usgsApiBaseUrl": "https://waterservices.usgs.gov/nwis/iv/"
+  "usgsApiBaseUrl": "https://waterservices.usgs.gov/nwis/iv/",
+  "waterVariables": [
+    { "id": "Discharge", "label": "Discharge (cfs)", "longLabel": "Discharge in cfs (cubic feet per second)" },
+    { "id": "Water Temperature", "label": "Temperature (°C)", "longLabel": "Water Temperature in °C (degrees Celsius)" },
+    { "id": "Specific Conductance", "label": "SPC (µS/cm)", "longLabel": "Specific Conductance in µS/cm (microsiemens per centimeter)" },
+    { "id": "pH", "label": "pH", "longLabel": "pH (potential of hydrogen)" },
+    { "id": "Oxygen, dissolved", "label": "Dissolved Oxygen (mg/L)", "longLabel": "Dissolved Oxygen in mg/L (milligrams per liter)" }
+  ]
 }

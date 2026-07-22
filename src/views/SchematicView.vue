@@ -94,8 +94,10 @@ async function loadPage() {
   pageLoadFailed.value = page.value === null
 }
 
-function findLiveStation(schematicName: string): Station | undefined {
-  const match = bestFuzzyMatch(schematicName, props.sites, (site) => site.displayName)
+function findLiveStation(node: SchematicNodeData): Station | undefined {
+  const match = node.stationId
+    ? props.sites.find((site) => site.code === node.stationId)
+    : bestFuzzyMatch(node.name, props.sites, (site) => site.displayName)
   if (!match) return undefined
   if (props.activeWaterways && !props.activeWaterways.includes(match.tributary ?? ''))
     return undefined
@@ -335,7 +337,7 @@ const vfNodes = computed<VFNode[]>(() => {
     const xOffset = node.kind === 'junction' ? (NODE_WIDTH - JUNCTION_WIDTH) / 2 : 0
     const isStationKind =
       node.kind === 'mainstem' || node.kind === 'tributary' || node.kind === 'diversion'
-    const liveStation = isStationKind ? findLiveStation(node.name) : undefined
+    const liveStation = isStationKind ? findLiveStation(node) : undefined
     return {
       id: node.id,
       type: 'schematic',

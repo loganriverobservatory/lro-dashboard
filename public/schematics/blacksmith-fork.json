@@ -6,7 +6,11 @@
     "NODES: each node is a card on the diagram, listed in the order the water actually flows.",
     "  id         - unique within this file. Tributaries/diversions/links reference another node's id via connectsTo.",
     "  name       - for kind 'mainstem'/'tributary'/'diversion', must fuzzy-match a live station's display name from",
-    "               HydroServer/DWRi/USGS. For 'junction'/'link' nodes it is just label text.",
+    "               HydroServer/DWRi/USGS, unless stationId is set, in which case that always wins. For 'junction'/'link'",
+    "               nodes it is just label text.",
+    "  stationId  - optional but recommended: the exact station id/code to match instead of guessing from name - the same id",
+    "               used in config/station_config.yaml (usgs_stations/dwri_stations), or a HydroServer station code (a",
+    "               display_names key, e.g. 'BC_CONF_A'). See README.md for details.",
     "  kind       - 'mainstem' (a real gauge station on the main channel), 'junction' (invisible connection point, no card),",
     "               'tributary'/'diversion' (a side attachment - see nibley_junc/dwri_nibley below), or 'link' (a card with",
     "               no live data of its own that just navigates to another schematic page). This page has no 'terminus'",
@@ -36,6 +40,7 @@
     {
       "id": "usgs_upl_dam",
       "name": "Blacksmith Fork River Above UP&L Dam",
+      "stationId": "10113500",
       "kind": "mainstem",
       "colorGroup": "USGS",
       "cardLabel": "Above UP&L Dam"
@@ -43,6 +48,7 @@
     {
       "id": "hollow_rd",
       "name": "Blacksmith Fork River: Hollow Road",
+      "stationId": "BSF_Darwin_A",
       "kind": "mainstem",
       "colorGroup": "Blacksmith Fork River"
     },
@@ -50,6 +56,7 @@
     {
       "id": "dwri_nibley",
       "name": "Blacksmith Fork River: Nibley Blacksmith Fork Canal",
+      "stationId": "9424",
       "kind": "diversion",
       "connectsTo": "nibley_junc",
       "side": "right",
@@ -58,6 +65,7 @@
     {
       "id": "seventeen_s",
       "name": "Blacksmith Fork River: 1700 South Footbridge",
+      "stationId": "BSF_1700S_A",
       "kind": "mainstem",
       "colorGroup": "Blacksmith Fork River"
     },

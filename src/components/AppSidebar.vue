@@ -17,7 +17,8 @@ import {
   ChevronDown,
   ChevronRight,
 } from 'lucide-vue-next'
-import { WATERWAY_COLORS, WATERWAY_LIST } from '../hydroService'
+import { WATERWAY_COLORS, WATERWAY_LIST, WATER_VARIBALES } from '../hydroService'
+import { toggleInList } from '../utils'
 
 const props = defineProps<{
   isOpen: boolean
@@ -55,14 +56,6 @@ function openSchematic() {
   const firstSlug = props.schematicNav[0]?.slug
   router.push(firstSlug ? `/schematic/${firstSlug}` : '/schematic')
 }
-
-const variables = [
-  { id: 'Discharge', label: 'Discharge' },
-  { id: 'Water Temperature', label: 'Water Temperature' },
-  { id: 'Specific Conductance', label: 'Specific Conductance' },
-  { id: 'pH', label: 'pH' },
-  { id: 'Oxygen, dissolved', label: 'Dissolved Oxygen' },
-]
 
 const selectedVariable = ref('Discharge')
 const legendOpen = ref(true)
@@ -117,13 +110,7 @@ const handleVariableChange = () => {
 // Adds/removes one waterway group from the active filter set (used by both the map and list
 // views, and the schematic's live-station lookup) - see App.vue's activeWaterways.
 function toggleWaterway(name: string) {
-  const current = new Set(props.activeWaterways)
-  if (current.has(name)) {
-    current.delete(name)
-  } else {
-    current.add(name)
-  }
-  emit('waterway-filter-changed', [...current])
+  emit('waterway-filter-changed', toggleInList(props.activeWaterways, name))
 }
 
 // The "Select All"/"Deselect All" toggle button - flips between every waterway active and none.
@@ -138,13 +125,7 @@ function toggleAll() {
 // Adds/removes one schematic system from the List/Map view filter - see App.vue's
 // activeSystems. Mirrors toggleWaterway above, just for a different filter dimension.
 function toggleSystem(slug: string) {
-  const current = new Set(props.activeSystems)
-  if (current.has(slug)) {
-    current.delete(slug)
-  } else {
-    current.add(slug)
-  }
-  emit('system-filter-changed', [...current])
+  emit('system-filter-changed', toggleInList(props.activeSystems, slug))
 }
 
 function toggleAllSystems() {
@@ -173,7 +154,7 @@ function toggleAllSystems() {
       </label>
       <div class="select-wrapper">
         <select v-model="selectedVariable" @change="handleVariableChange" class="variable-select">
-          <option v-for="v in variables" :key="v.id" :value="v.id">
+          <option v-for="v in WATER_VARIBALES" :key="v.id" :value="v.id">
             {{ v.label }}
           </option>
         </select>

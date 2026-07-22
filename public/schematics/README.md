@@ -44,7 +44,8 @@ Each node is one card on the diagram (except `junction`, which draws as a small 
 | Field | Required | Meaning |
 |---|---|---|
 | `id` | yes | Unique within this file. `connectsTo` and `linkTo` reference nodes by this id, so don't change an existing one casually. |
-| `name` | yes | For `kind: "mainstem"`, `"tributary"`, or `"diversion"`, this is matched (fuzzily — partial matches count both directions) against a live station's display name from HydroServer, DWRi, or USGS. For `junction`/`link` nodes it's just label text. |
+| `name` | yes | For `kind: "mainstem"`, `"tributary"`, or `"diversion"`, this is matched against a live station's display name from HydroServer, DWRi, or USGS — exactly, if `stationId` is set (see below), otherwise fuzzily (partial matches count both directions). For `junction`/`link` nodes it's just label text. |
+| `stationId` | no | The exact station identifier to match instead of guessing from `name`: for USGS/DWRi, the same `id` you used in `config/station_config.yaml`'s `usgs_stations`/`dwri_stations`; for a HydroServer station, its code (the key used in that file's `display_names` map, e.g. `"BC_CONF_A"`). When set, this always wins over the fuzzy `name` match, so a name that doesn't fit the wording of the live display name will still connect correctly. Recommended for every new node — the fuzzy fallback still exists for older nodes that only set `name`. |
 | `cardLabel` | no | Overrides the on-card name shown once matched to a live station. Normally the card shows the live station's own `displayName`, auto-shortened by `shortenForSchematic()` (handles two shapes: `"Logan River: X"` → `"X"`, and `"X: Before Confluence with Y"` → `"Y"`). A live name that doesn't fit either shape — e.g. `"USGS: Cache Highline Canal Near Logan, UT"` — gets shortened wrong (shows `"USGS"`). Set `cardLabel` instead of fighting that heuristic. |
 | `kind` | yes | One of `mainstem`, `junction`, `tributary`, `diversion`, `link` — see below. |
 | `connectsTo` | `tributary`/`diversion`/`link` only | The id of the mainstem/junction node this attaches to — or the id of *another* tributary/diversion/link to chain onto (e.g. a canal with several stations along it before it does anything else). A `link` node only needs this if it's a side attachment (like Blacksmith Fork River's card on the Lower Logan page); omit it if the link is just the next stop on the main channel (like `ext_to_lower`). |
@@ -73,7 +74,7 @@ Each node is one card on the diagram (except `junction`, which draws as a small 
 ## Common edits
 
 **Add a new live station:**
-1. Add a node with `kind: "mainstem"` (on the main channel) or `kind: "tributary"`/`"diversion"` (a side attachment), with a `name` that matches (even loosely) the station's real display name.
+1. Add a node with `kind: "mainstem"` (on the main channel) or `kind: "tributary"`/`"diversion"` (a side attachment), with a `name` that matches (even loosely) the station's real display name, and — recommended — a `stationId` set to the same id/code you used for it in `config/station_config.yaml` (or its HydroServer code), so it connects to the right live station exactly rather than by guesswork.
 2. If it's a side attachment, set `connectsTo` to the junction (or mainstem node) it flows into, and `side` to `"left"` or `"right"`.
 
 **Add a new diversion or canal:** same as above, with `kind: "diversion"`.
@@ -90,8 +91,8 @@ Each node is one card on the diagram (except `junction`, which draws as a small 
   "title": "Blacksmith Fork River",
   "subtitle": "The full Blacksmith Fork River system",
   "nodes": [
-    { "id": "hollow_rd", "name": "Blacksmith Fork River: Hollow Road", "kind": "mainstem", "colorGroup": "Blacksmith Fork River" },
-    { "id": "seventeen_s", "name": "Blacksmith Fork River: 1700 South Footbridge", "kind": "mainstem", "colorGroup": "Blacksmith Fork River" },
+    { "id": "hollow_rd", "name": "Blacksmith Fork River: Hollow Road", "stationId": "BSF_Darwin_A", "kind": "mainstem", "colorGroup": "Blacksmith Fork River" },
+    { "id": "seventeen_s", "name": "Blacksmith Fork River: 1700 South Footbridge", "stationId": "BSF_1700S_A", "kind": "mainstem", "colorGroup": "Blacksmith Fork River" },
     { "id": "to_lower_logan", "name": "Lower Logan River", "kind": "link", "linkTo": "lower-logan", "label": "Confluence with Logan River →" }
   ]
 }

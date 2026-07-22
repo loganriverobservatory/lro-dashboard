@@ -11,7 +11,11 @@
     "NODES: each node is a card on the diagram, listed in the order the water actually flows.",
     "  id         - unique within this file. Tributaries/diversions/links reference another node's id via connectsTo.",
     "  name       - for kind 'mainstem'/'tributary'/'diversion', must fuzzy-match a live station's display name from",
-    "               HydroServer/DWRi/USGS. For 'junction'/'link' nodes it is just label text.",
+    "               HydroServer/DWRi/USGS, unless stationId is set, in which case that always wins. For 'junction'/'link'",
+    "               nodes it is just label text.",
+    "  stationId  - optional but recommended: the exact station id/code to match instead of guessing from name - the same id",
+    "               used in config/station_config.yaml (usgs_stations/dwri_stations), or a HydroServer station code (a",
+    "               display_names key, e.g. 'BC_CONF_A'). See README.md for details.",
     "  kind       - 'mainstem' (a real gauge station on the main channel), 'junction' (an invisible confluence point on the main",
     "               channel, no card - where a tributary/diversion attaches), 'tributary' (water flowing IN), 'diversion' (water",
     "               flowing OUT), or 'link' (a card with no live data of its own that just navigates to another schematic page).",
@@ -64,14 +68,15 @@
     {
       "id": "dewitt",
       "name": "Dewitt Springs",
+      "stationId": "DS_CONF_A",
       "kind": "tributary",
       "connectsTo": "dewitt_junc",
-      "side": "left",
-      "colorGroup": "Logan River Observatory"
+      "side": "left"
     },
     {
       "id": "dwri_hydenorth",
       "name": "Logan River: Hyde Park and Logan Northfield",
+      "stationId": "26",
       "kind": "diversion",
       "connectsTo": "dewitt_junc",
       "side": "left",
@@ -80,6 +85,7 @@
     {
       "id": "dwri_provpioneer",
       "name": "Logan River: Providence Pioneer Canal",
+      "stationId": "54",
       "kind": "diversion",
       "connectsTo": "dwri_hydenorth",
       "side": "right",
@@ -88,6 +94,7 @@
     {
       "id": "dwri_crockett",
       "name": "Logan River: 8th Ward Canal (Crockett Canal)",
+      "stationId": "56",
       "kind": "diversion",
       "connectsTo": "dwri_provpioneer",
       "side": "left",
@@ -96,6 +103,7 @@
     {
       "id": "dwri_provlogan",
       "name": "Logan River: Providence-Logan Irrigation Company",
+      "stationId": "18",
       "kind": "diversion",
       "connectsTo": "dwri_crockett",
       "side": "right",
@@ -104,6 +112,7 @@
     {
       "id": "dwri_loganorthern",
       "name": "Logan River: Logan and Northern Canal",
+      "stationId": "17",
       "kind": "diversion",
       "connectsTo": "dwri_provlogan",
       "side": "left",
@@ -112,18 +121,21 @@
     {
       "id": "water_lab",
       "name": "Logan River: Utah Water Research Laboratory",
+      "stationId": "LR_WaterLab_AA",
       "kind": "mainstem",
       "colorGroup": "Logan River Observatory: Logan River Main Stem"
     },
     {
       "id": "mainstreet",
       "name": "Logan River: Main Street",
+      "stationId": "LR_MainStreet_BA",
       "kind": "mainstem",
       "colorGroup": "Logan River Observatory: Logan River Main Stem"
     },
     {
       "id": "dwri_nwfield",
       "name": "Logan River: Northwest Field Canal",
+      "stationId": "19",
       "kind": "diversion",
       "connectsTo": "mainstreet",
       "side": "right",
@@ -133,6 +145,7 @@
     {
       "id": "spring_creek",
       "name": "Spring Creek",
+      "stationId": "SC_CONF_A",
       "kind": "tributary",
       "connectsTo": "spring_creek_junc",
       "side": "left",
@@ -141,6 +154,7 @@
     {
       "id": "dwri_hydepark",
       "name": "Logan River: Hyde Park Canal",
+      "stationId": "11430",
       "kind": "diversion",
       "connectsTo": "spring_creek_junc",
       "side": "left",
@@ -149,6 +163,7 @@
     {
       "id": "dwri_benson",
       "name": "Logan River: Benson Irrigation Company",
+      "stationId": "21",
       "kind": "diversion",
       "connectsTo": "dwri_hydepark",
       "side": "left",
@@ -158,6 +173,7 @@
     {
       "id": "dwri_swfield",
       "name": "Logan River: Southwest Field Canal",
+      "stationId": "53",
       "kind": "diversion",
       "connectsTo": "bsf_confluence",
       "side": "right",
@@ -175,6 +191,7 @@
     {
       "id": "bsf_before_conf",
       "name": "Blacksmith Fork River: Before Confluence with Logan River",
+      "stationId": "BSF_CONF_BA",
       "kind": "tributary",
       "connectsTo": "bsf_ext",
       "side": "right",
@@ -185,18 +202,21 @@
     {
       "id": "thousand_w",
       "name": "Logan River: 1000 West",
+      "stationId": "LR_1000W_A",
       "kind": "mainstem",
       "colorGroup": "Logan River Observatory: Logan River Main Stem"
     },
     {
       "id": "mendon_rd",
       "name": "Logan River: Mendon Road",
+      "stationId": "LR_Mendon_AA",
       "kind": "mainstem",
       "colorGroup": "Logan River Observatory: Logan River Main Stem"
     },
     {
       "id": "dwri_littlelogan",
       "name": "Logan River: Little Logan Return to Bear",
+      "stationId": "11365",
       "kind": "diversion",
       "connectsTo": "mendon_rd",
       "side": "right",
@@ -205,6 +225,7 @@
     {
       "id": "before_cutler",
       "name": "Logan River: Before Confluence with Cutler Reservoir",
+      "stationId": "LR_Cutler_A",
       "kind": "mainstem",
       "colorGroup": "Logan River Observatory: Logan River Main Stem",
       "cardLabel": "Before Cutler Reservoir"
@@ -228,6 +249,7 @@
     {
       "id": "spring_creek_mendon",
       "name": "Spring Creek: Mendon Road",
+      "stationId": "SC_MR_A",
       "kind": "tributary",
       "connectsTo": "terminus",
       "side": "right",
