@@ -29,6 +29,8 @@
     "  colorGroup - optional; must match a name from waterway_groups or schematic_groups in config/station_config.yaml.",
     "  terminus   - mainstem only: marks this node as the system's final endpoint (only 'cutler_reservoir' below sets this).",
     "  linkTo     - the schematic page slug to navigate to; adds a 'view full system' button below the card it's on.",
+    "  label      - linkTo button text override (defaults to name) - see cutler_reservoir below, which uses this to point",
+    "               back to Lower Logan River.",
     "  description - terminus node only: subtitle text.",
     "",
     "There's no separate edges list - the main channel line, every diversion's connector, and flow direction are all derived",
