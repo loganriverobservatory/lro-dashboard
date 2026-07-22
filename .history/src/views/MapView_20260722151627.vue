@@ -4,18 +4,51 @@ MapView.vue - Displays the map with station pins and station cards in popups. Pi
 */
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { onMounted, watch, onBeforeUnmount, ref } from 'vue'
-import { type Station, getFreshnessStatus, STATUS_COLORS, WATERWAY_COLORS } from '../hydroService'
+import { onMounted, watch, onBeforeUnmount, ref, computed } from 'vue'
+import {
+  type Station,
+  type SchematicPages,
+  getFreshnessStatus,
+  getSchematicSystemOrder,
+  findStationSystem,
+  STATUS_COLORS,
+  WATERWAY_COLORS,
+  WATERWAY_LIST,
+  WATER_VARIBALES,
+} from '../hydroService'
 import StationCard from '../components/StationCard.vue'
 
 const props = defineProps<{
   sites: Station[]
+  loading: boolean
   selectedId: string | null
   selectedVariable: string
   activeWaterways: string[]
+  // Which schematic systems are active in the filter below - see App.vue's activeSystems.
+  activeSystems?: string[]
+  // Which of activeSystems/activeWaterways is currently applied - see App.vue's filterMode.
+  // Only one is ever actually filtered on, regardless of the other's stored checkbox state.
+  filterMode?: 'system' | 'source'
+  schematicPages?: SchematicPages | null
+  // Manifest-ordered {slug, label} list - used by resetMap() to restore every system on reset.
+  // No mobile filter UI here - MapView relies entirely on the sidebar's own FILTER STATIONS
+  // toggle, on mobile and desktop alike (see AppSidebar.vue).
+  schematicNav?: { slug: string; label: string }[]
 }>()
 
-const emit = defineEmits(['select'])
+const emit = defineEmits<{
+  (e: 'resetWaterways', fallbackWaterways: string[]): void
+  (e: 'system-filter-changed', updated: string[]): void
+}>()
+
+// Same schematic data as the schematic pages themselves, but keeping each station's system
+// slug - used to filter map pins by system, same matching rule ListView uses.
+const systemOrder = computed(() => getSchematicSystemOrder(props.schematicPages))
+
+const variableLongLabel = computed(() => {
+  const match = WATER_VARIBALES.find((v) => v.id === props.selectedVariable)
+  return match?.longLabel ?? props.selectedVariable
+})
 
 let map: L.Map | null = null
 const markerMap = new Map<string, L.Marker>()
@@ -23,6 +56,10 @@ const hasZoomed = ref(false)
 const expandedStation = ref<Station | null>(null)
 let isProgrammaticZoom = false
 
+// Rebuilds every Leaflet marker from scratch (rather than diffing) - simplest way to keep pins
+// in sync with sites/activeWaterways changes, and cheap enough at this station count. Also
+// re-fits the map to all visible pins, but only before the user's first manual zoom (see
+// hasZoomed), so it doesn't fight a zoom/pan the user just did.
 const syncMarkers = () => {
   if (!map) return
 
@@ -32,7 +69,15 @@ const syncMarkers = () => {
   const allCoords: L.LatLngTuple[] = []
 
   props.sites.forEach((station: Station) => {
-    if (!props.activeWaterways.includes(station.tributary ?? '')) return
+    if (props.filterMode === 'source') {
+      if (!props.activeWaterways.includes(station.tributary ?? '')) return
+    } else if (props.activeSystems) {
+      // A station that doesn't match any schematic file is treated as belonging to no
+      // system, so it's hidden the same as anything else once its (nonexistent) system is
+      // deselected - add it to a schematic JSON to make it filterable.
+      const system = findStationSystem(station.displayName, systemOrder.value)
+      if (system === undefined || !props.activeSystems.includes(system)) return
+    }
     if (station.coordinates && station.coordinates.length === 2) {
       const coords = station.coordinates as L.LatLngTuple
       allCoords.push(coords)
@@ -65,7 +110,7 @@ const syncMarkers = () => {
         let color = STATUS_COLORS.unknown
 
         if (obs && obs.result !== null && obs.result !== undefined) {
-          valueStr = `${Number(obs.result).toFixed(2)} ${station.unit || ''}`
+          valueStr = `${Number(obs.result).toFixed(2)}`
           const status = getFreshnessStatus(obs)
           color = STATUS_COLORS[status as keyof typeof STATUS_COLORS] ?? STATUS_COLORS.unknown
         }
@@ -80,6 +125,7 @@ const syncMarkers = () => {
 
         marker.on('click', () => {
           expandedStation.value = station
+          if (map) map.panTo(coords)
         })
       }
 
@@ -94,10 +140,19 @@ const syncMarkers = () => {
   }
 }
 
+// The "Reset" button shown once the user has zoomed in - clears the manual-zoom flag, restores
+// every waterway and system to the active filter set, and re-fits the map to all sites.
 function resetMap() {
   hasZoomed.value = false
   expandedStation.value = null
+  emit('resetWaterways', [...WATERWAY_LIST])
+  if (props.schematicNav?.length)
+    emit(
+      'system-filter-changed',
+      props.schematicNav.map((s) => s.slug),
+    )
   syncMarkers()
+
   const coords = props.sites
     .filter((s) => s.coordinates?.length === 2)
     .map((s) => s.coordinates as L.LatLngTuple)
@@ -145,6 +200,8 @@ onBeforeUnmount(() => {
   }
 })
 
+// Refreshes markers as new observations arrive, and keeps an open station popup showing
+// current data (or closes it if that station disappeared, e.g. a waterway filter change).
 watch(
   () => props.sites,
   () => {
@@ -157,10 +214,13 @@ watch(
   { deep: true },
 )
 
+// Closes the open station popup if its waterway just got filtered out (only when that filter
+// is actually the active one - see filterMode), then re-syncs pins.
 watch(
   () => props.activeWaterways,
   () => {
     if (
+      props.filterMode === 'source' &&
       expandedStation.value &&
       !props.activeWaterways.includes(expandedStation.value.tributary ?? '')
     ) {
@@ -171,6 +231,26 @@ watch(
   { deep: true },
 )
 
+// Same as above, for the system filter - closes the popup if its system just got turned off.
+watch(
+  () => props.activeSystems,
+  () => {
+    if (props.filterMode !== 'source' && expandedStation.value && props.activeSystems) {
+      const system = findStationSystem(expandedStation.value.displayName, systemOrder.value)
+      if (system === undefined || !props.activeSystems.includes(system)) {
+        expandedStation.value = null
+      }
+    }
+    syncMarkers()
+  },
+  { deep: true },
+)
+
+// Switching modes changes which stations are actually filtered, without activeWaterways or
+// activeSystems themselves necessarily changing - re-sync so pins reflect the new mode.
+watch(() => props.filterMode, syncMarkers)
+
+// Selecting a station elsewhere in the app (e.g. from a list) pans the map to and opens its pin.
 watch(
   () => props.selectedId,
   (newId) => {
@@ -189,9 +269,17 @@ watch(
   <div class="map-container">
     <div id="map-div"></div>
 
+    <div v-if="loading" class="map-loading-overlay">
+      <div class="spinner"></div>
+      <p>Loading stations…</p>
+    </div>
+
     <div v-if="!hasZoomed" class="map-banner">
-      Zoom in/out to see <strong>{{ selectedVariable }}</strong> values. Click on values for more
-      information. Pins may take a while to load.
+      <div class="banner-live-label">Live {{ variableLongLabel }}</div>
+      <span class="banner-instructions">
+        Zoom in/out to see <strong>{{ selectedVariable }}</strong> values. Click on values for more
+        information.
+      </span>
     </div>
 
     <button v-if="hasZoomed" class="reset-btn" @click="resetMap">Reset</button>
@@ -227,6 +315,38 @@ watch(
 :deep(.leaflet-control-container) {
   z-index: 800;
 }
+
+.map-loading-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 950;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  background: rgba(248, 250, 252, 0.85);
+  color: #64748b;
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #e2e8f0;
+  border-top: 3px solid #01377d;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
 .map-banner {
   position: absolute;
   top: 12px;
@@ -239,8 +359,31 @@ watch(
   font-size: 1.15rem;
   color: #7f1d1d;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-  max-width: 370px;
+  max-width: min(370px, calc(100vw - 24px));
   pointer-events: none;
+}
+.banner-live-label {
+  font-weight: 700;
+  font-size: 1rem;
+  margin-bottom: 6px;
+}
+
+/* Same 768px mobile threshold used elsewhere in the app. The banner shrinks and drops its
+   instructional text (kept full-size in .map-banner above) so it no longer reaches wide
+   enough to overlap the zoom control Leaflet renders in the top-right corner. */
+@media screen and (max-width: 768px) {
+  .map-banner {
+    padding: 8px 12px;
+    font-size: 0.85rem;
+    max-width: calc(100vw - 96px);
+  }
+  .banner-live-label {
+    font-size: 0.8rem;
+    margin-bottom: 0;
+  }
+  .banner-instructions {
+    display: none;
+  }
 }
 .reset-btn {
   position: absolute;
@@ -260,6 +403,7 @@ watch(
 .reset-btn:hover {
   background: #073763;
 }
+
 .expanded-overlay {
   position: absolute;
   inset: 0;
@@ -271,7 +415,7 @@ watch(
 }
 .expanded-card-wrapper {
   position: relative;
-  width: 360px;
+  width: min(360px, calc(100vw - 32px));
   max-height: 80vh;
   overflow-y: auto;
 }
@@ -295,11 +439,33 @@ watch(
 .close-btn:hover {
   background: #e2e8f0;
 }
+.expanded-card-wrapper :deep(.card-flex-layout) {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.75rem;
+}
+/* .close-btn below floats over the card's top-right corner - without this, the "Live"/
+   "Offline" status-badge in the card's own header sits right where the ✕ button is,
+   overlapping it. Shifts the badge left, clear of the button. */
+.expanded-card-wrapper :deep(.card-header) {
+  padding-right: 34px;
+}
+.expanded-card-wrapper :deep(.sparkline-sidebar-wrapper) {
+  width: 100%;
+}
+.expanded-card-wrapper :deep(.sparkline-title) {
+  text-align: left;
+}
+.expanded-card-wrapper :deep(.sparkline-sidebar-wrapper .cursor-pointer) {
+  height: auto !important;
+  aspect-ratio: 9 / 4;
+}
+
 :deep(.value-tooltip) {
   background: rgba(255, 255, 255, 0.95) !important;
   border: 1px solid #e2e8f0 !important;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12) !important;
-  padding: 2px 6px !important;
+  padding: 1px 4px !important;
   border-radius: 4px !important;
   cursor: pointer;
 }
@@ -307,8 +473,17 @@ watch(
   display: none !important;
 }
 :deep(.pin-value) {
-  font-size: 1.235rem;
+  font-size: 0.95rem;
   font-weight: 700;
   white-space: nowrap;
+}
+
+@media screen and (max-width: 480px) {
+  :deep(.pin-value) {
+    font-size: 0.7rem;
+  }
+  :deep(.value-tooltip) {
+    padding: 1px 3px !important;
+  }
 }
 </style>

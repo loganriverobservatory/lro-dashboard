@@ -57,29 +57,9 @@ function openSchematic() {
   router.push(firstSlug ? `/schematic/${firstSlug}` : '/schematic')
 }
 
-// Same 768px mobile threshold used elsewhere in the app - on mobile, both toggle sections
-// below default to closed (and re-collapse on every view switch, see the watcher further
-// down) so opening the sidebar doesn't immediately show everything expanded at once. Desktop
-// keeps them open by default, since there's more room there.
-function isMobileViewport() {
-  return typeof window !== 'undefined' && window.innerWidth <= 768
-}
-
 const selectedVariable = ref('Discharge')
-const legendOpen = ref(!isMobileViewport())
-const freshnessOpen = ref(!isMobileViewport())
-
-// Re-collapses both sections each time the person switches views, but only on mobile - on
-// desktop, whatever open/closed state the person last set is left alone.
-watch(
-  () => props.currentView,
-  () => {
-    if (isMobileViewport()) {
-      legendOpen.value = false
-      freshnessOpen.value = false
-    }
-  },
-)
+const legendOpen = ref(true)
+const freshnessOpen = ref(true)
 
 // Added badge text properties to feed the side-by-side pill layouts
 const freshnessItems = [
@@ -116,8 +96,7 @@ const emit = defineEmits<{
 }>()
 
 // The DATA STATUS legend makes sense on any view that shows colored stations/pins.
-const showFreshnessLegend = () =>
-  ['map', 'list'].includes(props.currentView) || isSchematicActive.value
+const showFreshnessLegend = () => ['map', 'list'].includes(props.currentView) || isSchematicActive.value
 // List/Map get the combined Systems/Data Sources filter toggle below - the schematic view
 // only ever shows one system at a time via its own page routing, so a systems filter doesn't
 // apply there; it keeps a plain, un-toggled Data Sources list instead (see showSchematicSources).
