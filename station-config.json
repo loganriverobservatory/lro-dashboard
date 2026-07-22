@@ -1,5 +1,5 @@
 {
-  "fetchedAt": "2026-07-22T20:20:32.975711+00:00",
+  "fetchedAt": "2026-07-22T21:35:20.941014+00:00",
   "waterwayGroups": [
     {
       "name": "Logan River Observatory",
@@ -83,6 +83,42 @@
       "displayName": "USGS: Blacksmith Fork River Above UP&L Dam near Hyrum, UT",
       "siteLink": "https://waterdata.usgs.gov/monitoring-location/USGS-10113500/#dataTypeId=continuous-00060-0&period=P7D&showMedian=true&showFieldMeasurements=true",
       "active": true
+    },
+    {
+      "id": "10105900",
+      "displayName": "USGS: Little Bear River at Paradise, UT",
+      "siteLink": "https://waterdata.usgs.gov/monitoring-location/USGS-10105900/#dataTypeId=continuous-00060-0&period=P7D&showMedian=true&showFieldMeasurements=true",
+      "active": true
+    },
+    {
+      "id": "10092700",
+      "displayName": "USGS: Bear River at Idaho-Utah State Line",
+      "siteLink": "https://waterdata.usgs.gov/monitoring-location/USGS-10092700/#dataTypeId=continuous-00060-0&period=P7D&showMedian=true&showFieldMeasurements=true",
+      "active": true
+    },
+    {
+      "id": "10102250",
+      "displayName": "USGS: Bear River near Smithfield, UT",
+      "siteLink": "https://waterdata.usgs.gov/monitoring-location/USGS-10102250/#dataTypeId=continuous-00060-0&period=P7D&showMedian=true&showFieldMeasurements=true",
+      "active": true
+    },
+    {
+      "id": "10126000",
+      "displayName": "USGS: Bear River near Corinne, UT",
+      "siteLink": "https://waterdata.usgs.gov/monitoring-location/USGS-10126000/#dataTypeId=continuous-00060-0&period=P7D&showMedian=true&showFieldMeasurements=true",
+      "active": true
+    },
+    {
+      "id": "10102350",
+      "displayName": "USGS: Summit Creek at Mouth near Smithfield, UT",
+      "siteLink": "https://waterdata.usgs.gov/monitoring-location/USGS-10102350/#dataTypeId=continuous-00060-0&period=P7D&showMedian=true&showFieldMeasurements=true",
+      "active": true
+    },
+    {
+      "id": "10102220",
+      "displayName": "USGS: Cub River near Mouth near Richmond, UT",
+      "siteLink": "https://waterdata.usgs.gov/monitoring-location/USGS-10102220/#dataTypeId=continuous-00060-0&period=P7D&showMedian=true&showFieldMeasurements=true",
+      "active": true
     }
   ],
   "dwriStations": [
@@ -93,8 +129,8 @@
       "schematicGroup": "Logan River",
       "lat": 41.734148,
       "lng": -111.811971,
-      "latestCfs": 67.6,
-      "latestTime": "2026-07-22T13:15:00",
+      "latestCfs": 67.48,
+      "latestTime": "2026-07-22T14:00:00",
       "history": [
         {
           "time": "2026-07-20T00:00:00",
@@ -1079,6 +1115,18 @@
         {
           "time": "2026-07-22T13:15:00",
           "value": 67.6
+        },
+        {
+          "time": "2026-07-22T13:30:00",
+          "value": 67.66
+        },
+        {
+          "time": "2026-07-22T13:45:00",
+          "value": 67.59
+        },
+        {
+          "time": "2026-07-22T14:00:00",
+          "value": 67.48
         }
       ]
     },
@@ -1090,7 +1138,7 @@
       "lat": 41.77395,
       "lng": -111.848877,
       "latestCfs": 21.639,
-      "latestTime": "2026-07-22T13:58:10",
+      "latestTime": "2026-07-22T15:28:07",
       "history": [
         {
           "time": "2026-07-20T00:26:18",
@@ -1422,6 +1470,14 @@
         },
         {
           "time": "2026-07-22T13:58:10",
+          "value": 21.639
+        },
+        {
+          "time": "2026-07-22T14:43:12",
+          "value": 21.38
+        },
+        {
+          "time": "2026-07-22T15:28:07",
           "value": 21.639
         }
       ]
@@ -2417,8 +2473,8 @@
       "schematicGroup": "Logan River",
       "lat": 41.765056,
       "lng": -111.822041,
-      "latestCfs": 8.45,
-      "latestTime": "2026-07-22T11:58:00",
+      "latestCfs": 8.34,
+      "latestTime": "2026-07-22T13:58:00",
       "history": [
         {
           "time": "2026-07-20T00:58:00",
@@ -2659,6 +2715,14 @@
         {
           "time": "2026-07-22T11:58:00",
           "value": 8.45
+        },
+        {
+          "time": "2026-07-22T12:58:00",
+          "value": 8.25
+        },
+        {
+          "time": "2026-07-22T13:58:00",
+          "value": 8.34
         }
       ]
     },
@@ -2669,8 +2733,8 @@
       "schematicGroup": "Logan River",
       "lat": 41.71283,
       "lng": -111.870446,
-      "latestCfs": 2.5,
-      "latestTime": "2026-07-22T12:15:00",
+      "latestCfs": 2.464,
+      "latestTime": "2026-07-22T13:45:00",
       "history": [
         {
           "time": "2026-07-20T05:45:00",
@@ -3547,6 +3611,30 @@
         {
           "time": "2026-07-22T12:15:00",
           "value": 2.5
+        },
+        {
+          "time": "2026-07-22T12:30:00",
+          "value": 2.501
+        },
+        {
+          "time": "2026-07-22T12:45:00",
+          "value": 2.511
+        },
+        {
+          "time": "2026-07-22T13:00:00",
+          "value": 2.481
+        },
+        {
+          "time": "2026-07-22T13:15:00",
+          "value": 2.473
+        },
+        {
+          "time": "2026-07-22T13:30:00",
+          "value": 2.482
+        },
+        {
+          "time": "2026-07-22T13:45:00",
+          "value": 2.464
         }
       ]
     },
@@ -3568,8 +3656,8 @@
       "schematicGroup": "Logan River",
       "lat": 41.727074,
       "lng": -111.843648,
-      "latestCfs": 28.06,
-      "latestTime": "2026-07-22T12:45:00",
+      "latestCfs": 27.66,
+      "latestTime": "2026-07-22T14:15:00",
       "history": [
         {
           "time": "2026-07-20T00:00:00",
@@ -4498,6 +4586,30 @@
         {
           "time": "2026-07-22T12:45:00",
           "value": 28.06
+        },
+        {
+          "time": "2026-07-22T13:00:00",
+          "value": 28.12
+        },
+        {
+          "time": "2026-07-22T13:15:00",
+          "value": 28.12
+        },
+        {
+          "time": "2026-07-22T13:30:00",
+          "value": 28.18
+        },
+        {
+          "time": "2026-07-22T13:45:00",
+          "value": 28.09
+        },
+        {
+          "time": "2026-07-22T14:00:00",
+          "value": 28.12
+        },
+        {
+          "time": "2026-07-22T14:15:00",
+          "value": 27.66
         }
       ]
     },
@@ -4509,7 +4621,7 @@
       "lat": 41.724699,
       "lng": -111.825988,
       "latestCfs": 0.268,
-      "latestTime": "2026-07-22T13:00:00",
+      "latestTime": "2026-07-22T14:00:00",
       "history": [
         {
           "time": "2026-07-20T00:00:00",
@@ -5490,6 +5602,22 @@
         {
           "time": "2026-07-22T13:00:00",
           "value": 0.268
+        },
+        {
+          "time": "2026-07-22T13:15:00",
+          "value": 0.268
+        },
+        {
+          "time": "2026-07-22T13:30:00",
+          "value": 0.268
+        },
+        {
+          "time": "2026-07-22T13:45:00",
+          "value": 0.268
+        },
+        {
+          "time": "2026-07-22T14:00:00",
+          "value": 0.268
         }
       ]
     },
@@ -5500,8 +5628,8 @@
       "schematicGroup": "Logan River",
       "lat": 41.73947,
       "lng": -111.8005,
-      "latestCfs": 4.8,
-      "latestTime": "2026-07-22T12:45:00",
+      "latestCfs": 4.781,
+      "latestTime": "2026-07-22T14:15:00",
       "history": [
         {
           "time": "2026-07-20T00:00:00",
@@ -6478,6 +6606,30 @@
         {
           "time": "2026-07-22T12:45:00",
           "value": 4.8
+        },
+        {
+          "time": "2026-07-22T13:00:00",
+          "value": 4.779
+        },
+        {
+          "time": "2026-07-22T13:15:00",
+          "value": 4.756
+        },
+        {
+          "time": "2026-07-22T13:30:00",
+          "value": 4.762
+        },
+        {
+          "time": "2026-07-22T13:45:00",
+          "value": 4.762
+        },
+        {
+          "time": "2026-07-22T14:00:00",
+          "value": 4.762
+        },
+        {
+          "time": "2026-07-22T14:15:00",
+          "value": 4.781
         }
       ]
     },
@@ -6488,8 +6640,8 @@
       "schematicGroup": "Logan River",
       "lat": 41.723808,
       "lng": -111.845284,
-      "latestCfs": 11.85,
-      "latestTime": "2026-07-22T12:45:00",
+      "latestCfs": 11.81,
+      "latestTime": "2026-07-22T14:15:00",
       "history": [
         {
           "time": "2026-07-20T00:00:00",
@@ -7466,6 +7618,30 @@
         {
           "time": "2026-07-22T12:45:00",
           "value": 11.85
+        },
+        {
+          "time": "2026-07-22T13:00:00",
+          "value": 11.83
+        },
+        {
+          "time": "2026-07-22T13:15:00",
+          "value": 11.83
+        },
+        {
+          "time": "2026-07-22T13:30:00",
+          "value": 11.81
+        },
+        {
+          "time": "2026-07-22T13:45:00",
+          "value": 11.81
+        },
+        {
+          "time": "2026-07-22T14:00:00",
+          "value": 11.81
+        },
+        {
+          "time": "2026-07-22T14:15:00",
+          "value": 11.81
         }
       ]
     },
@@ -7476,8 +7652,8 @@
       "schematicGroup": "Little Bear River",
       "lat": 41.518116,
       "lng": -111.714435,
-      "latestCfs": 7.882820234375,
-      "latestTime": "2026-07-22T14:19:21",
+      "latestCfs": 8.05049671875,
+      "latestTime": "2026-07-22T15:30:49",
       "history": [
         {
           "time": "2026-07-20T00:19:24",
@@ -8270,6 +8446,22 @@
         {
           "time": "2026-07-22T14:19:21",
           "value": 7.882820234375
+        },
+        {
+          "time": "2026-07-22T14:35:17",
+          "value": 7.8470609375
+        },
+        {
+          "time": "2026-07-22T14:55:50",
+          "value": 7.89474
+        },
+        {
+          "time": "2026-07-22T15:10:16",
+          "value": 8.102415625
+        },
+        {
+          "time": "2026-07-22T15:30:49",
+          "value": 8.05049671875
         }
       ]
     },
@@ -8281,7 +8473,7 @@
       "lat": 41.518169,
       "lng": -111.754416,
       "latestCfs": 19.467842604,
-      "latestTime": "2026-07-22T14:18:03",
+      "latestTime": "2026-07-22T15:09:16",
       "history": [
         {
           "time": "2026-07-20T00:33:43",
@@ -8746,6 +8938,14 @@
         {
           "time": "2026-07-22T14:18:03",
           "value": 19.467842604
+        },
+        {
+          "time": "2026-07-22T14:34:36",
+          "value": 19.467842604
+        },
+        {
+          "time": "2026-07-22T15:09:16",
+          "value": 19.467842604
         }
       ]
     },
@@ -8756,8 +8956,8 @@
       "schematicGroup": "Little Bear River",
       "lat": 41.621092,
       "lng": -111.799909,
-      "latestCfs": 3.635,
-      "latestTime": "2026-07-22T13:00:00",
+      "latestCfs": 3.472,
+      "latestTime": "2026-07-22T15:00:00",
       "history": [
         {
           "time": "2026-07-20T00:00:00",
@@ -9610,6 +9810,38 @@
         {
           "time": "2026-07-22T13:00:00",
           "value": 3.635
+        },
+        {
+          "time": "2026-07-22T13:15:00",
+          "value": 3.827
+        },
+        {
+          "time": "2026-07-22T13:30:00",
+          "value": 3.407
+        },
+        {
+          "time": "2026-07-22T13:45:00",
+          "value": 3.515
+        },
+        {
+          "time": "2026-07-22T14:00:00",
+          "value": 3.488
+        },
+        {
+          "time": "2026-07-22T14:15:00",
+          "value": 3.437
+        },
+        {
+          "time": "2026-07-22T14:30:00",
+          "value": 3.736
+        },
+        {
+          "time": "2026-07-22T14:45:00",
+          "value": 3.602
+        },
+        {
+          "time": "2026-07-22T15:00:00",
+          "value": 3.472
         }
       ]
     },
@@ -9620,8 +9852,8 @@
       "schematicGroup": "Little Bear River",
       "lat": 41.576291,
       "lng": -111.816182,
-      "latestCfs": 11.5625,
-      "latestTime": "2026-07-22T14:19:46",
+      "latestCfs": 11.28125,
+      "latestTime": "2026-07-22T15:31:35",
       "history": [
         {
           "time": "2026-07-20T00:20:17",
@@ -10282,6 +10514,14 @@
         {
           "time": "2026-07-22T14:19:46",
           "value": 11.5625
+        },
+        {
+          "time": "2026-07-22T14:56:21",
+          "value": 11.453125
+        },
+        {
+          "time": "2026-07-22T15:31:35",
+          "value": 11.28125
         }
       ]
     },
@@ -10293,7 +10533,7 @@
       "lat": 41.529045,
       "lng": -111.814628,
       "latestCfs": 19.783888032,
-      "latestTime": "2026-07-22T11:46:36",
+      "latestTime": "2026-07-22T14:47:51",
       "history": [
         {
           "time": "2026-07-20T00:11:40",
@@ -10570,6 +10810,10 @@
         {
           "time": "2026-07-22T11:46:36",
           "value": 19.783888032
+        },
+        {
+          "time": "2026-07-22T14:47:51",
+          "value": 19.783888032
         }
       ]
     },
@@ -10841,7 +11085,7 @@
       "lat": 41.5755,
       "lng": -111.855222,
       "latestCfs": 18.9,
-      "latestTime": "2026-07-22T13:45:00",
+      "latestTime": "2026-07-22T14:45:00",
       "history": [
         {
           "time": "2026-07-20T00:45:00",
@@ -11066,6 +11310,10 @@
         {
           "time": "2026-07-22T13:45:00",
           "value": 18.9
+        },
+        {
+          "time": "2026-07-22T14:45:00",
+          "value": 18.9
         }
       ]
     },
@@ -11076,8 +11324,8 @@
       "schematicGroup": "Little Bear River",
       "lat": 41.629641,
       "lng": -111.872435,
-      "latestCfs": 2.54375,
-      "latestTime": "2026-07-22T14:09:57",
+      "latestCfs": 2.1625,
+      "latestTime": "2026-07-22T15:19:59",
       "history": [
         {
           "time": "2026-07-20T00:08:19",
@@ -11690,6 +11938,22 @@
         {
           "time": "2026-07-22T14:09:57",
           "value": 2.54375
+        },
+        {
+          "time": "2026-07-22T14:28:19",
+          "value": 2.15
+        },
+        {
+          "time": "2026-07-22T14:44:00",
+          "value": 2.4625
+        },
+        {
+          "time": "2026-07-22T15:03:02",
+          "value": 2.1125
+        },
+        {
+          "time": "2026-07-22T15:19:59",
+          "value": 2.1625
         }
       ]
     },
@@ -11700,8 +11964,8 @@
       "schematicGroup": "Little Bear River",
       "lat": 41.532265,
       "lng": -111.812996,
-      "latestCfs": 20.194631904,
-      "latestTime": "2026-07-22T14:10:28",
+      "latestCfs": 20.332369684,
+      "latestTime": "2026-07-22T15:20:45",
       "history": [
         {
           "time": "2026-07-20T00:08:35",
@@ -12522,6 +12786,22 @@
         {
           "time": "2026-07-22T14:10:28",
           "value": 20.194631904
+        },
+        {
+          "time": "2026-07-22T14:29:12",
+          "value": 20.194631904
+        },
+        {
+          "time": "2026-07-22T14:44:54",
+          "value": 20.194631904
+        },
+        {
+          "time": "2026-07-22T15:03:40",
+          "value": 20.057442224
+        },
+        {
+          "time": "2026-07-22T15:20:45",
+          "value": 20.332369684
         }
       ]
     },
@@ -12532,8 +12812,8 @@
       "schematicGroup": "Little Bear River",
       "lat": 41.532271,
       "lng": -111.813021,
-      "latestCfs": 16.61025857,
-      "latestTime": "2026-07-22T14:13:54",
+      "latestCfs": 16.73830122,
+      "latestTime": "2026-07-22T15:24:11",
       "history": [
         {
           "time": "2026-07-20T00:13:11",
@@ -13342,6 +13622,22 @@
         {
           "time": "2026-07-22T14:13:54",
           "value": 16.61025857
+        },
+        {
+          "time": "2026-07-22T14:32:38",
+          "value": 16.61025857
+        },
+        {
+          "time": "2026-07-22T14:49:16",
+          "value": 16.48236059
+        },
+        {
+          "time": "2026-07-22T15:07:16",
+          "value": 16.48236059
+        },
+        {
+          "time": "2026-07-22T15:24:11",
+          "value": 16.73830122
         }
       ]
     },
@@ -13353,7 +13649,7 @@
       "lat": 41.56851,
       "lng": -111.824085,
       "latestCfs": 0.0,
-      "latestTime": "2026-07-22T14:14:14",
+      "latestTime": "2026-07-22T14:49:36",
       "history": [
         {
           "time": "2026-07-20T00:48:04",
@@ -13646,6 +13942,10 @@
         {
           "time": "2026-07-22T14:14:14",
           "value": 0.0
+        },
+        {
+          "time": "2026-07-22T14:49:36",
+          "value": 0.0
         }
       ]
     },
@@ -13656,8 +13956,8 @@
       "schematicGroup": "Little Bear River",
       "lat": 41.518167,
       "lng": -111.747908,
-      "latestCfs": 38.28125,
-      "latestTime": "2026-07-22T14:18:56",
+      "latestCfs": 39.53125,
+      "latestTime": "2026-07-22T15:30:09",
       "history": [
         {
           "time": "2026-07-20T00:18:59",
@@ -14378,6 +14678,22 @@
         {
           "time": "2026-07-22T14:18:56",
           "value": 38.28125
+        },
+        {
+          "time": "2026-07-22T14:34:47",
+          "value": 38.28125
+        },
+        {
+          "time": "2026-07-22T14:55:05",
+          "value": 39.375
+        },
+        {
+          "time": "2026-07-22T15:09:21",
+          "value": 38.59375
+        },
+        {
+          "time": "2026-07-22T15:30:09",
+          "value": 39.53125
         }
       ]
     },
@@ -14649,7 +14965,7 @@
       "lat": 41.62964,
       "lng": -111.872436,
       "latestCfs": 48.8,
-      "latestTime": "2026-07-22T14:09:49",
+      "latestTime": "2026-07-22T15:19:54",
       "history": [
         {
           "time": "2026-07-20T00:07:55",
@@ -15470,6 +15786,22 @@
         {
           "time": "2026-07-22T14:09:49",
           "value": 48.8
+        },
+        {
+          "time": "2026-07-22T14:28:11",
+          "value": 48.8
+        },
+        {
+          "time": "2026-07-22T14:43:31",
+          "value": 48.8
+        },
+        {
+          "time": "2026-07-22T15:02:54",
+          "value": 48.8
+        },
+        {
+          "time": "2026-07-22T15:19:54",
+          "value": 48.8
         }
       ]
     },
@@ -15481,7 +15813,7 @@
       "lat": 41.628556,
       "lng": -111.880464,
       "latestCfs": 52.25,
-      "latestTime": "2026-07-22T14:09:26",
+      "latestTime": "2026-07-22T15:19:15",
       "history": [
         {
           "time": "2026-07-20T00:07:38",
@@ -16298,6 +16630,22 @@
         {
           "time": "2026-07-22T14:09:26",
           "value": 52.25
+        },
+        {
+          "time": "2026-07-22T14:27:53",
+          "value": 52.25
+        },
+        {
+          "time": "2026-07-22T14:43:07",
+          "value": 52.25
+        },
+        {
+          "time": "2026-07-22T15:02:39",
+          "value": 52.25
+        },
+        {
+          "time": "2026-07-22T15:19:15",
+          "value": 52.25
         }
       ]
     },
@@ -16309,7 +16657,7 @@
       "lat": 41.645562,
       "lng": -111.818574,
       "latestCfs": 116.202096585,
-      "latestTime": "2026-07-22T14:08:51",
+      "latestTime": "2026-07-22T15:19:00",
       "history": [
         {
           "time": "2026-07-20T00:07:06",
@@ -17077,6 +17425,22 @@
         },
         {
           "time": "2026-07-22T14:08:51",
+          "value": 116.202096585
+        },
+        {
+          "time": "2026-07-22T14:27:17",
+          "value": 116.202096585
+        },
+        {
+          "time": "2026-07-22T14:42:16",
+          "value": 116.202096585
+        },
+        {
+          "time": "2026-07-22T15:02:28",
+          "value": 116.202096585
+        },
+        {
+          "time": "2026-07-22T15:19:00",
           "value": 116.202096585
         }
       ]
