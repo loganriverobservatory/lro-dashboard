@@ -94,15 +94,13 @@ const emit = defineEmits<{
   (e: 'filter-mode-changed', mode: 'system' | 'source'): void
 }>()
 
-// The DATA STATUS legend makes sense on any view that shows colored stations/pins - plus Home,
-// per request, so nothing is hidden there.
+// The DATA STATUS legend makes sense on any view that shows colored stations/pins.
 const showFreshnessLegend = () =>
-  ['map', 'list', 'home'].includes(props.currentView) || isSchematicActive.value
+  ['map', 'list'].includes(props.currentView) || isSchematicActive.value
 // List/Map get the combined Systems/Data Sources filter toggle below - the schematic view
 // only ever shows one system at a time via its own page routing, so a systems filter doesn't
 // apply there; it keeps a plain, un-toggled Data Sources list instead (see showSchematicSources).
-// Also shown on Home, per request, so nothing is hidden there.
-const showFilterToggle = () => ['map', 'list', 'home'].includes(props.currentView)
+const showFilterToggle = () => ['map', 'list'].includes(props.currentView)
 const showSchematicSources = () => isSchematicActive.value
 
 const handleVariableChange = () => {

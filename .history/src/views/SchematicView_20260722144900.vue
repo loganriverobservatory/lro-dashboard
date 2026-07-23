@@ -807,9 +807,9 @@ watch(
     0 0 6px rgba(255, 255, 255, 0.9);
 }
 
-/* Zoom out/in/Reset - three identical icon buttons, side by side at every screen size.
-   Styled to match Leaflet's default zoom control used in MapView.vue (white square,
-   thin border, black icon, subtle shadow) rather than the app's usual navy pill buttons. */
+/* Zoom out/in/Reset - three identical icon buttons, side by side at every screen size,
+   styled to match the app's own rounded navy button language used elsewhere (e.g.
+   MapView.vue's .reset-btn) instead of Vue Flow's default square icon buttons. */
 .zoom-btn-row {
   display: flex;
   align-items: center;
@@ -822,17 +822,17 @@ watch(
   justify-content: center;
   width: 28px;
   height: 28px;
-  border-radius: 4px;
-  border: 1px solid rgba(0, 0, 0, 0.25);
-  background: #ffffff;
-  color: #000000;
+  border-radius: 9999px;
+  border: none;
+  background: #073763;
+  color: #ffffff;
   cursor: pointer;
-  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
   transition: background 0.18s ease;
 }
 
 .zoom-icon-btn:hover {
-  background: #f4f4f4;
+  background: #0a4a82;
 }
 
 /* Same threshold as isCompact (768px) elsewhere in this file - on mobile all three buttons
