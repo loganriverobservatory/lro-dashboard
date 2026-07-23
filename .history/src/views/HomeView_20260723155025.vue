@@ -2,24 +2,24 @@
 /**
  * HomeView.vue
  * Serves as the landing page with a hero section and quick-access links for the general public.
- * Balanced layout with a larger, prominent logo asset and clean left-margin tracking.
  */
 import { List, Map as MapIcon, Network } from 'lucide-vue-next'
-// Make sure your logo image is saved in your assets folder as lro-logo.png
 import lroLogo from '../assets/lro-logo.png'
+import heroBanner from '../assets/home-hero-banner.jpg'
 
 const emit = defineEmits(['change-view'])
 </script>
 
 <template>
+  <div class="hero-banner" :style="{ backgroundImage: `url(${heroBanner})` }">
+    <div class="hero-banner-overlay"></div>
+    <img :src="lroLogo" alt="Logan River Observatory" class="hero-logo" />
+  </div>
+
   <div class="home-container">
     <div class="hero-block">
-      <div class="brand-logo-row">
-        <img :src="lroLogo" alt="Logan River Observatory" class="hero-logo" />
-      </div>
-
       <div class="hero-text-group">
-        <h2 class="hero-title">Current Watershed Conditions</h2>
+        <h2 class="hero-title">Current Basin Conditions</h2>
         <p class="hero-subtitle">
           Explore real-time climate, hydrology, and water quality data streams. This open-access
           dashboard provides live tracking of environmental conditions across the Logan River Basin.
@@ -50,8 +50,9 @@ const emit = defineEmits(['change-view'])
           <h3>Interactive Map</h3>
         </div>
         <p class="card-desc">
-          Locate physical sensor installations across the Logan River watershed. Click on individual
-          stations to view geographic relationships and explore live, localized data streams.
+          Locate physical sensor installations that are currently operational by the Logan River
+          Observatory. Click on individual stations to view geographic relationships and explore
+          live, localized data streams.
         </p>
         <span class="card-action-text text-green">Open Map View →</span>
       </div>
@@ -72,6 +73,27 @@ const emit = defineEmits(['change-view'])
         <span class="card-action-text text-blue">Open Schematic View →</span>
       </div>
     </div>
+    <div class="hero-text-group">
+      <h2 class="hero-title">Scope</h2>
+      <p class="hero-subtitle">
+        The Logan River Observatory (LRO) Dashboard is designed to provide the public with easy
+        access to Cache Valley watershed data. While HydroServer - the underlying data management
+        app - offers robust functionality, its complexity can present a barrier for general users.
+        The LRO Dashboard serves as a user-friendly interface, translating raw data into clear,
+        real-time informationn. For more details on site and variable information, please visit
+        HydroServer by clicking the top right corner icon or view the help page.
+      </p>
+    </div>
+    <div class="hero-text-group">
+      <h2 class="hero-title">Future Updates</h2>
+      <ul class="hero-subtitle">
+        <li>Display ΔQ between stations</li>
+        <li>Expand historical data visualizations</li>
+        <li>Mobile-responsive design improvements</li>
+        <li>Data source references and comparisons(USGS, DRWi, etc.)</li>
+        <li>Climate stations added to all views</li>
+      </ul>
+    </div>
   </div>
 </template>
 
@@ -79,32 +101,61 @@ const emit = defineEmits(['change-view'])
 .home-container {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   width: 100%;
-  max-width: 1440px; /* Bounded ceiling ensures clean scaling on huge resolutions */
-  margin: 0; /* Left aligned, not centered */
-  padding: 2.5rem 3rem 4rem 2.5rem; /* Restored elegant left tracking padding */
+  max-width: 1440px;
+  margin: 0;
+  padding: 2.5rem 3rem 4rem 2.5rem;
   box-sizing: border-box;
 }
 
 .hero-block {
   text-align: left;
-  margin-bottom: 3.5rem;
+  margin: 2.5rem 0 3.5rem 0;
 }
 
-.brand-logo-row {
-  display: flex;
-  align-items: center;
-  width: 100%;
+/* Full-bleed photo banner - lives outside .home-container's padding/max-width entirely (see
+   the template) so it spans exactly from the sidebar's edge to the browser's right edge, same
+   as .main-container itself. No rounded corners, no padding-driven inset. margin-top leaves a
+   strip of white space above it instead of starting flush with the viewport edge. */
+.hero-banner {
+  position: relative;
   overflow: hidden;
+  min-height: 260px;
+  margin-top: 2rem;
+  display: flex;
+  align-items: flex-end;
+  background-size: cover;
+  background-position: center 60%;
+  background-repeat: no-repeat;
+  background-color: #073763;
 }
 
+.hero-banner-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    rgba(7, 55, 99, 0.4) 0%,
+    rgba(7, 55, 99, 0.05) 40%,
+    rgba(7, 55, 99, 0.05) 65%,
+    rgba(7, 55, 99, 0.3) 100%
+  );
+}
+
+/* No background chip behind the logo - a drop-shadow does the contrast work instead, so the
+   logo's own colors show directly against the photo. Sized to nearly fill the banner's own
+   height - a literal 5x of the prior size would be taller than this shorter banner and would
+   have to overlap past its edge into the page below; ask if that overlapping-badge look is
+   what you want instead and I'll set it up that way. */
 .hero-logo {
+  position: relative;
+  z-index: 2;
   height: auto;
-  max-height: 410px;
-  max-width: min(760px, 100%);
+  max-height: 210px;
+  max-width: min(900px, calc(100% - 5rem));
   object-fit: contain;
-  margin-top: -3.5rem;
-  margin-bottom: -3.2rem;
-  margin-left: -0.75rem;
+  display: block;
+  margin: 0 0 1.5rem 2.5rem;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.55)) drop-shadow(0 0 18px rgba(0, 0, 0, 0.35));
 }
 
 .hero-text-group {
@@ -262,11 +313,14 @@ const emit = defineEmits(['change-view'])
   .home-container {
     padding: 1rem 1.25rem 2rem 1.25rem;
   }
+  .hero-banner {
+    min-height: 170px;
+    margin-top: 1rem;
+    background-position: center 0%;
+  }
   .hero-logo {
-    max-width: 100%;
-    margin-top: -1.5rem;
-    margin-bottom: -1rem;
-    margin-left: 0;
+    max-height: 110px;
+    margin: 0 0 1rem 1.25rem;
   }
   .navigation-grid {
     grid-template-columns: 1fr;

@@ -11,13 +11,16 @@ const emit = defineEmits(['change-view'])
 </script>
 
 <template>
-  <div class="hero-banner" :style="{ backgroundImage: `url(${heroBanner})` }">
-    <div class="hero-banner-overlay"></div>
-    <img :src="lroLogo" alt="Logan River Observatory" class="hero-logo" />
-  </div>
-
   <div class="home-container">
     <div class="hero-block">
+      <div class="hero-banner" :style="{ backgroundImage: `url(${heroBanner})` }">
+        <div class="hero-banner-overlay"></div>
+        <div class="logo-chip">
+          <img :src="lroLogo" alt="Logan River Observatory" class="hero-logo" />
+        </div>
+        <span class="banner-credit">Photo: Utah Water Research Laboratory</span>
+      </div>
+
       <div class="hero-text-group">
         <h2 class="hero-title">Current Basin Conditions</h2>
         <p class="hero-subtitle">
@@ -109,23 +112,23 @@ const emit = defineEmits(['change-view'])
 
 .hero-block {
   text-align: left;
-  margin: 2.5rem 0 3.5rem 0;
+  margin-bottom: 3.5rem;
 }
 
-/* Full-bleed photo banner - lives outside .home-container's padding/max-width entirely (see
-   the template) so it spans exactly from the sidebar's edge to the browser's right edge, same
-   as .main-container itself. No rounded corners, no padding-driven inset. margin-top leaves a
-   strip of white space above it instead of starting flush with the viewport edge. */
+/* Photo banner behind the logo - a frosted "chip" holds the logo so it stays legible
+   regardless of the logo file's own colors/transparency, rather than relying on the photo's
+   own contrast at that spot. The gradient overlay only lightly darkens the corners so the
+   photo itself still reads clearly. */
 .hero-banner {
   position: relative;
+  border-radius: 18px;
   overflow: hidden;
-  min-height: 300px;
-  margin-top: 0rem;
+  min-height: 280px;
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  padding: 2rem 2.5rem;
   background-size: cover;
-  background-position: center 45%;
+  background-position: center 58%;
   background-repeat: no-repeat;
   background-color: #073763;
 }
@@ -142,21 +145,36 @@ const emit = defineEmits(['change-view'])
   );
 }
 
-/* No background chip behind the logo - a drop-shadow does the contrast work instead, so the
-   logo's own colors show directly against the photo. Centered in the banner via the flex
-   container above, rather than pinned to a corner with margins. */
-.hero-logo {
+.logo-chip {
   position: relative;
   z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(6px);
+  border-radius: 14px;
+  padding: 1rem 1.75rem;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.22);
+  max-width: calc(100% - 2rem);
+}
+
+.hero-logo {
   height: auto;
-  max-height: 450px;
-  max-width: min(900px, calc(100% - 5rem));
+  max-height: 130px;
+  max-width: min(480px, 100%);
   object-fit: contain;
   display: block;
-  margin-left: 2.5rem;
-  filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.75))
-    drop-shadow(0 0 8px rgba(255, 255, 255, 0.45)) drop-shadow(0 4px 10px rgba(30, 41, 59, 0.35))
-    drop-shadow(0 12px 22px rgba(30, 41, 59, 0.25));
+}
+
+.banner-credit {
+  position: absolute;
+  z-index: 2;
+  right: 14px;
+  bottom: 10px;
+  font-size: 0.68rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.85);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
 }
 
 .hero-text-group {
@@ -315,15 +333,21 @@ const emit = defineEmits(['change-view'])
     padding: 1rem 1.25rem 2rem 1.25rem;
   }
   .hero-banner {
-    min-height: 200px;
-    margin-top: 0rem;
-    align-items: center;
-    justify-content: flex-start;
-    background-position: center 45%;
+    min-height: 190px;
+    padding: 1.25rem;
+    background-position: center 62%;
+  }
+  .logo-chip {
+    padding: 0.65rem 1.1rem;
+    border-radius: 10px;
   }
   .hero-logo {
-    max-height: 110px;
-    margin-left: 1.25rem;
+    max-height: 70px;
+  }
+  .banner-credit {
+    font-size: 0.6rem;
+    right: 10px;
+    bottom: 6px;
   }
   .navigation-grid {
     grid-template-columns: 1fr;

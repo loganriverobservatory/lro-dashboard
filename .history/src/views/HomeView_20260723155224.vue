@@ -119,13 +119,12 @@ const emit = defineEmits(['change-view'])
 .hero-banner {
   position: relative;
   overflow: hidden;
-  min-height: 300px;
-  margin-top: 0rem;
+  min-height: 260px;
+  margin-top: 2rem;
   display: flex;
-  align-items: center;
-  justify-content: flex-start;
+  align-items: flex-end;
   background-size: cover;
-  background-position: center 45%;
+  background-position: center 0%;
   background-repeat: no-repeat;
   background-color: #073763;
 }
@@ -143,20 +142,20 @@ const emit = defineEmits(['change-view'])
 }
 
 /* No background chip behind the logo - a drop-shadow does the contrast work instead, so the
-   logo's own colors show directly against the photo. Centered in the banner via the flex
-   container above, rather than pinned to a corner with margins. */
+   logo's own colors show directly against the photo. Sized to nearly fill the banner's own
+   height - a literal 5x of the prior size would be taller than this shorter banner and would
+   have to overlap past its edge into the page below; ask if that overlapping-badge look is
+   what you want instead and I'll set it up that way. */
 .hero-logo {
   position: relative;
   z-index: 2;
   height: auto;
-  max-height: 450px;
+  max-height: 210px;
   max-width: min(900px, calc(100% - 5rem));
   object-fit: contain;
   display: block;
-  margin-left: 2.5rem;
-  filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.75))
-    drop-shadow(0 0 8px rgba(255, 255, 255, 0.45)) drop-shadow(0 4px 10px rgba(30, 41, 59, 0.35))
-    drop-shadow(0 12px 22px rgba(30, 41, 59, 0.25));
+  margin: 0 0 1.5rem 2.5rem;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.55)) drop-shadow(0 0 18px rgba(0, 0, 0, 0.35));
 }
 
 .hero-text-group {
@@ -315,15 +314,13 @@ const emit = defineEmits(['change-view'])
     padding: 1rem 1.25rem 2rem 1.25rem;
   }
   .hero-banner {
-    min-height: 200px;
-    margin-top: 0rem;
-    align-items: center;
-    justify-content: flex-start;
-    background-position: center 45%;
+    min-height: 170px;
+    margin-top: 1rem;
+    background-position: center 0%;
   }
   .hero-logo {
     max-height: 110px;
-    margin-left: 1.25rem;
+    margin: 0 0 1rem 1.25rem;
   }
   .navigation-grid {
     grid-template-columns: 1fr;

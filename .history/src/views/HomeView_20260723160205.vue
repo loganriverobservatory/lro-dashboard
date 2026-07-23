@@ -123,7 +123,7 @@ const emit = defineEmits(['change-view'])
   margin-top: 0rem;
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: center;
   background-size: cover;
   background-position: center 45%;
   background-repeat: no-repeat;
@@ -149,11 +149,10 @@ const emit = defineEmits(['change-view'])
   position: relative;
   z-index: 2;
   height: auto;
-  max-height: 450px;
+  max-height: 300px;
   max-width: min(900px, calc(100% - 5rem));
   object-fit: contain;
   display: block;
-  margin-left: 2.5rem;
   filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.75))
     drop-shadow(0 0 8px rgba(255, 255, 255, 0.45)) drop-shadow(0 4px 10px rgba(30, 41, 59, 0.35))
     drop-shadow(0 12px 22px rgba(30, 41, 59, 0.25));
@@ -318,12 +317,11 @@ const emit = defineEmits(['change-view'])
     min-height: 200px;
     margin-top: 0rem;
     align-items: center;
-    justify-content: flex-start;
+    justify-content: center;
     background-position: center 45%;
   }
   .hero-logo {
     max-height: 110px;
-    margin-left: 1.25rem;
   }
   .navigation-grid {
     grid-template-columns: 1fr;

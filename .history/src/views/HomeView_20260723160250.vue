@@ -149,7 +149,7 @@ const emit = defineEmits(['change-view'])
   position: relative;
   z-index: 2;
   height: auto;
-  max-height: 450px;
+  max-height: 500px;
   max-width: min(900px, calc(100% - 5rem));
   object-fit: contain;
   display: block;
