@@ -15,7 +15,7 @@ import {
   type Node as VFNode,
   type Edge as VFEdge,
 } from '@vue-flow/core'
-import { Plus, Minus, RotateCcw } from 'lucide-vue-next'
+import { Plus, Minus } from 'lucide-vue-next'
 import '@vue-flow/core/dist/style.css'
 import {
   type Station,
@@ -590,26 +590,20 @@ watch(
         :fit-view-on-init="true"
         @node-click="onNodeClick"
       >
-        <!-- Custom zoom controls rather than Vue Flow's stock Controls component, so all
-        three buttons can share one uniform icon-button style (see .zoom-icon-btn below)
-        instead of Vue Flow's default styling and a mismatched text-label Reset button. -->
+        <!-- Custom zoom controls rather than Vue Flow's stock Controls component, so the
+        buttons can match the app's own rounded/navy button language (see .zoom-icon-btn /
+        .zoom-reset-btn below) instead of Vue Flow's default square icon-button styling. -->
         <div class="zoom-control-group">
           <div class="zoom-btn-row">
-            <button type="button" class="zoom-icon-btn" aria-label="Zoom out" @click="zoomOut()">
-              <Minus :size="isCompact ? 11 : 14" />
-            </button>
-            <button type="button" class="zoom-icon-btn" aria-label="Zoom in" @click="zoomIn()">
-              <Plus :size="isCompact ? 11 : 14" />
-            </button>
-            <button
-              type="button"
-              class="zoom-icon-btn"
-              aria-label="Reset view"
-              title="Reset view"
-              @click="resetView"
-            >
-              <RotateCcw :size="isCompact ? 11 : 14" />
-            </button>
+            <div class="zoom-icon-group">
+              <button type="button" class="zoom-icon-btn" aria-label="Zoom out" @click="zoomOut()">
+                <Minus :size="isCompact ? 11 : 14" />
+              </button>
+              <button type="button" class="zoom-icon-btn" aria-label="Zoom in" @click="zoomIn()">
+                <Plus :size="isCompact ? 11 : 14" />
+              </button>
+            </div>
+            <button type="button" class="zoom-reset-btn" @click="resetView">Reset</button>
           </div>
           <p v-if="!loading && page" class="corner-hint">
             {{ isCompact ? 'Pinch to zoom, drag to pan.' : 'Scroll to zoom, drag to pan.' }}
@@ -773,7 +767,7 @@ watch(
 
 /* Positions the pan/zoom hint and the custom zoom-button row together in the bottom-left
    corner, where Vue Flow's own default Controls component used to sit before it was replaced
-   with fully custom buttons (see .zoom-icon-btn below). */
+   with fully custom buttons (see .zoom-icon-btn / .zoom-reset-btn below). */
 .zoom-control-group {
   position: absolute;
   bottom: 10px;
@@ -807,10 +801,16 @@ watch(
     0 0 6px rgba(255, 255, 255, 0.9);
 }
 
-/* Zoom out/in/Reset - three identical icon buttons, side by side at every screen size.
-   Styled to match Leaflet's default zoom control used in MapView.vue (white square,
-   thin border, black icon, subtle shadow) rather than the app's usual navy pill buttons. */
+/* Zoom in/out/Reset, side by side - styled to match the app's own rounded navy button
+   language used elsewhere (e.g. MapView.vue's .reset-btn) instead of Vue Flow's default
+   square icon buttons. */
 .zoom-btn-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.zoom-icon-group {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -822,25 +822,57 @@ watch(
   justify-content: center;
   width: 28px;
   height: 28px;
-  border-radius: 4px;
-  border: 1px solid rgba(0, 0, 0, 0.25);
-  background: #ffffff;
-  color: #000000;
+  border-radius: 9999px;
+  border: none;
+  background: #073763;
+  color: #ffffff;
   cursor: pointer;
-  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
   transition: background 0.18s ease;
 }
 
 .zoom-icon-btn:hover {
-  background: #f4f4f4;
+  background: #0a4a82;
+}
+
+.zoom-reset-btn {
+  border-radius: 9999px;
+  border: none;
+  background: #073763;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0 12px;
+  height: 28px;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  transition: background 0.18s ease;
+}
+
+.zoom-reset-btn:hover {
+  background: #0a4a82;
 }
 
 /* Same threshold as isCompact (768px) elsewhere in this file - on mobile all three buttons
-   shrink slightly further, staying side by side rather than stacking. */
+   (zoom out/in, Reset) sit in a single row, sized consistently with each other, instead of
+   the icon pair stacking above Reset. */
 @media screen and (max-width: 768px) {
+  .zoom-btn-row {
+    flex-direction: row;
+    align-items: center;
+    gap: 5px;
+  }
+
   .zoom-icon-btn {
     width: 26px;
     height: 26px;
+  }
+
+  .zoom-reset-btn {
+    height: 26px;
+    padding: 0 10px;
+    font-size: 0.62rem;
   }
 }
 

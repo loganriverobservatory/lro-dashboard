@@ -146,7 +146,11 @@ function resetMap() {
   hasZoomed.value = false
   expandedStation.value = null
   emit('resetWaterways', [...WATERWAY_LIST])
-  if (props.schematicNav?.length) emit('system-filter-changed', props.schematicNav.map((s) => s.slug))
+  if (props.schematicNav?.length)
+    emit(
+      'system-filter-changed',
+      props.schematicNav.map((s) => s.slug),
+    )
   syncMarkers()
 
   const coords = props.sites
@@ -272,8 +276,10 @@ watch(
 
     <div v-if="!hasZoomed" class="map-banner">
       <div class="banner-live-label">Live {{ variableLongLabel }}</div>
-      Zoom in/out to see <strong>{{ selectedVariable }}</strong> values. Click on values for more
-      information.
+      <span class="banner-instructions">
+        Zoom in/out to see <strong>{{ selectedVariable }}</strong> values. Click on values for more
+        information.
+      </span>
     </div>
 
     <button v-if="hasZoomed" class="reset-btn" @click="resetMap">Reset</button>
@@ -361,6 +367,24 @@ watch(
   font-size: 1rem;
   margin-bottom: 6px;
 }
+
+/* Same 768px mobile threshold used elsewhere in the app. The banner shrinks and drops its
+   instructional text (kept full-size in .map-banner above) so it no longer reaches wide
+   enough to overlap the zoom control Leaflet renders in the top-right corner. */
+@media screen and (max-width: 768px) {
+  .map-banner {
+    padding: 8px 12px;
+    font-size: 0.85rem;
+    max-width: calc(100vw - 96px);
+  }
+  .banner-live-label {
+    font-size: 0.8rem;
+    margin-bottom: 0;
+  }
+  .banner-instructions {
+    display: none;
+  }
+}
 .reset-btn {
   position: absolute;
   top: 12px;
@@ -419,6 +443,12 @@ watch(
   flex-direction: column;
   align-items: stretch;
   gap: 0.75rem;
+}
+/* .close-btn below floats over the card's top-right corner - without this, the "Live"/
+   "Offline" status-badge in the card's own header sits right where the ✕ button is,
+   overlapping it. Shifts the badge left, clear of the button. */
+.expanded-card-wrapper :deep(.card-header) {
+  padding-right: 34px;
 }
 .expanded-card-wrapper :deep(.sparkline-sidebar-wrapper) {
   width: 100%;
