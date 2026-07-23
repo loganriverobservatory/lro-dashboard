@@ -47,3 +47,11 @@ __pycache__/
 
 # Local Netlify folder
 .netlify
+
+# VS Code "Local History"-style extension snapshots - personal editor undo history,
+# not project code. Never meant to be tracked.
+.history/
+
+# Old manual build/backup archives - build output belongs in dist/ (already ignored),
+# not as a zip checked into the repo.
+*.zip
