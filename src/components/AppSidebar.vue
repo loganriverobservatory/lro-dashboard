@@ -8,8 +8,8 @@ Map, and Schematic view switching itself lives in AppHeader now - the schematic 
 tab bar, so it isn't duplicated here. Collapses to a toggleable overlay on narrow screens (see
 App.vue's sidebarOpen), controlled by AppHeader's menu icon.
 */
-import { ref, computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref, computed, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { X, Droplets, ChevronDown, ChevronRight, Home, HelpCircle } from 'lucide-vue-next'
 import { WATERWAY_COLORS, WATERWAY_LIST, WATER_VARIBALES } from '../hydroService'
 import { toggleInList } from '../utils'
@@ -42,6 +42,7 @@ const props = withDefaults(
 )
 
 const route = useRoute()
+const router = useRouter()
 const isSchematicActive = computed(() => route.path.startsWith('/schematic/'))
 // Collapsed by default so it doesn't crowd the nav on first load, but auto-expands once you're
 // actually on a schematic page, so its four systems are visible without an extra click. Doesn't
@@ -110,11 +111,11 @@ const emit = defineEmits<{
 // The DATA STATUS legend makes sense on any view that shows colored stations/pins - plus Home,
 // per request, so nothing is hidden there.
 const showFreshnessLegend = () =>
-  ['map', 'list'].includes(props.currentView) || isSchematicActive.value
-// List/Map get the combined Systems/Data Sources filter toggle below - the schematic view
+  ['map', 'list', 'home'].includes(props.currentView) || isSchematicActive.value
+// List/Map/Home get the combined Systems/Data Sources filter toggle below - the schematic view
 // only ever shows one system at a time via its own page routing, so a systems filter doesn't
 // apply there; it keeps a plain, un-toggled Data Sources list instead (see showSchematicSources).
-const showFilterToggle = () => ['map', 'list'].includes(props.currentView)
+const showFilterToggle = () => ['map', 'list', 'home'].includes(props.currentView)
 const showSchematicSources = () => isSchematicActive.value
 
 const handleVariableChange = () => {
