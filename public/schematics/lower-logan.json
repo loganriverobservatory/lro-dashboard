@@ -116,15 +116,6 @@
       "colorGroup": "Logan River"
     },
     {
-      "id": "dwri_loganorthern",
-      "name": "Logan River: Logan and Northern Canal",
-      "stationId": "17",
-      "kind": "diversion",
-      "connectsTo": "dwri_provlogan",
-      "side": "left",
-      "colorGroup": "Logan River"
-    },
-    {
       "id": "water_lab",
       "name": "Logan River: Utah Water Research Laboratory",
       "stationId": "LR_WaterLab_AA",

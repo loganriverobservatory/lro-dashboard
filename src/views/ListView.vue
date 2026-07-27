@@ -2,7 +2,7 @@
 /*
 ListView.vue - Displays a list of station cards with variable values and freshness status
 */
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import StationCard from '../components/StationCard.vue'
 import {
   type Station,
@@ -58,11 +58,13 @@ const schematicOrder = computed(() => getSchematicOrder(props.schematicPages))
 // Same schematic data, but keeping each station's system slug - used to filter by system below.
 const systemOrder = computed(() => getSchematicSystemOrder(props.schematicPages))
 
+const searchQuery = ref('')
+
 // Filtered by whichever single dimension filterMode currently selects (system or data
-// source - never both at once, see App.vue's filterMode), then sorted to match the
-// schematic's upstream->downstream order. A station that doesn't match any schematic file is
-// treated as belonging to no system, so it's hidden the same as anything else once its
-// (nonexistent) system is deselected - add it to a schematic JSON to make it filterable.
+// source - never both at once, see App.vue's filterMode), then by the search box, then sorted
+// to match the schematic's upstream->downstream order. A station that doesn't match any
+// schematic file is treated as belonging to no system, so it's hidden the same as anything else
+// once its (nonexistent) system is deselected - add it to a schematic JSON to make it filterable.
 const filteredSites = computed(() => {
   let filtered = props.sites
 
@@ -73,6 +75,11 @@ const filteredSites = computed(() => {
       const system = findStationSystem(s.displayName, systemOrder.value)
       return system !== undefined && props.activeSystems!.includes(system)
     })
+  }
+
+  const query = searchQuery.value.trim().toLowerCase()
+  if (query) {
+    filtered = filtered.filter((s) => s.displayName.toLowerCase().includes(query))
   }
 
   return sortStationsBySchematic(filtered, schematicOrder.value)
@@ -144,6 +151,13 @@ function toggleWaterway(name: string) {
       <div class="status-banner">
         <h2>Live {{ variableLongLabel }}</h2>
       </div>
+      <input
+        v-model="searchQuery"
+        type="search"
+        class="site-search-input"
+        placeholder="Search sites..."
+        aria-label="Search sites"
+      />
     </header>
 
     <div v-if="loading" class="loading-state">
@@ -288,7 +302,26 @@ function toggleWaterway(name: string) {
   background-color: #e0f2fe;
   padding: 10px;
   border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.site-search-input {
+  width: 100%;
+  max-width: 320px;
+  padding: 8px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #1e293b;
+  font-family: inherit;
+  font-size: 0.85rem;
   margin-bottom: 20px;
+}
+
+.site-search-input:focus {
+  outline: none;
+  border-color: #01377d;
+  box-shadow: 0 0 0 2px rgba(1, 55, 125, 0.15);
 }
 
 .loading-state {

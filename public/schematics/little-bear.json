@@ -94,31 +94,11 @@
       "colorGroup": "Little Bear River"
     },
     {
-      "id": "highline_atpond",
-      "name": "Little Bear River: Highline Canal at Pond",
-      "stationId": "12354",
-      "kind": "diversion",
+      "id": "highline_continue",
+      "name": "Continue to Highline Canal",
+      "kind": "link",
       "connectsTo": "highline_canal",
-      "side": "right",
-      "colorGroup": "Little Bear River"
-    },
-    {
-      "id": "highline_weeks",
-      "name": "Little Bear River: Highline Canal below Weeks Farm",
-      "stationId": "9739",
-      "kind": "diversion",
-      "connectsTo": "highline_atpond",
-      "side": "right",
-      "colorGroup": "Little Bear River"
-    },
-    {
-      "id": "paradise_city",
-      "name": "Little Bear River: Paradise City through Highline Canal",
-      "stationId": "10424",
-      "kind": "diversion",
-      "connectsTo": "highline_weeks",
-      "side": "right",
-      "colorGroup": "Little Bear River"
+      "side": "right"
     },
 
     { "id": "paradise_canal_junc", "name": "Paradise Canal diversion point", "kind": "junction" },
