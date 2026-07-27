@@ -29,9 +29,15 @@
     "  linkTo     - optional on any node; the schematic page slug to navigate to on click. On a normal node this adds a",
     "               'view full system' button below its card; on a 'link' node it's the entire point of the card.",
     "  label      - linkTo button text override (defaults to name).",
+    "  cardLabel  - optional; overrides the on-card name shown once matched to a live station (see bsf_before_conf/",
+    "               before_cutler below) - needed when the live station's real displayName doesn't shorten well",
+    "               automatically. See README.md for the exact shortening rule this bypasses.",
     "  terminus   - mainstem only: marks this node as the system's final endpoint (only the 'terminus' node below should set",
     "               this).",
     "  description - terminus node only: subtitle text.",
+    "  returnsTo  - tributary/diversion only: if this is the last node in a chain and the water rejoins the main channel",
+    "               here, the id of the junction it rejoins at (see bsf_before_conf below, which rejoins at bsf_confluence).",
+    "               Draws a second connector back into the trunk.",
     "",
     "There's no separate edges list - the main channel line, every tributary/diversion's connector, and flow direction (in",
     "for tributary, out for diversion) are all derived automatically from kind + connectsTo + the order nodes appear above.",
@@ -107,15 +113,6 @@
       "kind": "diversion",
       "connectsTo": "dwri_crockett",
       "side": "right",
-      "colorGroup": "Logan River"
-    },
-    {
-      "id": "dwri_loganorthern",
-      "name": "Logan River: Logan and Northern Canal",
-      "stationId": "17",
-      "kind": "diversion",
-      "connectsTo": "dwri_provlogan",
-      "side": "left",
       "colorGroup": "Logan River"
     },
     {

@@ -225,7 +225,7 @@ dwri_stations:
     schematicGroup: "Logan River"
     lat: 41.739778
     lng: -111.791494
-    active: true
+    active: false
 
   - id: 19
     displayName: "Logan River: Northwest Field Canal"

@@ -594,6 +594,7 @@ watch(
         three buttons can share one uniform icon-button style (see .zoom-icon-btn below)
         instead of Vue Flow's default styling and a mismatched text-label Reset button. -->
         <div class="zoom-control-group">
+          <p class="zoom-controls-label">Zoom Controls</p>
           <div class="zoom-btn-row">
             <button type="button" class="zoom-icon-btn" aria-label="Zoom out" @click="zoomOut()">
               <Minus :size="isCompact ? 11 : 14" />
@@ -611,9 +612,7 @@ watch(
               <RotateCcw :size="isCompact ? 11 : 14" />
             </button>
           </div>
-          <p v-if="!loading && page" class="corner-hint">
-            {{ isCompact ? 'Pinch to zoom, drag to pan.' : 'Scroll to zoom, drag to pan.' }}
-          </p>
+          <p v-if="!loading && page" class="corner-hint">Scroll/pinch to Zoom</p>
         </div>
       </VueFlow>
     </div>
@@ -783,6 +782,25 @@ watch(
   flex-direction: column;
   align-items: flex-start;
   gap: 6px;
+}
+
+.zoom-controls-label {
+  margin: 0;
+  padding: 0 1px;
+  color: #64748b;
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+  font-size: 0.68rem;
+  font-weight: 700;
+  white-space: nowrap;
+  text-shadow:
+    0 1px 2px rgba(255, 255, 255, 0.9),
+    0 0 6px rgba(255, 255, 255, 0.9);
 }
 
 .corner-hint {
