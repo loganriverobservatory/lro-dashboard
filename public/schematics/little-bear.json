@@ -29,6 +29,8 @@
     "  colorGroup - optional; must match a name from waterway_groups or schematic_groups in config/station_config.yaml.",
     "  terminus   - mainstem only: marks this node as the system's final endpoint (only 'cutler_reservoir' below sets this).",
     "  linkTo     - the schematic page slug to navigate to; adds a 'view full system' button below the card it's on.",
+    "  label      - linkTo button text override (defaults to name) - see cutler_reservoir below, which uses this to point",
+    "               back to Lower Logan River.",
     "  description - terminus node only: subtitle text.",
     "",
     "There's no separate edges list - the main channel line, every diversion's connector, and flow direction are all derived",
@@ -92,31 +94,11 @@
       "colorGroup": "Little Bear River"
     },
     {
-      "id": "highline_atpond",
-      "name": "Little Bear River: Highline Canal at Pond",
-      "stationId": "12354",
-      "kind": "diversion",
+      "id": "highline_continue",
+      "name": "Continue to Highline Canal",
+      "kind": "link",
       "connectsTo": "highline_canal",
-      "side": "right",
-      "colorGroup": "Little Bear River"
-    },
-    {
-      "id": "highline_weeks",
-      "name": "Little Bear River: Highline Canal below Weeks Farm",
-      "stationId": "9739",
-      "kind": "diversion",
-      "connectsTo": "highline_atpond",
-      "side": "right",
-      "colorGroup": "Little Bear River"
-    },
-    {
-      "id": "paradise_city",
-      "name": "Little Bear River: Paradise City through Highline Canal",
-      "stationId": "10424",
-      "kind": "diversion",
-      "connectsTo": "highline_weeks",
-      "side": "right",
-      "colorGroup": "Little Bear River"
+      "side": "right"
     },
 
     { "id": "paradise_canal_junc", "name": "Paradise Canal diversion point", "kind": "junction" },
