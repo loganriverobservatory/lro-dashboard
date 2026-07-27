@@ -114,18 +114,15 @@ const emit = defineEmits(['change-view'])
 
 /* Full-bleed photo banner - lives outside .home-container's padding/max-width entirely (see
    the template) so it spans exactly from the sidebar's edge to the browser's right edge, same
-   as .main-container itself. No rounded corners, no padding-driven inset. margin-top leaves a
-   strip of white space above it instead of starting flush with the viewport edge. */
+   as .main-container itself. No rounded corners, no padding-driven inset. */
 .hero-banner {
   position: relative;
   overflow: hidden;
-  min-height: 300px;
-  margin-top: 0rem;
+  min-height: 420px;
   display: flex;
-  align-items: center;
-  justify-content: flex-start;
+  align-items: flex-end;
   background-size: cover;
-  background-position: center 45%;
+  background-position: center 92%;
   background-repeat: no-repeat;
   background-color: #073763;
 }
@@ -143,20 +140,17 @@ const emit = defineEmits(['change-view'])
 }
 
 /* No background chip behind the logo - a drop-shadow does the contrast work instead, so the
-   logo's own colors show directly against the photo. Centered in the banner via the flex
-   container above, rather than pinned to a corner with margins. */
+   logo's own colors show directly against the photo. */
 .hero-logo {
   position: relative;
   z-index: 2;
   height: auto;
-  max-height: 450px;
-  max-width: min(900px, calc(100% - 5rem));
+  max-height: 220px;
+  max-width: min(720px, calc(100% - 5rem));
   object-fit: contain;
   display: block;
-  margin-left: 2.5rem;
-  filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.75))
-    drop-shadow(0 0 8px rgba(255, 255, 255, 0.45)) drop-shadow(0 4px 10px rgba(30, 41, 59, 0.35))
-    drop-shadow(0 12px 22px rgba(30, 41, 59, 0.25));
+  margin: 0 0 2rem 2.5rem;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.55)) drop-shadow(0 0 18px rgba(0, 0, 0, 0.35));
 }
 
 .hero-text-group {
@@ -315,15 +309,12 @@ const emit = defineEmits(['change-view'])
     padding: 1rem 1.25rem 2rem 1.25rem;
   }
   .hero-banner {
-    min-height: 200px;
-    margin-top: 0rem;
-    align-items: center;
-    justify-content: flex-start;
-    background-position: center 45%;
+    min-height: 260px;
+    background-position: center 92%;
   }
   .hero-logo {
-    max-height: 110px;
-    margin-left: 1.25rem;
+    max-height: 100px;
+    margin: 0 0 1.25rem 1.25rem;
   }
   .navigation-grid {
     grid-template-columns: 1fr;

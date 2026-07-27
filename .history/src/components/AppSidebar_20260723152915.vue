@@ -43,31 +43,6 @@ const props = withDefaults(
 
 const route = useRoute()
 const isSchematicActive = computed(() => route.path.startsWith('/schematic/'))
-// Collapsed by default so it doesn't crowd the nav on first load, but auto-expands once you're
-// actually on a schematic page, so its four systems are visible without an extra click. Doesn't
-// auto-collapse again on leaving - the chevron stays under manual control after that.
-const schematicOpen = ref(false)
-watch(
-  isSchematicActive,
-  (active) => {
-    if (active) schematicOpen.value = true
-  },
-  { immediate: true },
-)
-
-// Falls back to the router's own default redirect target when the manifest hasn't loaded yet.
-function openSchematic() {
-  const firstSlug = props.schematicNav[0]?.slug
-  router.push(firstSlug ? `/schematic/${firstSlug}` : '/schematic')
-}
-
-// Same 768px mobile threshold used elsewhere in the app - on mobile, both toggle sections
-// below default to closed (and re-collapse on every view switch, see the watcher further
-// down) so opening the sidebar doesn't immediately show everything expanded at once. Desktop
-// keeps them open by default, since there's more room there.
-function isMobileViewport() {
-  return typeof window !== 'undefined' && window.innerWidth <= 768
-}
 
 const selectedVariable = ref('Discharge')
 const legendOpen = ref(true)
@@ -107,14 +82,13 @@ const emit = defineEmits<{
   (e: 'filter-mode-changed', mode: 'system' | 'source'): void
 }>()
 
-// The DATA STATUS legend makes sense on any view that shows colored stations/pins - plus Home,
-// per request, so nothing is hidden there.
+// The DATA STATUS legend makes sense on any view that shows colored stations/pins.
 const showFreshnessLegend = () =>
-  ['map', 'list'].includes(props.currentView) || isSchematicActive.value
+  ['home', 'map', 'list'].includes(props.currentView) || isSchematicActive.value
 // List/Map get the combined Systems/Data Sources filter toggle below - the schematic view
 // only ever shows one system at a time via its own page routing, so a systems filter doesn't
 // apply there; it keeps a plain, un-toggled Data Sources list instead (see showSchematicSources).
-const showFilterToggle = () => ['map', 'list'].includes(props.currentView)
+const showFilterToggle = () => ['home', 'map', 'list'].includes(props.currentView)
 const showSchematicSources = () => isSchematicActive.value
 
 const handleVariableChange = () => {
