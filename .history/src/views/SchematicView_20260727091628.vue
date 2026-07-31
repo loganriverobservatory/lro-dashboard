@@ -40,24 +40,7 @@ const props = defineProps<{
 }>()
 
 const router = useRouter()
-const { fitView, zoomIn, zoomOut, onNodesInitialized, viewport } = useVueFlow()
-
-// Reactive min-zoom bound passed to <VueFlow :min-zoom="minZoomBound">. Deliberately NOT set
-// via the imperative setMinZoom() - VueFlow re-syncs its internal zoom bound from the :min-zoom
-// prop on re-render, which would silently stomp an imperative call back down to whatever the
-// prop last said. Driving it as a reactive prop instead means there's only one source of truth.
-const minZoomBound = ref(0.15)
-
-// Never let min-zoom sit below this, or above this, regardless of what a given page's fit
-// level computes to - keeps the bound sane on both a tiny page (Blacksmith Fork) and a very
-// tall one (Lower Logan, Upper Logan's canal chain).
-const ABSOLUTE_MIN_ZOOM_FLOOR = 0.1
-const ABSOLUTE_MIN_ZOOM_CEILING = 0.5
-
-// How far below "fit the whole page" a user can still zoom out. 1 would mean min-zoom equals
-// the fit level exactly (no zooming out at all past fit); lower allows a bit of breathing
-// room without letting the diagram shrink to a speck in a sea of empty canvas.
-const MIN_ZOOM_FIT_RATIO = 0.6
+const { fitView, zoomIn, zoomOut, onNodesInitialized } = useVueFlow()
 
 const nodeTypes = { schematic: markRaw(SchematicNode) }
 
@@ -509,26 +492,9 @@ function updateBreakpoints() {
 
 // Re-fits the view to every node on the current page - shared by initial load, switching
 // systems, the "Reset" control button, and window resize, so the diagram never keeps a stale
-// pan/zoom from a different viewport size or a previously-viewed system. Also re-derives the
-// zoom-out floor from whatever "fit the whole page" comes out to on this page/viewport, rather
-// than using one fixed min-zoom for every page - a fixed number is either too loose on a short
-// page (lets you zoom out into a lot of empty canvas) or too strict on a tall one (clips the
-// page's own content when it can't zoom out far enough to fit it on load).
-async function resetView() {
-  // fitView() is constrained by whatever min-zoom is currently in effect. On a page switch,
-  // the PREVIOUS page's floor is still set at this point - if the new page needs to zoom out
-  // further than that stale floor allows (e.g. leaving Blacksmith Fork's tight ~0.5 floor for
-  // Lower Logan's much looser ~0.16 one), the fit gets clamped and only part of the new
-  // diagram shows. Relax to the loosest floor first, let it propagate, then fit, then compute
-  // the real floor for whatever page is actually showing now.
-  minZoomBound.value = ABSOLUTE_MIN_ZOOM_FLOOR
-  await nextTick()
-  await fitView({ padding: 0.05 })
-  const fittedZoom = viewport.value.zoom
-  minZoomBound.value = Math.min(
-    ABSOLUTE_MIN_ZOOM_CEILING,
-    Math.max(ABSOLUTE_MIN_ZOOM_FLOOR, fittedZoom * MIN_ZOOM_FIT_RATIO),
-  )
+// pan/zoom from a different viewport size or a previously-viewed system.
+function resetView() {
+  fitView({ padding: 0.05 })
 }
 
 let resizeTimer: ReturnType<typeof setTimeout> | null = null
@@ -619,7 +585,7 @@ watch(
         :zoom-on-pinch="true"
         :zoom-on-double-click="false"
         :prevent-scrolling="true"
-        :min-zoom="minZoomBound"
+        :min-zoom="0.15"
         :max-zoom="1.5"
         :fit-view-on-init="true"
         @node-click="onNodeClick"
@@ -959,10 +925,8 @@ watch(
 }
 
 .station-sheet :deep(.card-flex-layout) {
-  /* See the matching comment in MapView.vue - StationCard's own rule uses !important on
-     flex-direction/align-items, so this override needs it too or it silently loses. */
-  flex-direction: column !important;
-  align-items: stretch !important;
+  flex-direction: column;
+  align-items: stretch;
   gap: 0.75rem;
 }
 .station-sheet :deep(.sparkline-sidebar-wrapper) {

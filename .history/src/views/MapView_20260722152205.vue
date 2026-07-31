@@ -440,11 +440,8 @@ watch(
   background: #e2e8f0;
 }
 .expanded-card-wrapper :deep(.card-flex-layout) {
-  /* StationCard's own .card-flex-layout rule uses !important on flex-direction/align-items,
-     so this override needs it too - without it, the row layout silently wins, the sparkline
-     tries to sit beside the value with no room, and the card's own overflow:hidden clips it. */
-  flex-direction: column !important;
-  align-items: stretch !important;
+  flex-direction: column;
+  align-items: stretch;
   gap: 0.75rem;
 }
 /* .close-btn below floats over the card's top-right corner - without this, the "Live"/

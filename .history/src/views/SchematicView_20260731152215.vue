@@ -515,14 +515,6 @@ function updateBreakpoints() {
 // page (lets you zoom out into a lot of empty canvas) or too strict on a tall one (clips the
 // page's own content when it can't zoom out far enough to fit it on load).
 async function resetView() {
-  // fitView() is constrained by whatever min-zoom is currently in effect. On a page switch,
-  // the PREVIOUS page's floor is still set at this point - if the new page needs to zoom out
-  // further than that stale floor allows (e.g. leaving Blacksmith Fork's tight ~0.5 floor for
-  // Lower Logan's much looser ~0.16 one), the fit gets clamped and only part of the new
-  // diagram shows. Relax to the loosest floor first, let it propagate, then fit, then compute
-  // the real floor for whatever page is actually showing now.
-  minZoomBound.value = ABSOLUTE_MIN_ZOOM_FLOOR
-  await nextTick()
   await fitView({ padding: 0.05 })
   const fittedZoom = viewport.value.zoom
   minZoomBound.value = Math.min(

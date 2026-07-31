@@ -364,10 +364,8 @@ function toggleWaterway(name: string) {
 }
 @media screen and (max-width: 375px) {
   :deep(.card-flex-layout) {
-    /* StationCard's own rule uses !important on flex-direction/align-items, so this needs it
-       too, or the row layout silently wins and never actually stacks on narrow phones. */
-    flex-direction: column !important;
-    align-items: stretch !important;
+    flex-direction: column;
+    align-items: stretch;
   }
   :deep(.sparkline-sidebar-wrapper) {
     width: 80%;

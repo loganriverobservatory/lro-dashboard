@@ -25,26 +25,10 @@
   "stationConfigUrl": "https://raw.githubusercontent.com/loganriverobservatory/lro-dashboard/data-cache/station-config.json",
   "usgsApiBaseUrl": "https://waterservices.usgs.gov/nwis/iv/",
   "waterVariables": [
-    {
-      "id": "Discharge",
-      "label": "Discharge (cfs)",
-      "longLabel": "Discharge in cfs (cubic feet per second)"
-    },
-    {
-      "id": "Water Temperature",
-      "label": "Temperature (°C)",
-      "longLabel": "Water Temperature in °C (degrees Celsius)"
-    },
-    {
-      "id": "Specific Conductance",
-      "label": "Specific Conductance (µS/cm)",
-      "longLabel": "Specific Conductance in µS/cm (microsiemens per centimeter)"
-    },
+    { "id": "Discharge", "label": "Discharge (cfs)", "longLabel": "Discharge in cfs (cubic feet per second)" },
+    { "id": "Water Temperature", "label": "Temperature (°C)", "longLabel": "Water Temperature in °C (degrees Celsius)" },
+    { "id": "Specific Conductance", "label": "SPC (µS/cm)", "longLabel": "Specific Conductance in µS/cm (microsiemens per centimeter)" },
     { "id": "pH", "label": "pH", "longLabel": "pH (potential of hydrogen)" },
-    {
-      "id": "Oxygen, dissolved",
-      "label": "Dissolved Oxygen (mg/L)",
-      "longLabel": "Dissolved Oxygen in mg/L (milligrams per liter)"
-    }
+    { "id": "Oxygen, dissolved", "label": "Dissolved Oxygen (mg/L)", "longLabel": "Dissolved Oxygen in mg/L (milligrams per liter)" }
   ]
 }

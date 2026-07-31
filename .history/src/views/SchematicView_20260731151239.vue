@@ -40,13 +40,7 @@ const props = defineProps<{
 }>()
 
 const router = useRouter()
-const { fitView, zoomIn, zoomOut, onNodesInitialized, viewport } = useVueFlow()
-
-// Reactive min-zoom bound passed to <VueFlow :min-zoom="minZoomBound">. Deliberately NOT set
-// via the imperative setMinZoom() - VueFlow re-syncs its internal zoom bound from the :min-zoom
-// prop on re-render, which would silently stomp an imperative call back down to whatever the
-// prop last said. Driving it as a reactive prop instead means there's only one source of truth.
-const minZoomBound = ref(0.15)
+const { fitView, zoomIn, zoomOut, onNodesInitialized, setMinZoom, getViewport } = useVueFlow()
 
 // Never let min-zoom sit below this, or above this, regardless of what a given page's fit
 // level computes to - keeps the bound sane on both a tiny page (Blacksmith Fork) and a very
@@ -515,20 +509,13 @@ function updateBreakpoints() {
 // page (lets you zoom out into a lot of empty canvas) or too strict on a tall one (clips the
 // page's own content when it can't zoom out far enough to fit it on load).
 async function resetView() {
-  // fitView() is constrained by whatever min-zoom is currently in effect. On a page switch,
-  // the PREVIOUS page's floor is still set at this point - if the new page needs to zoom out
-  // further than that stale floor allows (e.g. leaving Blacksmith Fork's tight ~0.5 floor for
-  // Lower Logan's much looser ~0.16 one), the fit gets clamped and only part of the new
-  // diagram shows. Relax to the loosest floor first, let it propagate, then fit, then compute
-  // the real floor for whatever page is actually showing now.
-  minZoomBound.value = ABSOLUTE_MIN_ZOOM_FLOOR
-  await nextTick()
   await fitView({ padding: 0.05 })
-  const fittedZoom = viewport.value.zoom
-  minZoomBound.value = Math.min(
+  const fittedZoom = getViewport().zoom
+  const floor = Math.min(
     ABSOLUTE_MIN_ZOOM_CEILING,
     Math.max(ABSOLUTE_MIN_ZOOM_FLOOR, fittedZoom * MIN_ZOOM_FIT_RATIO),
   )
+  setMinZoom(floor)
 }
 
 let resizeTimer: ReturnType<typeof setTimeout> | null = null
@@ -619,7 +606,7 @@ watch(
         :zoom-on-pinch="true"
         :zoom-on-double-click="false"
         :prevent-scrolling="true"
-        :min-zoom="minZoomBound"
+        :min-zoom="0.15"
         :max-zoom="1.5"
         :fit-view-on-init="true"
         @node-click="onNodeClick"

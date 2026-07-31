@@ -34,9 +34,7 @@ export function setApiConfig(cfg: {
 }
 
 let apiToken: string | undefined
-export function setApiToken(token: string) {
-  apiToken = token
-}
+export function setApiToken(token: string) { apiToken = token }
 function authHeaders(): HeadersInit {
   return apiToken ? { Authorization: `Token ${apiToken}` } : {}
 }
@@ -94,8 +92,8 @@ const HYDROSERVER_GROUP = 'Logan River Observatory'
 export let WATERWAY_COLORS: Record<string, string> = {
   [MAIN_STEM_GROUP]: '#2a78d6',
   [HYDROSERVER_GROUP]: '#2a78d6',
-  USGS: '#e87ba4',
-  DWRi: '#4a3aa7',
+  'USGS': '#e87ba4',
+  'DWRi': '#4a3aa7',
 }
 
 export let WATERWAY_LIST = Object.keys(WATERWAY_COLORS)
@@ -121,27 +119,11 @@ export interface WaterVariable {
 // hardcoded fallback (same shape as WATERWAY_COLORS above) so the app still has a reasonable
 // variable list to render with if that fetch hasn't completed yet or config.json omits it.
 export let WATER_VARIBALES: WaterVariable[] = [
-  {
-    id: 'Discharge',
-    label: 'Discharge (cfs)',
-    longLabel: 'Discharge in cfs (cubic feet per second)',
-  },
-  {
-    id: 'Water Temperature',
-    label: 'Temperature (°C)',
-    longLabel: 'Water Temperature in °C (degrees Celsius)',
-  },
-  {
-    id: 'Specific Conductance',
-    label: 'Specific Conductance (µS/cm)',
-    longLabel: 'Specific Conductance in µS/cm (microsiemens per centimeter)',
-  },
+  { id: 'Discharge', label: 'Discharge (cfs)', longLabel: 'Discharge in cfs (cubic feet per second)' },
+  { id: 'Water Temperature', label: 'Temperature (°C)', longLabel: 'Water Temperature in °C (degrees Celsius)' },
+  { id: 'Specific Conductance', label: 'SPC (µS/cm)', longLabel: 'Specific Conductance in µS/cm (microsiemens per centimeter)' },
   { id: 'pH', label: 'pH', longLabel: 'pH (potential of hydrogen)' },
-  {
-    id: 'Oxygen, dissolved',
-    label: 'Dissolved Oxygen (mg/L)',
-    longLabel: 'Dissolved Oxygen in mg/L (milligrams per liter)',
-  },
+  { id: 'Oxygen, dissolved', label: 'Dissolved Oxygen (mg/L)', longLabel: 'Dissolved Oxygen in mg/L (milligrams per liter)' },
 ]
 
 // Called by App.vue's loadConfig() with config.json's "waterVariables" array, if present. Unlike
@@ -292,9 +274,7 @@ export async function loadStationConfig(): Promise<void> {
 
     HIDDEN_STATIONS = data.hiddenStations ?? []
     DISPLAY_NAMES = data.displayNames ?? {}
-    USGS_STATIONS_CONFIG = (data.usgsStations ?? []).filter(
-      (s: UsgsStationEntry) => s.active !== false,
-    )
+    USGS_STATIONS_CONFIG = (data.usgsStations ?? []).filter((s: UsgsStationEntry) => s.active !== false)
     DWRI_STATIONS_DATA = data.dwriStations ?? []
 
     if (Array.isArray(data.waterwayGroups) && data.waterwayGroups.length) {
@@ -325,10 +305,7 @@ export async function getVariableStations(variable: string = 'Discharge'): Promi
 
   const thingsUrl = `${BASE_URL}/Things?$top=200&$expand=Locations`
 
-  const [dsRes, thingsRes] = await Promise.all([
-    fetch(listUrl, { headers: authHeaders() }),
-    fetch(thingsUrl, { headers: authHeaders() }),
-  ])
+  const [dsRes, thingsRes] = await Promise.all([fetch(listUrl, { headers: authHeaders() }), fetch(thingsUrl, { headers: authHeaders() })])
   const [data, thingsData] = await Promise.all([dsRes.json(), thingsRes.json()])
 
   const thingsByCode: Record<string, { uuid: string; coords: [number, number] | null }> = {}
@@ -431,15 +408,12 @@ export async function getUSGSStations(variable: string = 'Discharge'): Promise<S
       const stationCode = `USGS-${siteCode}`
       const configEntry = USGS_STATIONS_CONFIG.find((s) => s.id === siteCode)
       const displayName = configEntry?.displayName ?? stationCode
-      const tributaryBase = displayName.includes(':')
-        ? (displayName.split(':')[0]?.trim() ?? 'USGS')
-        : 'USGS'
+      const tributaryBase = displayName.includes(':') ? (displayName.split(':')[0]?.trim() ?? 'USGS') : 'USGS'
       const tributary = tributaryBase === 'Logan River' ? MAIN_STEM_GROUP : tributaryBase
 
       const geo = ts.sourceInfo?.geoLocation?.geogLocation
-      const coordinates: [number, number] | null = geo
-        ? [Number(geo.latitude), Number(geo.longitude)]
-        : null
+      const coordinates: [number, number] | null =
+        geo ? [Number(geo.latitude), Number(geo.longitude)] : null
 
       const latestVal = ts.values?.[0]?.value?.[0]
       const rawResult = latestVal?.value
@@ -458,7 +432,9 @@ export async function getUSGSStations(variable: string = 'Discharge'): Promise<S
         isPrivate: false,
         isUSGS: true,
         siteLink: configEntry?.siteLink,
-        observation: phenomenonTime ? { '@iot.id': stationCode, result, phenomenonTime } : null,
+        observation: phenomenonTime
+          ? { '@iot.id': stationCode, result, phenomenonTime }
+          : null,
       }
     })
   } catch {
@@ -578,9 +554,7 @@ export function getSchematicOrder(pages: SchematicPages | null | undefined): str
 // what lets a live station be matched back to which schematic page (Upper Logan, Little Bear,
 // etc.) it belongs to, for the List/Map view system filter. Adding or removing a station is a
 // schematic-JSON-only edit - nothing here needs to change to pick it up.
-export function getSchematicSystemOrder(
-  pages: SchematicPages | null | undefined,
-): { name: string; slug: SchematicSlug }[] {
+export function getSchematicSystemOrder(pages: SchematicPages | null | undefined): { name: string; slug: SchematicSlug }[] {
   return buildSchematicEntries(pages).map((e) => ({ name: e.name, slug: e.slug }))
 }
 
@@ -591,11 +565,7 @@ export function getSchematicSystemOrder(
 // a literal text-prefix of another's, e.g. "Highline Canal" vs "Highline Canal at Pond" - the
 // shorter name's station would win the match for both, showing its reading on both cards.
 // Preferring an exact match, then the closest-length partial match, fixes that.
-export function bestFuzzyMatch<T>(
-  targetName: string,
-  items: T[],
-  nameOf: (item: T) => string,
-): T | undefined {
+export function bestFuzzyMatch<T>(targetName: string, items: T[], nameOf: (item: T) => string): T | undefined {
   const target = targetName.toLowerCase()
   let best: T | undefined
   let bestDiff = Infinity
