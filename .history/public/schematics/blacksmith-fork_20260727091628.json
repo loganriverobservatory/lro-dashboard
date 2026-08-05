@@ -33,9 +33,7 @@
     "",
     "To add a new station: add a node with kind 'mainstem' at the right point in the list.",
     "The 'to_lower_logan' node at the bottom is the reciprocal of the 'bsf_ext' link node on lower-logan.json - do not delete",
-    "one without the other. 'bsf_before_conf' above is intentionally duplicated as a preview card on lower-logan.json too",
-    "(chained onto 'bsf_ext' there, with returnsTo pointing back at the real confluence junction) - same live station,",
-    "shown on both pages so Lower Logan reads as a complete standalone diagram."
+    "one without the other."
   ],
   "id": "blacksmith-fork",
   "title": "Blacksmith Fork River",
@@ -73,14 +71,6 @@
       "stationId": "BSF_1700S_A",
       "kind": "mainstem",
       "colorGroup": "Blacksmith Fork River"
-    },
-    {
-      "id": "bsf_before_conf",
-      "name": "Blacksmith Fork River: Before Confluence with Logan River",
-      "stationId": "BSF_CONF_BA",
-      "kind": "mainstem",
-      "colorGroup": "Blacksmith Fork River",
-      "cardLabel": "Before Confluence with Logan River"
     },
     {
       "id": "to_lower_logan",

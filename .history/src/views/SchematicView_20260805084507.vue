@@ -381,12 +381,6 @@ const STYLE_PRESETS = {
   main: { stroke: '#1e293b', strokeWidth: 4 },
   in: { stroke: '#475569', strokeWidth: 3 }, // tributary, or a link flowing toward its anchor
   out: { stroke: '#c2703d', strokeWidth: 3 }, // diversion flowing away from its anchor
-  // A returnsTo connector (e.g. bsf_before_conf rejoining the trunk at bsf_confluence) often
-  // has to travel back past one or more OTHER cards it doesn't actually connect to, to reach
-  // its rejoin point - dashing it distinguishes "this is a second, secondary connector for a
-  // node you already saw" from what would otherwise look like a stray/duplicate solid line
-  // crossing near unrelated cards.
-  return: { stroke: '#475569', strokeWidth: 2, strokeDasharray: '6 4' },
 } as const
 
 const vfEdges = computed<VFEdge[]>(() => {
@@ -440,11 +434,7 @@ const vfEdges = computed<VFEdge[]>(() => {
       sourceHandle,
       targetHandle,
       type: edgeShape,
-      style: {
-        stroke: preset.stroke,
-        strokeWidth: preset.strokeWidth,
-        ...('strokeDasharray' in preset ? { strokeDasharray: preset.strokeDasharray } : {}),
-      },
+      style: { stroke: preset.stroke, strokeWidth: preset.strokeWidth },
       // Main-channel edges only get an arrowhead where they actually land on a station
       // card (mainstem) - into a junction's barely-visible dot, an arrowhead has nothing
       // to visually land on and just reads as noise. Lateral tributary/diversion
@@ -488,7 +478,7 @@ const vfEdges = computed<VFEdge[]>(() => {
     if (node.returnsTo) {
       const returnTarget = nodesById.get(node.returnsTo)
       if (returnTarget)
-        edges.push(makeEdge(`return-${node.id}`, node, returnTarget, STYLE_PRESETS.return))
+        edges.push(makeEdge(`return-${node.id}`, node, returnTarget, STYLE_PRESETS.in))
     }
   })
 

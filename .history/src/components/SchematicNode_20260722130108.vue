@@ -130,25 +130,6 @@ const resolvedColorGroup = computed(() => {
       :connectable="false"
       class="schematic-handle"
     />
-    <!-- Needed for a branch chain node positioned BELOW its own anchor (e.g. lower-logan's
-    bsf_before_conf sitting under bsf_ext) whose arrow still needs to point UP into that
-    anchor. Without this pair, SchematicView had no top-facing source / bottom-facing target
-    to use, so Vue Flow routed those connectors the long way around the cards instead of a
-    short straight/step line - the overlapping-arrow bug on Lower Logan and similar chains. -->
-    <Handle
-      id="s-top"
-      type="source"
-      :position="Position.Top"
-      :connectable="false"
-      class="schematic-handle"
-    />
-    <Handle
-      id="t-bottom"
-      type="target"
-      :position="Position.Bottom"
-      :connectable="false"
-      class="schematic-handle"
-    />
     <Handle
       id="s-left"
       type="source"
@@ -239,13 +220,9 @@ const resolvedColorGroup = computed(() => {
 .station-wrapper :deep(.metric-row) {
   margin-bottom: 0.05rem;
 }
-/* Was a flat 2rem with a hard 2-line clamp+ellipsis - that clipped legitimately long names
-   (e.g. "Utah Water Research Laboratory") instead of just controlling height. Shrinking the
-   size instead of capping lines means the full name always shows - a card can still wrap to
-   3-4 short lines in the worst case, which ROW_HEIGHT (SchematicView.vue) has margin for. */
 .station-wrapper :deep(.location-name) {
-  font-size: 1.4rem !important;
-  line-height: 1.15 !important;
+  font-size: 2rem !important;
+  line-height: 1.1 !important;
   margin: 0;
   white-space: normal;
   overflow-wrap: break-word;

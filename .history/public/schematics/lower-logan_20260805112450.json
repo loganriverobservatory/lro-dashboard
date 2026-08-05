@@ -38,22 +38,21 @@
     "               this).",
     "  description - terminus node only: subtitle text.",
     "  returnsTo  - tributary/diversion only: if this is the last node in a chain and the water rejoins the main channel",
-    "               at a DIFFERENT junction than the one it's attached to, the id of that junction. Draws a second connector",
-    "               back into the trunk, rendered dashed to distinguish it from a primary connector. Not currently used on",
-    "               this page - every attachment below connects directly to the junction/mainstem node it actually rejoins.",
+    "               here, the id of the junction it rejoins at (see bsf_before_conf below, which rejoins at bsf_confluence).",
+    "               Draws a second connector back into the trunk, rendered dashed to distinguish it from a primary connector.",
     "",
     "There's no separate edges list - the main channel line, every tributary/diversion's connector, and flow direction (in",
     "for tributary, out for diversion) are all derived automatically from kind + connectsTo + the order nodes appear above.",
     "",
     "The 'bsf_ext' node is where Blacksmith Fork River used to be drawn directly on this page - it's now a 'link' card that",
-    "navigates to its own page (blacksmith-fork.json), chained onto 'bsf_before_conf' (the last real BSF gauge before it",
-    "joins the Logan River, and also the last real node on blacksmith-fork.json's own page), which itself connects DIRECTLY",
-    "to bsf_confluence so its connector runs straight into the real confluence point. Do not delete bsf_ext without also",
-    "removing the reciprocal 'to_lower_logan' link node on that page.",
+    "navigates to its own page (blacksmith-fork.json), plus one real preview station ('bsf_before_conf', the last BSF gauge",
+    "before it joins the Logan River - also the last real node on blacksmith-fork.json's own page) chained onto it, with",
+    "returnsTo pointing back at bsf_confluence so its connector rejoins the main trunk right where the real confluence is.",
+    "Do not delete bsf_ext without also removing the reciprocal 'to_lower_logan' link node on that page.",
     "",
-    "'little_bear' and 'lb_ext' below work the same way: 'little_bear' is a real live station (Little Bear River: Mendon",
-    "Road - the same station that's also the last node on little-bear.json's own page) connected directly to the terminus,",
-    "with 'lb_ext' (the 'view full system' link card) chained onto it. Do not delete either without also removing the",
+    "'little_bear' below is a real live station (Little Bear River: Mendon Road - the same station that's also the last",
+    "node on little-bear.json's own page) that ALSO carries linkTo to that page for a 'view full system' button, rather",
+    "than a nav-only link card - per the canonical site-ordering reference. Do not delete it without also removing the",
     "reciprocal linkTo on that page's 'cutler_reservoir' terminus node.",
     "",
     "Southwest Field Canal, Northwest Field Canal, Hyde Park and Logan Northfield, Hyde Park Canal, and Benson Irrigation",
@@ -70,7 +69,7 @@
       "name": "Upper Logan Canyon",
       "kind": "link",
       "linkTo": "upper-logan",
-      "label": "Continue to Upper Logan Canyon"
+      "label": "Continue to Upper Logan Canyon ←"
     },
     {
       "id": "guinivah",
@@ -175,23 +174,24 @@
     },
     { "id": "bsf_confluence", "name": "Blacksmith Fork Confluence", "kind": "junction" },
     {
+      "id": "bsf_ext",
+      "name": "Blacksmith Fork River",
+      "kind": "link",
+      "connectsTo": "bsf_confluence",
+      "side": "right",
+      "linkTo": "blacksmith-fork",
+      "label": "Continue to Blacksmith Fork River"
+    },
+    {
       "id": "bsf_before_conf",
       "name": "Blacksmith Fork River: Before Confluence with Logan River",
       "stationId": "BSF_CONF_BA",
       "kind": "tributary",
-      "connectsTo": "bsf_confluence",
+      "connectsTo": "bsf_ext",
       "side": "right",
       "colorGroup": "Blacksmith Fork River",
-      "cardLabel": "Before Confluence with Logan River"
-    },
-    {
-      "id": "bsf_ext",
-      "name": "Blacksmith Fork River",
-      "kind": "link",
-      "connectsTo": "bsf_before_conf",
-      "side": "right",
-      "linkTo": "blacksmith-fork",
-      "label": "Continue to Blacksmith Fork River"
+      "cardLabel": "Before Confluence with Logan River",
+      "returnsTo": "bsf_confluence"
     },
     {
       "id": "thousand_w",
@@ -251,15 +251,8 @@
       "stationId": "LBR_MR_A",
       "kind": "tributary",
       "connectsTo": "terminus",
-      "side": "left",
-      "colorGroup": "Little Bear River"
-    },
-    {
-      "id": "lb_ext",
-      "name": "Little Bear River",
-      "kind": "link",
-      "connectsTo": "little_bear",
-      "side": "left",
+      "side": "right",
+      "colorGroup": "Little Bear River",
       "linkTo": "little-bear",
       "label": "Continue to Little Bear River"
     }

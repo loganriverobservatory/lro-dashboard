@@ -239,16 +239,21 @@ const resolvedColorGroup = computed(() => {
 .station-wrapper :deep(.metric-row) {
   margin-bottom: 0.05rem;
 }
-/* Was a flat 2rem with a hard 2-line clamp+ellipsis - that clipped legitimately long names
-   (e.g. "Utah Water Research Laboratory") instead of just controlling height. Shrinking the
-   size instead of capping lines means the full name always shows - a card can still wrap to
-   3-4 short lines in the worst case, which ROW_HEIGHT (SchematicView.vue) has margin for. */
+/* Capped to 2 lines (with an ellipsis on anything longer) rather than wrapping freely - an
+   uncapped name can grow a card taller than its allotted row (ROW_HEIGHT in SchematicView.vue),
+   pushing it into the row below and making neighboring cards look "smashed together". Capping
+   here keeps every card's height predictable so ROW_HEIGHT stays accurate. */
 .station-wrapper :deep(.location-name) {
-  font-size: 1.4rem !important;
-  line-height: 1.15 !important;
+  font-size: 2rem !important;
+  line-height: 1.1 !important;
   margin: 0;
   white-space: normal;
   overflow-wrap: break-word;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .station-wrapper :deep(.value) {
   font-size: clamp(1.8rem, 5vw, 2.4rem) !important;

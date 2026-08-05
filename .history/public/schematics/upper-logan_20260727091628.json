@@ -34,8 +34,7 @@
     "This page continues into 'Lower Logan River' via the 'ext_to_lower' link node at the bottom - do not remove it without",
     "also updating lower-logan.json's matching recap section.",
     "Sites displayed here are the ones at and above the UWRL Water Lab: the natural tributaries (Beaver Creek, Ricks Spring,",
-    "Temple Fork, Right Hand Fork, Dewitt Springs) plus the USGS Cache Highline Canal and Above First Dam stations - order",
-    "and attachment points here follow the canonical site-ordering reference (row/col/juncId per station)."
+    "Temple Fork, Right Hand Fork, Dewitt Springs) plus the USGS Cache Highline Canal and Above First Dam stations."
   ],
   "id": "upper-logan",
   "title": "Upper Logan River: Canyon",
