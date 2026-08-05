@@ -37,10 +37,7 @@ let apiToken: string | undefined
 export function setApiToken(token: string) {
   apiToken = token
 }
-// Exported so other files that make their own direct HydroServer calls (e.g.
-// StationSparkline.vue's history fetch) can send the same auth header instead of duplicating
-// or omitting this logic.
-export function authHeaders(): HeadersInit {
+function authHeaders(): HeadersInit {
   return apiToken ? { Authorization: `Token ${apiToken}` } : {}
 }
 

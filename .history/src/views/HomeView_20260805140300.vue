@@ -133,9 +133,8 @@ const emit = defineEmits(['change-view'])
   display: block;
   margin-left: 2.5rem;
   /* brightness(0) invert(1) recolors the logo to solid white (same trick as App.vue's
-     hs-badge-icon). One soft, dark drop-shadow gives it separation from bright parts of the
-     photo (sky, water) without the heavier multi-layer glow this used to have. */
-  filter: brightness(0) invert(1) drop-shadow(0 3px 18px rgba(0, 0, 0, 0.5));
+     hs-badge-icon). No drop-shadow - just the plain white mark against the photo. */
+  filter: brightness(0) invert(1);
 }
 
 .hero-text-group {
@@ -296,20 +295,16 @@ const emit = defineEmits(['change-view'])
   .hero-banner {
     /* Was a flat 200px, which felt squished under the logo - scales with viewport width
        instead (with a floor/ceiling) so it stays proportional across phone sizes rather
-       than cramming the same short strip onto every screen. Raised again alongside the
-       bigger mobile logo below so it has room to breathe instead of overflowing. */
-    min-height: min(75vw, 380px);
+       than cramming the same short strip onto every screen. */
+    min-height: min(58vw, 300px);
     margin-top: 0rem;
     align-items: center;
     justify-content: flex-start;
     background-position: center 45%;
   }
   .hero-logo {
-    /* Intentionally much larger than desktop's proportions call for - on a small screen the
-       logo IS the hero image's main content, so it should read clearly at a glance rather
-       than sit small in the corner like it can afford to on a wide desktop banner. */
-    max-height: 260px;
-    margin-left: 1rem;
+    max-height: 140px;
+    margin-left: 1.25rem;
   }
   .navigation-grid {
     grid-template-columns: 1fr;

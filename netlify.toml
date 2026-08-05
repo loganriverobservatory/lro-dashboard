@@ -1,0 +1,25 @@
+# Production counterpart to vite.config.ts's server.proxy.
+#
+# HydroServer's SensorThings API (lro.hydroserver.org) does not send back
+# Access-Control-Allow-Origin headers, so the browser blocks direct
+# cross-origin fetches from this dashboard (CORS error). vite.config.ts
+# already works around this in local dev by proxying any request to
+# "/api/..." through to https://lro.hydroserver.org/api/... server-side,
+# where CORS doesn't apply. This redirect does the same job for the
+# deployed site: Netlify's edge fetches the HydroServer response
+# server-side and hands it back to the browser as same-origin, so no
+# CORS headers are needed at all.
+#
+# public/config.json's hydroServerBaseUrl must stay a relative path
+# ("/api/sensorthings/v1.1") for this to take effect - see the comment
+# there.
+#
+# No [build] table here on purpose - build command/publish directory stay
+# managed in the Netlify UI as they already are; this file only adds the
+# redirect rule on top of that.
+
+[[redirects]]
+  from = "/api/*"
+  to = "https://lro.hydroserver.org/api/:splat"
+  status = 200
+  force = true

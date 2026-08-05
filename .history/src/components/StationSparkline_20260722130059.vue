@@ -67,7 +67,7 @@ needs one simple line. DWRi stations pass their history in via preloadedHistory 
 in bulk); every other station fetches its own recent history directly here.
 */
 import { ref, computed, watch } from 'vue'
-import { getFreshnessStatus, authHeaders, type StaObservation } from '../hydroService'
+import { getFreshnessStatus, type StaObservation } from '../hydroService'
 
 const props = defineProps({
   stationId: {
@@ -166,13 +166,9 @@ const sparklineContainerStyle = computed(() => ({
 const canShowSparkline = computed(() => sparklineObservations.value.length > 1)
 
 // Fetches this station's last 48 hours of readings directly (USGS or HydroServer, by id
-// prefix). The USGS URL is hardcoded here rather than going through hydroService.ts's
-// setApiConfig() endpoints - a deployment that changes its USGS endpoint via config.json would
-// need to also edit this function. The HydroServer branch below uses the same relative "/api/..."
-// path (proxied server-side - see vite.config.ts / netlify.toml) that the rest of the app's
-// HydroServer calls use; it used to hit the absolute https://lro.hydroserver.org URL directly,
-// which the browser blocks (HydroServer sends no CORS headers) - this was the cause of most
-// HydroServer stations' sparklines silently showing "No recent history".
+// prefix) - NOTE both URLs here are hardcoded rather than going through hydroService.ts's
+// setApiConfig() endpoints, unlike the rest of the app's data fetching; a deployment that
+// changes its HydroServer/USGS endpoints via config.json would need to also edit this function.
 async function fetchRecentHistory(id: string) {
   try {
     loading.value = true
@@ -189,8 +185,8 @@ async function fetchRecentHistory(id: string) {
     } else {
       // $orderby is ignored by this API; filter by 48-hour window and sort client-side
       const since = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString()
-      const url = `/api/sensorthings/v1.1/Datastreams('${id}')/Observations?$filter=phenomenonTime ge ${since}&$top=300&$select=result,phenomenonTime`
-      const res = await fetch(url, { headers: authHeaders() })
+      const url = `https://lro.hydroserver.org/api/sensorthings/v1.1/Datastreams('${id}')/Observations?$filter=phenomenonTime ge ${since}&$top=300&$select=result,phenomenonTime`
+      const res = await fetch(url)
       const data = await res.json()
       if (data.value) {
         sparklineObservations.value = data.value

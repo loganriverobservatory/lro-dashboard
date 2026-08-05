@@ -133,9 +133,9 @@ const emit = defineEmits(['change-view'])
   display: block;
   margin-left: 2.5rem;
   /* brightness(0) invert(1) recolors the logo to solid white (same trick as App.vue's
-     hs-badge-icon). One soft, dark drop-shadow gives it separation from bright parts of the
-     photo (sky, water) without the heavier multi-layer glow this used to have. */
-  filter: brightness(0) invert(1) drop-shadow(0 3px 18px rgba(0, 0, 0, 0.5));
+     hs-badge-icon). One soft, dark drop-shadow gives it just enough separation from bright
+     parts of the photo (sky, water) without the heavier multi-layer glow this used to have. */
+  filter: brightness(0) invert(1) drop-shadow(0 2px 14px rgba(0, 0, 0, 0.35));
 }
 
 .hero-text-group {
