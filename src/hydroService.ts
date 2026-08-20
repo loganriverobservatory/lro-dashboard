@@ -1,7 +1,12 @@
 /*
 src/hydroService.ts - fetches and processes data from HydroServer for use in the app
 */
-import type { DatastreamExtended } from '@hydroserver/client'
+import { HydroServer } from '@hydroserver/client'
+import type {
+  DatastreamExtended,
+  Datastream as ClientDatastream,
+  Thing as ClientThing,
+} from '@hydroserver/client'
 
 // Set once by App.vue's loadConfig(), from public/config.json, before any of the fetch
 // functions below run - there is no hardcoded LRO default to fall back to. That's deliberate:
@@ -11,6 +16,23 @@ let BASE_URL: string
 let STATION_CONFIG_URL: string
 let USGS_API_BASE_URL: string
 
+// @hydroserver/client instance - talks to the Data Management API (a different endpoint
+// surface than the SensorThings BASE_URL above, but proxied through the same same-origin
+// /api path - see vite.config.ts's server.proxy / the eventual GCP-side equivalent). Created
+// once setApiConfig() has a real host to point at; getVariableStations()/getLatestObservation()
+// below both read this instead of hand-rolling their own fetch() calls, which is what gives us
+// the client's built-in rate limiting on the per-datastream observation calls (see
+// getLatestObservation()'s comment - there is currently no batched-observations endpoint to
+// call instead, confirmed with HydroServer's maintainers Aug 2026).
+let hsClient: HydroServer | undefined
+
+// NOTE: the @hydroserver/client package is built around cookie/session login (see
+// SessionService), not a static bearer token. It has no way to attach the apiToken below to
+// its own requests. That's fine for this dashboard's normal case (all LRO station data read
+// here is public), but it does mean apiToken/authHeaders (kept below) are only usable by the
+// remaining hand-rolled fetch() calls in this file, not by anything routed through hsClient.
+// If LRO ever needs this dashboard to read a private/hidden station's data, that station's
+// data would need to keep going through the raw fetch()+authHeaders() path, not hsClient.
 export function setApiConfig(cfg: {
   hydroServerBaseUrl?: unknown
   stationConfigUrl?: unknown
@@ -31,6 +53,14 @@ export function setApiConfig(cfg: {
   BASE_URL = cfg.hydroServerBaseUrl as string
   STATION_CONFIG_URL = cfg.stationConfigUrl as string
   USGS_API_BASE_URL = cfg.usgsApiBaseUrl as string
+
+  // Same-origin root ('' -> same host the page was served from), so the client's requests
+  // go through the same proxy that already rewrites /api to the real HydroServer host - see
+  // vite.config.ts locally, and whatever the GCP-hosted equivalent ends up being in
+  // production. Do NOT point this at an absolute https://lro.hydroserver.org host directly;
+  // that reintroduces the CORS failure this dashboard was already built to route around (see
+  // hydroServerBaseUrl's own config.json comment).
+  hsClient = new HydroServer({ host: '' })
 }
 
 let apiToken: string | undefined
@@ -39,7 +69,8 @@ export function setApiToken(token: string) {
 }
 // Exported so other files that make their own direct HydroServer calls (e.g.
 // StationSparkline.vue's history fetch) can send the same auth header instead of duplicating
-// or omitting this logic.
+// or omitting this logic. Only relevant to the remaining raw fetch() calls in this file -
+// hsClient (above) has no equivalent, see its own comment.
 export function authHeaders(): HeadersInit {
   return apiToken ? { Authorization: `Token ${apiToken}` } : {}
 }
@@ -326,45 +357,55 @@ export async function loadStationConfig(): Promise<void> {
   }
 }
 
+// Fetches every Thing/Datastream/Unit through the HydroServer client's listAllItems() (which
+// pages internally - no more hardcoded $top=50/$top=200 caps that silently drop stations once
+// the network grows past them) instead of hand-rolled SensorThings fetch() calls. Filtering by
+// variable name, hidden/decommissioned/testing status all move client-side here rather than
+// being pushed down as server-side query params - the Data Management API's actual filter
+// parameter names are defined by a file (data.types.d.ts) the @hydroserver/client package
+// doesn't currently ship (flagged to Daniel Aug 2026, fix expected in a future client version).
+// Once that's available this can filter server-side instead of over-fetching every datastream.
 export async function getVariableStations(variable: string = 'Discharge'): Promise<Station[]> {
+  if (!hsClient) return []
+
   const isDischarge = variable.toLowerCase() === 'discharge'
 
-  const varFilter = isDischarge
-    ? `contains(name,'Discharge') and contains(name,'cfs') and not contains(name,'cms')`
-    : `contains(name,'${variable}')`
-
-  const listUrl = `${BASE_URL}/Datastreams?$filter=${varFilter}&$top=50&$orderby=name asc`
-
-  const thingsUrl = `${BASE_URL}/Things?$top=200&$expand=Locations`
-
-  const [dsRes, thingsRes] = await Promise.all([
-    fetch(listUrl, { headers: authHeaders() }),
-    fetch(thingsUrl, { headers: authHeaders() }),
+  const [things, datastreams, units] = await Promise.all([
+    hsClient.things.listAllItems(),
+    hsClient.datastreams.listAllItems(),
+    hsClient.units.listAllItems(),
   ])
-  const [data, thingsData] = await Promise.all([dsRes.json(), thingsRes.json()])
 
-  const thingsByCode: Record<string, { uuid: string; coords: [number, number] | null }> = {}
-  for (const t of (thingsData.value as StaThing[] | undefined) ?? []) {
-    const code = t.properties?.samplingFeatureCode
-    if (!code) continue
-    const p = t.Locations?.[0]?.location?.geometry?.coordinates
-    const coords: [number, number] | null = p && p.length >= 2 ? [Number(p[1]), Number(p[0])] : null
-    thingsByCode[code] = { uuid: t['@iot.id']?.toString() ?? '', coords }
-  }
+  const thingsById = new Map<string, ClientThing>(things.map((t) => [t.id, t]))
+  const unitSymbolById = new Map<string, string>(units.map((u) => [u.id, u.symbol]))
 
-  return data.value
-    .filter((ds: StaDatastream) => {
+  return datastreams
+    .filter((ds: ClientDatastream) => {
       if (!ds.name) return false
+
+      // Same "CODE Variable unit" naming convention the SensorThings side used - both APIs
+      // read the same underlying HydroServer data, so this should hold, but it's worth
+      // double-checking against a real datastream name once this runs against the live server.
+      const matchesVariable = isDischarge
+        ? ds.name.includes('Discharge') && ds.name.includes('cfs') && !ds.name.includes('cms')
+        : ds.name.includes(variable)
+      if (!matchesVariable) return false
+
       const code = ds.name.split(' ')[0]
       if (code && HIDDEN_STATIONS.includes(code)) return false
+
       const isDecommissioned =
         ds.description?.includes('Decommissioned') || ds.name.includes('Decommissioned')
       const isTesting = ds.name.includes('Testing')
       return !isDecommissioned && !isTesting
     })
-    .map((ds: StaDatastream) => {
-      const stationCode = ds.name.split(' ')[0] || 'UNKNOWN'
-      const thingInfo = thingsByCode[stationCode] ?? { uuid: '', coords: null }
+    .map((ds: ClientDatastream) => {
+      const thing = thingsById.get(ds.thingId)
+      const stationCode = thing?.samplingFeatureCode || ds.name.split(' ')[0] || 'UNKNOWN'
+      const lat = thing?.location?.latitude
+      const lng = thing?.location?.longitude
+      const coordinates: [number, number] | null =
+        typeof lat === 'number' && typeof lng === 'number' ? [lat, lng] : null
 
       const displayNameText: string = DISPLAY_NAMES[stationCode] || stationCode
       const tributaryBase = displayNameText.includes(':')
@@ -373,22 +414,18 @@ export async function getVariableStations(variable: string = 'Discharge'): Promi
 
       const tributary = tributaryBase === 'Logan River' ? MAIN_STEM_GROUP : HYDROSERVER_GROUP
 
-      // phenomenonTime is "start/end" interval — extract end as latest observation time
-      const ptParts = ds.phenomenonTime?.split('/') ?? []
-      const latestTime = ptParts[ptParts.length - 1] ?? null
-
       return {
-        id: ds['@iot.id']?.toString(),
-        uuid: thingInfo.uuid,
+        id: ds.id,
+        uuid: thing?.id ?? '',
         code: stationCode,
         displayName: displayNameText,
         description: ds.description || '',
         observation: null,
-        coordinates: thingInfo.coords,
-        unit: ds.unitOfMeasurement?.symbol || '',
+        coordinates,
+        unit: unitSymbolById.get(ds.unitId) || '',
         tributary,
-        latestTime,
-        isPrivate: ds.properties?.isVisible === false || ds.properties?.isPrivate === true,
+        latestTime: ds.phenomenonEndTime ?? null,
+        isPrivate: ds.isVisible === false || ds.isPrivate === true,
       }
     })
 }

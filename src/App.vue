@@ -4,6 +4,7 @@ App.vue - root orchestrator
 */
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import pLimit from 'p-limit'
 import {
   getVariableStations,
   getLatestObservation,
@@ -73,6 +74,22 @@ const schematicNav = computed(() => {
   })
 })
 
+// Caps how many getLatestObservation() requests are in flight at once. There is currently no
+// batched-observations endpoint on HydroServer to call instead (confirmed directly with
+// HydroServer's maintainers, Aug 2026 - a future API version may add one). Until then, this is
+// what keeps a ~30-station refresh from firing 30 simultaneous requests at the server the way
+// the old Promise.all(...) below used to - each request still happens, just a handful at a time
+// instead of all at once.
+const observationLimit = pLimit(5)
+
+// Bumped at the start of every loadStations() call. Each call captures its own snapshot of this
+// value; if a newer call has started by the time an older call's per-station observation fetch
+// resolves, that write is discarded instead of landing in sites.value. Without this, a fast
+// variable change (or a variable change that lands mid-refresh) can let a slow, now-stale
+// request overwrite a newer station array's entries with the wrong variable's data - see
+// Daniel's code review for the exact failure mode this fixes.
+let loadRequestId = 0
+
 let refreshTimer: ReturnType<typeof setInterval> | null = null
 
 function scheduleRefresh() {
@@ -130,6 +147,7 @@ async function loadConfig() {
 }
 
 async function loadStations(variable: string) {
+  const requestId = ++loadRequestId
   loading.value = true
   sites.value = []
   try {
@@ -139,6 +157,11 @@ async function loadStations(variable: string) {
       getDWRiStations(variable),
     ])
 
+    // A newer loadStations() call (e.g. the user picked a different variable while this one
+    // was still fetching) has already started - drop this call's results instead of showing
+    // them, so they can't briefly flash the wrong variable's stations.
+    if (requestId !== loadRequestId) return
+
     const allStations = [...stations, ...usgsStations, ...dwriStations]
 
     // Show station list immediately so cards render with "Updating..." spinner
@@ -146,23 +169,29 @@ async function loadStations(variable: string) {
     loading.value = false
 
     // Load observations for HydroServer stations; USGS stations come pre-filled.
-    // Fired in parallel (not awaited one at a time) since each request is independent —
-    // getLatestObservation already swallows its own errors, so one station failing never
-    // blocks or delays the rest.
+    // Rate-limited to 5 concurrent requests (see observationLimit's own comment) instead of
+    // firing all ~30 at once - getLatestObservation already swallows its own errors, so one
+    // station failing never blocks or delays the rest.
     await Promise.all(
-      allStations.map(async (station, i) => {
-        if (station.isUSGS || station.isDWRi) return
-        try {
-          const telemetry = await getLatestObservation(station.id, station.latestTime)
-          sites.value[i] = { ...station, observation: telemetry }
-        } catch {
-          // leave observation null
-        }
-      }),
+      allStations.map((station, i) =>
+        observationLimit(async () => {
+          if (station.isUSGS || station.isDWRi) return
+          if (requestId !== loadRequestId) return // superseded mid-flight, see above
+          try {
+            const telemetry = await getLatestObservation(station.id, station.latestTime)
+            // Re-check after the await too - a newer call may have started while this
+            // specific station's request was in flight, not just before the loop began.
+            if (requestId !== loadRequestId) return
+            sites.value[i] = { ...station, observation: telemetry }
+          } catch {
+            // leave observation null
+          }
+        }),
+      ),
     )
   } catch (err) {
     console.error('Fatal dashboard orchestrator error:', err)
-    loading.value = false
+    if (requestId === loadRequestId) loading.value = false
   }
 }
 
